@@ -70,127 +70,108 @@
 
   <main id="main-content">
 
-    <nav class="recalls-tabs" aria-label="Recall categories">
-      <ul class="recalls-tabs__list">
-        <li class="recalls-tabs__item"><a href="consumer-products.html" class="recalls-tabs__link">Consumer Products</a></li>
-        <li class="recalls-tabs__item"><a href="motor-vehicles.html" class="recalls-tabs__link">Motor Vehicles</a></li>
-        <li class="recalls-tabs__item"><a href="boats.html" class="recalls-tabs__link">Boats</a></li>
-        <li class="recalls-tabs__item"><a href="food.html" class="recalls-tabs__link">Food</a></li>
-        <li class="recalls-tabs__item"><a href="medicine.html" class="recalls-tabs__link" aria-current="page">Medicine</a></li>
-        <li class="recalls-tabs__item"><a href="cosmetics.html" class="recalls-tabs__link">Cosmetics</a></li>
-        <li class="recalls-tabs__item"><a href="environmental.html" class="recalls-tabs__link">Environmental</a></li>
-      </ul>
-    </nav>
-
-    <div class="grid-container">
-      <nav class="usa-breadcrumb" aria-label="Breadcrumbs">
-        <ol class="usa-breadcrumb__list">
-          <li class="usa-breadcrumb__list-item"><a href="index.html" class="usa-breadcrumb__link">Home</a></li>
-          <li class="usa-breadcrumb__list-item usa-current" aria-current="page">Medicine</li>
-        </ol>
-      </nav>
-    </div>
-
-    <section class="usa-section" aria-labelledby="page-heading">
+    <section class="page-header">
       <div class="grid-container">
-        <div class="page-intro">
-          <h1 class="page-intro__heading" id="page-heading">Medicine Recalls and Drug Safety Alerts</h1>
-          <p class="page-intro__body">
-            Recalls of prescription drugs, over-the-counter medications, medical
-            devices, and biological products are regulated by the U.S. Food and
-            Drug Administration (FDA). Visit the FDA's dedicated recall databases
-            for each product category using the links below.
-          </p>
+        <nav class="usa-breadcrumb" aria-label="Breadcrumbs" style="margin-bottom:1.5rem;">
+          <ol class="usa-breadcrumb__list">
+            <li class="usa-breadcrumb__list-item"><a href="index.html" class="usa-breadcrumb__link" style="color:rgba(255,255,255,0.8);">Home</a></li>
+            <li class="usa-breadcrumb__list-item usa-current" aria-current="page" style="color:#fff;">Medicine</li>
+          </ol>
+        </nav>
+        <div class="page-header__icon">
+          <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+            <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#medical_services"></use>
+          </svg>
         </div>
+        <h1 class="page-header__heading">Medicine Recalls and Drug Safety Alerts</h1>
+        <p class="page-header__desc">
+          Recalls of prescription drugs, over-the-counter medications, medical devices, and 
+          biological products are regulated by the U.S. Food and Drug Administration.
+        </p>
+      </div>
+    </section>
 
-        <div class="recalls-info-banner">
-          <p>
-            <strong>Do not stop taking a prescription medication without first consulting your doctor.</strong>
-            If your medication is recalled, contact your pharmacist or physician
-            for guidance on what to do. In most cases, alternative medications
-            are available.
-          </p>
-        </div>
-
-        <div class="agency-cards">
-          <div class="cards-grid" role="list">
-
-            <article class="agency-card" role="listitem">
-              <div class="agency-card__logo-wrap">
-                <img class="agency-card__logo" src="assets/logos/fda.svg" alt="U.S. Food and Drug Administration" />
-              </div>
-              <div class="agency-card__body">
-                <h2 class="agency-card__heading">Drug Recalls</h2>
-                <p class="agency-card__text">
-                  FDA drug recall database covering prescription drugs,
-                  over-the-counter medications, and compounded drugs. Includes
-                  recall class (I, II, or III) indicating the level of health hazard.
-                </p>
-              </div>
-              <div class="agency-card__footer">
-                <a
-                  href="https://www.fda.gov/drugs/drug-safety-and-availability/drug-recalls"
-                  class="usa-button"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="View FDA drug recalls on fda.gov (opens in a new tab)"
-                >
-                  View Drug Recalls on FDA.gov
-                </a>
-              </div>
-            </article>
-
-            <article class="agency-card" role="listitem">
-              <div class="agency-card__logo-wrap">
-                <img class="agency-card__logo" src="assets/logos/fda.svg" alt="U.S. Food and Drug Administration" />
-              </div>
-              <div class="agency-card__body">
-                <h2 class="agency-card__heading">Medical Device Recalls</h2>
-                <p class="agency-card__text">
-                  FDA medical device recalls cover a broad range of products including
-                  implants, diagnostic equipment, surgical tools, and in vitro
-                  diagnostic devices. Searchable by device name, manufacturer, and date.
-                </p>
-              </div>
-              <div class="agency-card__footer">
-                <a
-                  href="https://www.fda.gov/medical-devices/medical-device-recalls"
-                  class="usa-button usa-button--outline"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="View FDA medical device recalls on fda.gov (opens in a new tab)"
-                >
-                  View Medical Device Recalls
-                </a>
-              </div>
-            </article>
-
-            <article class="agency-card" role="listitem">
-              <div class="agency-card__logo-wrap">
-                <img class="agency-card__logo" src="assets/logos/fda.svg" alt="U.S. Food and Drug Administration" />
-              </div>
-              <div class="agency-card__body">
-                <h2 class="agency-card__heading">Report a Drug or Device Problem</h2>
-                <p class="agency-card__text">
-                  MedWatch is the FDA's safety information and adverse event reporting
-                  program. Report serious problems with drugs, medical devices,
-                  biologics, or dietary supplements to the FDA.
-                </p>
-              </div>
-              <div class="agency-card__footer">
-                <a
-                  href="https://www.fda.gov/safety/medwatch-fda-safety-information-and-adverse-event-reporting-program"
-                  class="usa-button usa-button--outline"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="Report a drug or device problem on FDA MedWatch (opens in a new tab)"
-                >
-                  Report on FDA MedWatch
-                </a>
-              </div>
-            </article>
-
+    <section class="agency-section">
+      <div class="grid-container">
+        
+        <div class="info-banner info-banner--warning">
+          <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+            <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#warning"></use>
+          </svg>
+          <div class="info-banner__content">
+            <p class="info-banner__title">Do not stop taking a prescription medication without consulting your doctor</p>
+            <p class="info-banner__text">If your medication is recalled, contact your pharmacist or physician for guidance. Alternative medications are usually available.</p>
           </div>
+        </div>
+
+        <div class="agency-cards-grid">
+          
+          <article class="agency-card">
+            <div class="agency-card__header">
+              <img class="agency-card__logo" src="assets/logos/fda.svg" alt="" />
+              <span class="agency-card__agency-name">FDA</span>
+            </div>
+            <div class="agency-card__body">
+              <h2 class="agency-card__title">Drug Recalls</h2>
+              <p class="agency-card__text">
+                FDA drug recall database covering prescription drugs, over-the-counter medications, 
+                and compounded drugs. Includes recall class (I, II, or III) indicating hazard level.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="https://www.fda.gov/drugs/drug-safety-and-availability/drug-recalls" class="usa-button" target="_blank" rel="noopener" aria-label="View FDA drug recalls (opens in new tab)">
+                View Drug Recalls
+                <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+                  <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#launch"></use>
+                </svg>
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card">
+            <div class="agency-card__header">
+              <img class="agency-card__logo" src="assets/logos/fda.svg" alt="" />
+              <span class="agency-card__agency-name">FDA</span>
+            </div>
+            <div class="agency-card__body">
+              <h2 class="agency-card__title">Medical Device Recalls</h2>
+              <p class="agency-card__text">
+                FDA medical device recalls cover implants, diagnostic equipment, surgical tools, 
+                and in vitro diagnostic devices. Searchable by device name, manufacturer, and date.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="https://www.fda.gov/medical-devices/medical-device-recalls" class="usa-button usa-button--outline" target="_blank" rel="noopener" aria-label="View FDA device recalls (opens in new tab)">
+                View Device Recalls
+                <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+                  <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#launch"></use>
+                </svg>
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card">
+            <div class="agency-card__header">
+              <img class="agency-card__logo" src="assets/logos/fda.svg" alt="" />
+              <span class="agency-card__agency-name">FDA MedWatch</span>
+            </div>
+            <div class="agency-card__body">
+              <h2 class="agency-card__title">Report a Drug or Device Problem</h2>
+              <p class="agency-card__text">
+                MedWatch is the FDA's safety information and adverse event reporting program. 
+                Report serious problems with drugs, medical devices, biologics, or dietary supplements.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="https://www.fda.gov/safety/medwatch-fda-safety-information-and-adverse-event-reporting-program" class="usa-button usa-button--outline" target="_blank" rel="noopener" aria-label="Report on FDA MedWatch (opens in new tab)">
+                Report on MedWatch
+                <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+                  <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#launch"></use>
+                </svg>
+              </a>
+            </div>
+          </article>
+
         </div>
       </div>
     </section>
@@ -205,14 +186,14 @@
           <nav class="usa-footer__nav mobile-lg:grid-col-8 desktop:grid-col-10" aria-label="Footer navigation">
             <ul class="grid-row grid-gap usa-list usa-list--unstyled">
               <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/privacy-policy">Privacy Policy</a></li>
-              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility">Accessibility Statement</a></li>
-              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/vulnerability-disclosure-policy">Vulnerability Disclosure Policy</a></li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility">Accessibility</a></li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/vulnerability-disclosure-policy">Vulnerability Disclosure</a></li>
               <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/foia">FOIA</a></li>
-              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/no-fear-act">No FEAR Act Data</a></li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/no-fear-act">No FEAR Act</a></li>
             </ul>
           </nav>
         </div>
-        <p class="recalls-footer-note">This site is provided as a public resource for federal recalls. Contact <a href="mailto:webteam@cpsc.gov">webteam@cpsc.gov</a> with questions about this website.</p>
+        <p class="footer-note">This site is provided as a public resource for federal recalls. Contact <a href="mailto:webteam@cpsc.gov">webteam@cpsc.gov</a> with questions.</p>
       </div>
     </div>
   </footer>
@@ -221,7 +202,7 @@
     <section class="usa-identifier__section usa-identifier__section--masthead" aria-label="Agency identifier">
       <div class="usa-identifier__container">
         <div class="usa-identifier__logos">
-          <a href="https://www.cpsc.gov" class="usa-identifier__logo" aria-label="U.S. Consumer Product Safety Commission homepage">
+          <a href="https://www.cpsc.gov" class="usa-identifier__logo" aria-label="CPSC homepage">
             <img class="usa-identifier__logo-img" src="assets/logos/cpsc.svg" alt="U.S. Consumer Product Safety Commission" />
           </a>
         </div>
@@ -231,19 +212,7 @@
         </section>
       </div>
     </section>
-    <nav class="usa-identifier__section usa-identifier__section--required-links" aria-label="Important links">
-      <div class="usa-identifier__container">
-        <ul class="usa-identifier__required-links-list">
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc" class="usa-identifier__required-link usa-link">About CPSC</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility" class="usa-identifier__required-link usa-link">Accessibility Statement</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/foia" class="usa-identifier__required-link usa-link">FOIA Requests</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/no-fear-act" class="usa-identifier__required-link usa-link">No FEAR Act Data</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://oig.cpsc.gov" class="usa-identifier__required-link usa-link">Office of Inspector General</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/privacy-policy" class="usa-identifier__required-link usa-link">Privacy Policy</a></li>
-        </ul>
-      </div>
-    </nav>
-    <section class="usa-identifier__section usa-identifier__section--usagov" aria-label="U.S. government information and services">
+    <section class="usa-identifier__section usa-identifier__section--usagov" aria-label="U.S. government information">
       <div class="usa-identifier__container">
         <div class="usa-identifier__usagov-description">Looking for U.S. government information and services?</div>
         <a href="https://www.usa.gov/" class="usa-link">Visit USA.gov</a>

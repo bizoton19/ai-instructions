@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Find official federal food recalls and safety alerts from the FDA and USDA Food Safety and Inspection Service, including meat, poultry, packaged goods, and pet food." />
+  <meta name="description" content="Find official federal food recalls and safety alerts from the FDA and USDA Food Safety and Inspection Service." />
   <title>Food Recalls | Recalls.gov | U.S. Consumer Product Safety Commission</title>
   <link rel="preconnect" href="https://unpkg.com" />
   <link rel="stylesheet" href="https://unpkg.com/@uswds/uswds@3.13.0/dist/css/uswds.min.css" />
@@ -70,127 +70,108 @@
 
   <main id="main-content">
 
-    <nav class="recalls-tabs" aria-label="Recall categories">
-      <ul class="recalls-tabs__list">
-        <li class="recalls-tabs__item"><a href="consumer-products.html" class="recalls-tabs__link">Consumer Products</a></li>
-        <li class="recalls-tabs__item"><a href="motor-vehicles.html" class="recalls-tabs__link">Motor Vehicles</a></li>
-        <li class="recalls-tabs__item"><a href="boats.html" class="recalls-tabs__link">Boats</a></li>
-        <li class="recalls-tabs__item"><a href="food.html" class="recalls-tabs__link" aria-current="page">Food</a></li>
-        <li class="recalls-tabs__item"><a href="medicine.html" class="recalls-tabs__link">Medicine</a></li>
-        <li class="recalls-tabs__item"><a href="cosmetics.html" class="recalls-tabs__link">Cosmetics</a></li>
-        <li class="recalls-tabs__item"><a href="environmental.html" class="recalls-tabs__link">Environmental</a></li>
-      </ul>
-    </nav>
-
-    <div class="grid-container">
-      <nav class="usa-breadcrumb" aria-label="Breadcrumbs">
-        <ol class="usa-breadcrumb__list">
-          <li class="usa-breadcrumb__list-item"><a href="index.html" class="usa-breadcrumb__link">Home</a></li>
-          <li class="usa-breadcrumb__list-item usa-current" aria-current="page">Food</li>
-        </ol>
-      </nav>
-    </div>
-
-    <section class="usa-section" aria-labelledby="page-heading">
+    <section class="page-header">
       <div class="grid-container">
-        <div class="page-intro">
-          <h1 class="page-intro__heading" id="page-heading">Food Recalls and Safety Alerts</h1>
-          <p class="page-intro__body">
-            Food safety recalls in the United States are managed by two federal agencies:
-            the U.S. Food and Drug Administration (FDA) for most packaged foods and
-            beverages, and the USDA Food Safety and Inspection Service (FSIS) for
-            meat, poultry, and egg products. FoodSafety.gov consolidates information
-            from both agencies.
-          </p>
+        <nav class="usa-breadcrumb" aria-label="Breadcrumbs" style="margin-bottom:1.5rem;">
+          <ol class="usa-breadcrumb__list">
+            <li class="usa-breadcrumb__list-item"><a href="index.html" class="usa-breadcrumb__link" style="color:rgba(255,255,255,0.8);">Home</a></li>
+            <li class="usa-breadcrumb__list-item usa-current" aria-current="page" style="color:#fff;">Food</li>
+          </ol>
+        </nav>
+        <div class="page-header__icon">
+          <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+            <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#restaurant"></use>
+          </svg>
         </div>
+        <h1 class="page-header__heading">Food Recalls and Safety Alerts</h1>
+        <p class="page-header__desc">
+          Food safety recalls are managed by the FDA for most packaged foods and the USDA FSIS 
+          for meat, poultry, and egg products. FoodSafety.gov consolidates information from both.
+        </p>
+      </div>
+    </section>
 
-        <div class="recalls-info-banner">
-          <p>
-            <strong>Do not eat or use recalled food products.</strong>
-            If you have a recalled product at home, discard it or return it to the
-            place of purchase. Do not taste it to determine if it is safe.
-          </p>
-        </div>
-
-        <div class="agency-cards">
-          <div class="cards-grid" role="list">
-
-            <article class="agency-card" role="listitem">
-              <div class="agency-card__logo-wrap">
-                <img class="agency-card__logo" src="assets/logos/usda.svg" alt="U.S. Department of Agriculture Food Safety and Inspection Service" />
-              </div>
-              <div class="agency-card__body">
-                <h2 class="agency-card__heading">FoodSafety.gov — All Food Recalls</h2>
-                <p class="agency-card__text">
-                  FoodSafety.gov is the federal government's combined resource for food
-                  recalls and outbreaks. Content is provided by the FDA, USDA/FSIS,
-                  and CDC. Subscribe to receive email or text alerts for new recalls.
-                </p>
-              </div>
-              <div class="agency-card__footer">
-                <a
-                  href="https://www.foodsafety.gov/recalls-and-outbreaks"
-                  class="usa-button"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="View all food recalls and outbreaks on FoodSafety.gov (opens in a new tab)"
-                >
-                  View Recalls on FoodSafety.gov
-                </a>
-              </div>
-            </article>
-
-            <article class="agency-card" role="listitem">
-              <div class="agency-card__logo-wrap">
-                <img class="agency-card__logo" src="assets/logos/fda.svg" alt="U.S. Food and Drug Administration" />
-              </div>
-              <div class="agency-card__body">
-                <h2 class="agency-card__heading">FDA — Packaged Foods, Beverages, and Pet Food</h2>
-                <p class="agency-card__text">
-                  The FDA regulates most packaged food, beverages, dietary supplements,
-                  and pet food. The FDA recall database is searchable by product type,
-                  brand, and date. Includes market withdrawals and safety alerts.
-                </p>
-              </div>
-              <div class="agency-card__footer">
-                <a
-                  href="https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts"
-                  class="usa-button usa-button--outline"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="View FDA food recalls and safety alerts on fda.gov (opens in a new tab)"
-                >
-                  View FDA Food Recalls
-                </a>
-              </div>
-            </article>
-
-            <article class="agency-card" role="listitem">
-              <div class="agency-card__logo-wrap">
-                <img class="agency-card__logo" src="assets/logos/usda.svg" alt="U.S. Department of Agriculture Food Safety and Inspection Service" />
-              </div>
-              <div class="agency-card__body">
-                <h2 class="agency-card__heading">USDA FSIS — Meat, Poultry, and Egg Products</h2>
-                <p class="agency-card__text">
-                  The USDA Food Safety and Inspection Service (FSIS) regulates recalls
-                  of meat, poultry, and egg products. Sign up for email or RSS alerts
-                  to receive notice of new recalls as they are announced.
-                </p>
-              </div>
-              <div class="agency-card__footer">
-                <a
-                  href="https://www.fsis.usda.gov/recalls"
-                  class="usa-button usa-button--outline"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="View USDA FSIS meat and poultry recalls on fsis.usda.gov (opens in a new tab)"
-                >
-                  View USDA FSIS Recalls
-                </a>
-              </div>
-            </article>
-
+    <section class="agency-section">
+      <div class="grid-container">
+        
+        <div class="info-banner info-banner--warning">
+          <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+            <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#warning"></use>
+          </svg>
+          <div class="info-banner__content">
+            <p class="info-banner__title">Do not eat or use recalled food products</p>
+            <p class="info-banner__text">If you have a recalled product at home, discard it or return it to the place of purchase. Do not taste it to determine if it is safe.</p>
           </div>
+        </div>
+
+        <div class="agency-cards-grid">
+          
+          <article class="agency-card">
+            <div class="agency-card__header">
+              <img class="agency-card__logo" src="assets/logos/usda.svg" alt="" />
+              <span class="agency-card__agency-name">FoodSafety.gov</span>
+            </div>
+            <div class="agency-card__body">
+              <h2 class="agency-card__title">All Food Recalls and Outbreaks</h2>
+              <p class="agency-card__text">
+                FoodSafety.gov is the federal government's combined resource for food recalls and outbreaks. 
+                Content is provided by the FDA, USDA/FSIS, and CDC. Subscribe for email or text alerts.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="https://www.foodsafety.gov/recalls-and-outbreaks" class="usa-button" target="_blank" rel="noopener" aria-label="View food recalls on FoodSafety.gov (opens in new tab)">
+                View All Food Recalls
+                <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+                  <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#launch"></use>
+                </svg>
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card">
+            <div class="agency-card__header">
+              <img class="agency-card__logo" src="assets/logos/fda.svg" alt="" />
+              <span class="agency-card__agency-name">FDA</span>
+            </div>
+            <div class="agency-card__body">
+              <h2 class="agency-card__title">Packaged Foods, Beverages, Pet Food</h2>
+              <p class="agency-card__text">
+                The FDA regulates most packaged food, beverages, dietary supplements, and pet food. 
+                The database is searchable by product type, brand, and date.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts" class="usa-button usa-button--outline" target="_blank" rel="noopener" aria-label="View FDA food recalls (opens in new tab)">
+                View FDA Recalls
+                <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+                  <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#launch"></use>
+                </svg>
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card">
+            <div class="agency-card__header">
+              <img class="agency-card__logo" src="assets/logos/usda.svg" alt="" />
+              <span class="agency-card__agency-name">USDA FSIS</span>
+            </div>
+            <div class="agency-card__body">
+              <h2 class="agency-card__title">Meat, Poultry, and Egg Products</h2>
+              <p class="agency-card__text">
+                The USDA Food Safety and Inspection Service regulates recalls of meat, poultry, and egg 
+                products. Sign up for email or RSS alerts for new recalls.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="https://www.fsis.usda.gov/recalls" class="usa-button usa-button--outline" target="_blank" rel="noopener" aria-label="View USDA FSIS recalls (opens in new tab)">
+                View USDA FSIS Recalls
+                <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+                  <use xlink:href="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#launch"></use>
+                </svg>
+              </a>
+            </div>
+          </article>
+
         </div>
       </div>
     </section>
@@ -205,14 +186,14 @@
           <nav class="usa-footer__nav mobile-lg:grid-col-8 desktop:grid-col-10" aria-label="Footer navigation">
             <ul class="grid-row grid-gap usa-list usa-list--unstyled">
               <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/privacy-policy">Privacy Policy</a></li>
-              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility">Accessibility Statement</a></li>
-              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/vulnerability-disclosure-policy">Vulnerability Disclosure Policy</a></li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility">Accessibility</a></li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/vulnerability-disclosure-policy">Vulnerability Disclosure</a></li>
               <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/foia">FOIA</a></li>
-              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/no-fear-act">No FEAR Act Data</a></li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content"><a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/no-fear-act">No FEAR Act</a></li>
             </ul>
           </nav>
         </div>
-        <p class="recalls-footer-note">This site is provided as a public resource for federal recalls. Contact <a href="mailto:webteam@cpsc.gov">webteam@cpsc.gov</a> with questions about this website.</p>
+        <p class="footer-note">This site is provided as a public resource for federal recalls. Contact <a href="mailto:webteam@cpsc.gov">webteam@cpsc.gov</a> with questions.</p>
       </div>
     </div>
   </footer>
@@ -221,7 +202,7 @@
     <section class="usa-identifier__section usa-identifier__section--masthead" aria-label="Agency identifier">
       <div class="usa-identifier__container">
         <div class="usa-identifier__logos">
-          <a href="https://www.cpsc.gov" class="usa-identifier__logo" aria-label="U.S. Consumer Product Safety Commission homepage">
+          <a href="https://www.cpsc.gov" class="usa-identifier__logo" aria-label="CPSC homepage">
             <img class="usa-identifier__logo-img" src="assets/logos/cpsc.svg" alt="U.S. Consumer Product Safety Commission" />
           </a>
         </div>
@@ -231,19 +212,7 @@
         </section>
       </div>
     </section>
-    <nav class="usa-identifier__section usa-identifier__section--required-links" aria-label="Important links">
-      <div class="usa-identifier__container">
-        <ul class="usa-identifier__required-links-list">
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc" class="usa-identifier__required-link usa-link">About CPSC</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility" class="usa-identifier__required-link usa-link">Accessibility Statement</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/foia" class="usa-identifier__required-link usa-link">FOIA Requests</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/no-fear-act" class="usa-identifier__required-link usa-link">No FEAR Act Data</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://oig.cpsc.gov" class="usa-identifier__required-link usa-link">Office of Inspector General</a></li>
-          <li class="usa-identifier__required-links-item"><a href="https://www.cpsc.gov/about-cpsc/privacy-policy" class="usa-identifier__required-link usa-link">Privacy Policy</a></li>
-        </ul>
-      </div>
-    </nav>
-    <section class="usa-identifier__section usa-identifier__section--usagov" aria-label="U.S. government information and services">
+    <section class="usa-identifier__section usa-identifier__section--usagov" aria-label="U.S. government information">
       <div class="usa-identifier__container">
         <div class="usa-identifier__usagov-description">Looking for U.S. government information and services?</div>
         <a href="https://www.usa.gov/" class="usa-link">Visit USA.gov</a>

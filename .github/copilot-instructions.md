@@ -100,11 +100,136 @@ Never omit the banner, skip-nav, `id="main-content"`, or identifier. These are f
 ## 5. Visual Design Discipline
 
 - **No AI slop.** Do not generate: gradient mesh backgrounds, glassmorphism panels, floating card shadows with colored blurs, stock photo heroes, or any visual pattern that signals generic AI-generated aesthetics.
-- **No emojis.** Not in UI text, button labels, headings, alt text, tooltips, placeholder text, code comments, or commit messages.
+- **No emojis.** Not in UI text, button labels, headings, alt text, tooltips, placeholder text, code comments, or commit messages. Use real icons instead.
 - **No filler content.** Do not use lorem ipsum or placeholder copy in any output that will be reviewed. Every text block must be real, purposeful, and reviewed for plain language (8th grade reading level target per federal plain language guidelines).
-- Icons must come from the USWDS icon set (`usa-icon`). Do not import third-party icon fonts (Font Awesome, Material Icons, etc.).
 - Photography and illustration: use only agency-approved imagery. Never use stock photo URLs or unsplash/pexels links.
 - Animations: USWDS transitions only. Respect `prefers-reduced-motion`. No auto-playing carousels.
+
+## 5a. Icons — USWDS Icon Library
+
+Use the **USWDS icon set** exclusively. USWDS provides 200+ icons from the Material Symbols and Font Awesome libraries, pre-approved for federal use.
+
+### How to Use USWDS Icons
+
+```html
+<svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+  <use xlink:href="/assets/img/sprite.svg#arrow_forward"></use>
+</svg>
+```
+
+For icons that convey meaning (not purely decorative), add accessible text:
+
+```html
+<a href="/search" class="usa-button">
+  <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+    <use xlink:href="/assets/img/sprite.svg#search"></use>
+  </svg>
+  Search recalls
+</a>
+```
+
+### Icon Sizing
+
+Use USWDS size tokens:
+- `usa-icon--size-3` (24px) — default, inline with text
+- `usa-icon--size-4` (32px) — buttons, navigation
+- `usa-icon--size-5` (40px) — feature icons, cards
+- `usa-icon--size-6` (48px) — hero icons, large callouts
+- `usa-icon--size-7` to `usa-icon--size-9` — decorative feature blocks
+
+### Common Federal UI Icons
+
+| Purpose | Icon name |
+|---------|-----------|
+| External link | `launch` |
+| Search | `search` |
+| Warning/alert | `warning` |
+| Info | `info` |
+| Success | `check_circle` |
+| Error | `error` |
+| Close | `close` |
+| Menu | `menu` |
+| Arrow forward | `arrow_forward` |
+| Arrow back | `arrow_back` |
+| Download | `file_download` |
+| Print | `print` |
+| Email | `mail` |
+| Phone | `phone` |
+| Location | `location_on` |
+| Calendar | `event` |
+| Person/account | `account_circle` |
+| Settings | `settings` |
+| Help | `help` |
+| Home | `home` |
+| Lock (secure) | `lock` |
+| Accessibility | `accessibility_new` |
+| Government | `account_balance` |
+| Vehicle | `directions_car` |
+| Medical | `medical_services` |
+| Food | `restaurant` |
+| Report problem | `report` |
+
+### Icon Rules
+
+- Never use emoji as a substitute for icons.
+- Never import Font Awesome, Material Icons, Heroicons, or other third-party icon libraries.
+- Always include `aria-hidden="true"` on decorative icons.
+- Always pair icons with visible text labels for actions — icon-only buttons are not accessible without `aria-label`.
+- For CDN usage, load the sprite from `https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg`.
+
+## 5b. Design Excellence — Beyond Compliance
+
+USWDS compliance is the floor, not the ceiling. Federal sites should be **distinctive, modern, and delightful to use** — not generic or institutional-looking.
+
+### Visual Hierarchy
+
+- **Establish clear focal points.** Every page should have one primary action or message that draws the eye first.
+- **Use whitespace generously.** Crowded layouts feel bureaucratic. Give content room to breathe with USWDS spacing tokens (`margin-top-4`, `padding-y-6`, etc.).
+- **Create visual rhythm.** Alternate section backgrounds (light/dark) to break up long pages. Use `usa-section--light` and `usa-section--dark` variants.
+- **Size matters.** Make primary headings large and confident. Use USWDS `display` type scale for hero headings.
+
+### Color Strategy
+
+- **Use the full USWDS palette.** Don't default to just blue and white. USWDS provides vivid, accessible accent colors: gold, green, cyan, orange, and red. Use them intentionally for:
+  - Category differentiation
+  - Status indicators
+  - Call-to-action accents
+  - Interactive state changes
+- **Dark sections add drama.** A dark (`primary-darker` or `ink`) section with white text creates visual impact and signals importance.
+- **Accent borders and highlights.** A bold left border (`border-left-1`, `border-left-05`) in an accent color draws attention to key information.
+
+### Card and Component Design
+
+- **Consistent card heights.** In a card grid, all cards in a row should have equal height (use CSS Grid or Flexbox with `align-items: stretch`).
+- **Clear card anatomy.** Every card should have: a visual anchor (icon, logo, or image), a heading, body text, and a clear action.
+- **Icon-led cards.** For category navigation, use a large icon (size-7 or larger) as the visual anchor instead of or in addition to text.
+- **Hover and focus states.** Add subtle transitions on interactive cards — background color shift, slight shadow increase, or border accent.
+
+### Layout Patterns
+
+- **Asymmetric layouts.** Don't default to equal-width columns. A 2/3 + 1/3 split or 3/4 + 1/4 creates more dynamic compositions.
+- **Feature blocks.** For key messages, use a full-width section with large icon + heading + description + CTA button.
+- **Icon grids.** For navigation hubs, use a grid of icon-led cards (3-up or 4-up) with consistent sizing.
+- **Sidebar patterns.** On informational pages, use a sticky sidebar for navigation or key contact info.
+
+### Micro-interactions
+
+- **Button feedback.** Buttons should have visible hover/focus/active states. USWDS provides these by default — do not flatten them.
+- **Link underlines.** Keep underlines on text links (USWDS default). This is an accessibility requirement.
+- **Smooth transitions.** Use `transition: all 0.2s ease` for hover effects. Keep it subtle — no bouncing or dramatic animations.
+
+### What Makes a Federal Site Feel Modern (Not Dated)
+
+| Dated pattern | Modern alternative |
+|---------------|-------------------|
+| Tiny body text (14px) | 16-18px body, generous line height |
+| Cramped spacing | USWDS `padding-y-6` or more between sections |
+| Blue-only color scheme | Accent colors for differentiation |
+| Icon-free layouts | Strategic icon use for wayfinding |
+| Centered everything | Left-aligned text with intentional whitespace |
+| Walls of text | Scannable headings, bullets, cards |
+| Generic stock photos | Iconography, data viz, or no imagery |
+| Dropdown mega-menus | Simple, focused navigation |
 
 ## 6. Layout and Responsiveness
 
