@@ -208,6 +208,32 @@ If you need some DDD concepts without full DDD:
 - Document storage with flexible schema (MongoDB, but consider SQL Server JSON or PostgreSQL JSONB first)
 - Key-value caching (Redis, Memcached)
 
+### Audit Fields — Required on All Tables
+
+Every table must include audit fields to track who created and modified records:
+
+```sql
+-- SQL Server audit fields (standard on all tables)
+CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+CreatedBy UNIQUEIDENTIFIER NOT NULL,  -- Populated by application
+UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+UpdatedBy UNIQUEIDENTIFIER NOT NULL,  -- Populated by application
+DeletedAt DATETIME2 NULL,             -- Soft delete timestamp
+DeletedBy UNIQUEIDENTIFIER NULL       -- Populated by application on soft delete
+```
+
+**Audit Field Population:**
+- Date fields (`CreatedAt`, `UpdatedAt`) default to current UTC time via database
+- User fields (`CreatedBy`, `UpdatedBy`, `DeletedBy`) populated by application from authenticated user context
+- Never allow client to specify audit fields directly
+- Use ORM hooks, middleware, or base repository to populate automatically
+
+**Soft Delete Pattern:**
+- Never hard delete records (except for GDPR/data retention compliance)
+- Set `DeletedAt` and `DeletedBy` instead of DELETE statement
+- Filter deleted records in queries: `WHERE DeletedAt IS NULL`
+- Use filtered indexes to exclude deleted records
+
 ### Schema Design
 
 **Normalization Strategy:**
@@ -236,9 +262,14 @@ If you need some DDD concepts without full DDD:
 
 **General Schema Guidelines:**
 - Use **GUIDs (uniqueidentifier in SQL Server) for primary keys** if you may need to merge databases or support distributed systems.
-- Use **timestamps** (`CreatedAt`, `UpdatedAt`) on all tables.
-- Use **soft deletes** (`DeletedAt`) for audit trails, not hard deletes.
-- Use **database constraints** to enforce business rules (NOT NULL, CHECK, UNIQUE, FOREIGN KEY).
+- Use **audit fields** on all tables: `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`.
+  - Dates default to `GETUTCDATE()` (SQL Server) or `CURRENT_TIMESTAMP` (PostgreSQL)
+  - User fields populated by application, not database defaults
+- Use **soft deletes** (`DeletedAt`, `DeletedBy`) for audit trails, not hard deletes.
+- Use **foreign keys with CASCADE DELETE** to maintain referential integrity automatically.
+- **Enforce business rules in application code**, not database constraints (CHECK, triggers).
+  - Database enforces data integrity (NOT NULL, UNIQUE, FOREIGN KEY)
+  - Application enforces business logic (valid values, state transitions, complex rules)
 - Use **computed columns** for derived values (SQL Server) or generated columns (PostgreSQL).
 - Use **indexes** strategically based on query patterns, not preemptively.
 

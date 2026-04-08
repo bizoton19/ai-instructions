@@ -500,18 +500,23 @@ def update_document(current_user, document_id):
 **SQL Server (Federal Default):**
 
 ```sql
--- System of Record: Normalized (3NF) schema
+-- System of Record: Normalized (3NF) schema with audit fields
 CREATE TABLE Users (
     UserId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     Email NVARCHAR(255) NOT NULL UNIQUE,
     PasswordHash NVARCHAR(255) NOT NULL,
     FirstName NVARCHAR(100) NOT NULL,
     LastName NVARCHAR(100) NOT NULL,
-    Role NVARCHAR(50) NOT NULL CHECK (Role IN ('user', 'admin', 'auditor')),
+    Role NVARCHAR(50) NOT NULL,  -- Business rule validation in app, not CHECK constraint
     IsActive BIT DEFAULT 1,
-    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    
+    -- Audit fields (standard on all tables)
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CreatedBy UNIQUEIDENTIFIER NOT NULL,  -- Populated by application
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedBy UNIQUEIDENTIFIER NOT NULL,  -- Populated by application
     DeletedAt DATETIME2 NULL,
+    DeletedBy UNIQUEIDENTIFIER NULL,      -- Populated by application on soft delete
     
     INDEX IX_Users_Email NONCLUSTERED (Email) WHERE DeletedAt IS NULL,
     INDEX IX_Users_Role NONCLUSTERED (Role) WHERE IsActive = 1
@@ -519,28 +524,33 @@ CREATE TABLE Users (
 
 CREATE TABLE Documents (
     DocumentId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    OwnerId UNIQUEIDENTIFIER NOT NULL FOREIGN KEY REFERENCES Users(UserId) ON DELETE CASCADE,
+    OwnerId UNIQUEIDENTIFIER NOT NULL,
     Title NVARCHAR(255) NOT NULL,
     Content NVARCHAR(MAX),
-    Classification NVARCHAR(50) NOT NULL DEFAULT 'unclassified',
+    Classification NVARCHAR(50) NOT NULL DEFAULT 'unclassified',  -- Validated in app
     Version INT DEFAULT 1,
-    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 DEFAULT GETUTCDATE(),
-    DeletedAt DATETIME2 NULL,
     
-    CONSTRAINT CK_Documents_Classification CHECK (
-        Classification IN ('unclassified', 'cui', 'confidential', 'secret')
-    ),
+    -- Audit fields (standard on all tables)
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CreatedBy UNIQUEIDENTIFIER NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedBy UNIQUEIDENTIFIER NOT NULL,
+    DeletedAt DATETIME2 NULL,
+    DeletedBy UNIQUEIDENTIFIER NULL,
+    
+    -- Foreign key with CASCADE DELETE for referential integrity
+    CONSTRAINT FK_Documents_Owner FOREIGN KEY (OwnerId) 
+        REFERENCES Users(UserId) ON DELETE CASCADE,
     
     INDEX IX_Documents_Owner NONCLUSTERED (OwnerId) WHERE DeletedAt IS NULL,
     INDEX IX_Documents_Classification NONCLUSTERED (Classification)
 );
 
--- Audit log table
+-- Audit log table (immutable, no updates or deletes)
 CREATE TABLE AuditLog (
     AuditLogId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     EventType NVARCHAR(100) NOT NULL,
-    UserId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Users(UserId),
+    UserId UNIQUEIDENTIFIER,  -- No FK constraint - preserve logs even if user deleted
     ResourceType NVARCHAR(100),
     ResourceId UNIQUEIDENTIFIER,
     Action NVARCHAR(50) NOT NULL,
@@ -548,7 +558,7 @@ CREATE TABLE AuditLog (
     IpAddress NVARCHAR(45),
     UserAgent NVARCHAR(MAX),
     Details NVARCHAR(MAX),  -- JSON data
-    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
     
     INDEX IX_AuditLog_User NONCLUSTERED (UserId, CreatedAt DESC),
     INDEX IX_AuditLog_Resource NONCLUSTERED (ResourceType, ResourceId),
@@ -566,10 +576,16 @@ CREATE TABLE DocumentReviewQueue (
     AuthorEmail NVARCHAR(255) NOT NULL,    -- Denormalized
     ReviewerId UNIQUEIDENTIFIER,
     ReviewerName NVARCHAR(200),            -- Denormalized
-    Status NVARCHAR(50) NOT NULL DEFAULT 'pending',
+    Status NVARCHAR(50) NOT NULL DEFAULT 'pending',  -- Validated in app
     SubmittedAt DATETIME2 NOT NULL,
     AssignedAt DATETIME2,
     ReviewedAt DATETIME2,
+    
+    -- Audit fields
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CreatedBy UNIQUEIDENTIFIER NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedBy UNIQUEIDENTIFIER NOT NULL,
     
     INDEX IX_ReviewQueue_Status NONCLUSTERED (Status, SubmittedAt),
     INDEX IX_ReviewQueue_Reviewer NONCLUSTERED (ReviewerId) WHERE Status = 'assigned'
@@ -579,22 +595,300 @@ CREATE TABLE DocumentReviewQueue (
 **PostgreSQL (Alternative):**
 
 ```sql
--- Same structure, PostgreSQL syntax
+-- Same structure, PostgreSQL syntax with audit fields
 CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    role VARCHAR(50) NOT NULL CHECK (role IN ('user', 'admin', 'auditor')),
+    role VARCHAR(50) NOT NULL,  -- Validated in app
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL
+    
+    -- Audit fields
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by UUID NOT NULL,
+    deleted_at TIMESTAMP NULL,
+    deleted_by UUID NULL
 );
 
 CREATE INDEX idx_users_email ON users(email) WHERE deleted_at IS NULL;
 CREATE INDEX idx_users_role ON users(role) WHERE is_active = TRUE;
+```
+
+### Populating Audit Fields in Application
+
+**C# / Entity Framework Example:**
+
+```csharp
+// Base entity with audit fields
+public abstract class AuditableEntity
+{
+    public DateTime CreatedAt { get; set; }
+    public Guid CreatedBy { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public Guid UpdatedBy { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public Guid? DeletedBy { get; set; }
+}
+
+// Automatic audit field population
+public class ApplicationDbContext : DbContext
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        IHttpContextAccessor httpContextAccessor) : base(options)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+    
+    public override int SaveChanges()
+    {
+        UpdateAuditFields();
+        return base.SaveChanges();
+    }
+    
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        UpdateAuditFields();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+    
+    private void UpdateAuditFields()
+    {
+        var currentUserId = GetCurrentUserId();
+        var entries = ChangeTracker.Entries<AuditableEntity>();
+        
+        foreach (var entry in entries)
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = DateTime.UtcNow;
+                entry.Entity.CreatedBy = currentUserId;
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+                entry.Entity.UpdatedBy = currentUserId;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+                entry.Entity.UpdatedBy = currentUserId;
+                
+                // Prevent modification of creation audit fields
+                entry.Property(e => e.CreatedAt).IsModified = false;
+                entry.Property(e => e.CreatedBy).IsModified = false;
+            }
+        }
+    }
+    
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = _httpContextAccessor.HttpContext?.User
+            .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        return Guid.TryParse(userIdClaim, out var userId) 
+            ? userId 
+            : Guid.Empty; // System user for background jobs
+    }
+}
+
+// Soft delete implementation
+public static class EntityExtensions
+{
+    public static void SoftDelete<T>(this T entity, Guid deletedBy) where T : AuditableEntity
+    {
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.DeletedBy = deletedBy;
+    }
+}
+```
+
+**Python / SQLAlchemy Example:**
+
+```python
+# Base model with audit fields
+from datetime import datetime
+from sqlalchemy import Column, DateTime, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import declarative_base
+from flask import g
+
+Base = declarative_base()
+
+class AuditMixin:
+    """Mixin for audit fields"""
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_by = Column(UUID(as_uuid=True), nullable=False)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = Column(UUID(as_uuid=True), nullable=False)
+    deleted_at = Column(DateTime, nullable=True)
+    deleted_by = Column(UUID(as_uuid=True), nullable=True)
+
+# Automatic audit field population
+from sqlalchemy import event
+from sqlalchemy.orm import Session
+
+@event.listens_for(Session, 'before_flush')
+def before_flush(session, flush_context, instances):
+    """Automatically populate audit fields before flush"""
+    current_user_id = getattr(g, 'current_user_id', None)
+    
+    if not current_user_id:
+        return  # Skip if no user context (e.g., migrations)
+    
+    for obj in session.new:
+        if isinstance(obj, AuditMixin):
+            obj.created_by = current_user_id
+            obj.updated_by = current_user_id
+    
+    for obj in session.dirty:
+        if isinstance(obj, AuditMixin):
+            obj.updated_by = current_user_id
+
+# Soft delete implementation
+class User(Base, AuditMixin):
+    __tablename__ = 'users'
+    
+    user_id = Column(UUID(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()'))
+    email = Column(String(255), nullable=False, unique=True)
+    # ... other fields
+    
+    def soft_delete(self, deleted_by):
+        """Soft delete this user"""
+        self.deleted_at = datetime.utcnow()
+        self.deleted_by = deleted_by
+```
+
+**Node.js / Sequelize Example:**
+
+```javascript
+// Base model with audit fields
+const { DataTypes } = require('sequelize');
+
+const auditFields = {
+  createdAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+    field: 'created_at'
+  },
+  createdBy: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'created_by'
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+    field: 'updated_at'
+  },
+  updatedBy: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'updated_by'
+  },
+  deletedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'deleted_at'
+  },
+  deletedBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'deleted_by'
+  }
+};
+
+// Automatic audit field population via hooks
+const addAuditHooks = (model) => {
+  model.beforeCreate((instance, options) => {
+    const userId = options.userId || options.transaction?.userId;
+    if (userId) {
+      instance.createdBy = userId;
+      instance.updatedBy = userId;
+    }
+  });
+  
+  model.beforeUpdate((instance, options) => {
+    const userId = options.userId || options.transaction?.userId;
+    if (userId) {
+      instance.updatedBy = userId;
+    }
+  });
+};
+
+// Usage in model definition
+const User = sequelize.define('User', {
+  userId: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+    field: 'user_id'
+  },
+  email: {
+    type: DataTypes.STRING(255),
+    allowNull: false,
+    unique: true
+  },
+  // ... other fields
+  ...auditFields
+}, {
+  tableName: 'users',
+  timestamps: false  // We handle timestamps manually
+});
+
+addAuditHooks(User);
+
+// Soft delete method
+User.prototype.softDelete = async function(deletedBy) {
+  this.deletedAt = new Date();
+  this.deletedBy = deletedBy;
+  await this.save();
+};
+```
+
+### Business Rule Validation in Application
+
+**Why validate in application, not database?**
+
+1. **Flexibility**: Business rules change frequently; app code is easier to update than database constraints
+2. **Better error messages**: Application can provide user-friendly validation messages
+3. **Complex logic**: Business rules often involve multiple tables or external data
+4. **Testing**: Easier to unit test validation logic in application code
+
+**Example: Role validation in application**
+
+```csharp
+// C# example with FluentValidation
+public class CreateUserValidator : AbstractValidator<CreateUserRequest>
+{
+    private static readonly string[] ValidRoles = { "user", "admin", "auditor" };
+    
+    public CreateUserValidator()
+    {
+        RuleFor(x => x.Role)
+            .NotEmpty()
+            .Must(role => ValidRoles.Contains(role))
+            .WithMessage($"Role must be one of: {string.Join(", ", ValidRoles)}");
+    }
+}
+
+// Python example with Marshmallow
+from marshmallow import Schema, fields, validates, ValidationError
+
+VALID_ROLES = ['user', 'admin', 'auditor']
+
+class CreateUserSchema(Schema):
+    role = fields.Str(required=True)
+    
+    @validates('role')
+    def validate_role(self, value):
+        if value not in VALID_ROLES:
+            raise ValidationError(f'Role must be one of: {", ".join(VALID_ROLES)}')
 ```
 
 ### Migration Strategy
