@@ -176,6 +176,8 @@ Use USWDS size tokens:
 - Always include `aria-hidden="true"` on decorative icons.
 - Always pair icons with visible text labels for actions — icon-only buttons are not accessible without `aria-label`.
 - For CDN usage, load the sprite from `https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg`.
+- **Verify icons exist** before using them. The USWDS sprite contains ~245 icons. Not all Material Icons are included. Check the sprite file or USWDS documentation if unsure.
+- Common icons that do **NOT** exist in USWDS sprite: `inventory_2`, `spa`, `directions_boat`, `sailing`, `anchor`. Use alternatives like `shopping_basket`, `science`, `flag`, `public`.
 
 ## 5b. Design Excellence — Beyond Compliance
 
@@ -276,6 +278,43 @@ Examples:
 - Dates: spell out month names (`April 8, 2026`). Never use ambiguous formats (`04/08/26`).
 - Phone numbers: format as `(800) 555-0100`. Always provide a TTY alternative where voice phone is listed.
 - Addresses: follow USPS standard format.
+
+## 10a. GSA Content Standards (per OMB M-23-22)
+
+Follow GSA's content standards for all federal web content. Reference: https://www.gsa.gov/reference/gsa-web-style-guide/content-standards
+
+### Timeliness
+- Review all content **at least once every three years** from initial publication or last review date.
+- Consolidate or remove outdated content per OMB Memo M-23-22.
+
+### Usefulness
+- Write so anyone who needs the content can **find, understand, and use it the first time**.
+- Use clear, intentional calls to action.
+- Use clear page titles and headings — skip acronyms and government jargon.
+- Use files and formats accessible to all users.
+- Use short sentences and words for easy scanning.
+
+### Readability
+- There is no mandated grade level, but work to **incrementally lower** the reading level from where it started.
+- Use readability tools (e.g., Siteimprove, Hemingway) to assess and improve.
+
+### Free of Duplication
+- **Never publish the same or similar content in multiple places.** Duplication creates confusion, inconsistency, and extra maintenance cost.
+- Duplication is prohibited under OMB M-23-22.
+- Continually de-duplicate existing content.
+
+### Accuracy
+- When experts request content updates for accuracy, aim to complete revisions within **three business days**.
+- Have a subject matter expert review revisions before publishing.
+
+### Consistency
+- Follow the agency's written style guide when adding or editing text.
+- Follow the agency's visual style (USWDS components, imagery) for all graphic elements.
+
+### OMB-Approved Content
+- **Do not modify OMB-approved content text** without proper review and re-approval.
+- If content must be removed, do so without altering the remaining approved text.
+- Mark any content that has been officially reviewed/approved so it is not inadvertently changed.
 
 ## 11. Reusable Components
 
