@@ -1,0 +1,287 @@
+/*
+  recalls.gov — Custom theme overrides
+  Built on USWDS 3.x
+  All color values use USWDS token references expressed as CSS custom properties
+  loaded from the USWDS theme layer.
+
+  Do NOT edit USWDS source files. All project-specific styles belong here.
+*/
+
+/* ============================================================
+   Site-level layout
+   ============================================================ */
+
+.site-logo-img {
+  height: 48px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+
+.usa-logo .site-logo-lockup {
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================================
+   Hero section
+   ============================================================ */
+
+.recalls-hero {
+  background-color: #1b1b1b;
+  color: #ffffff;
+  padding: 3rem 0;
+  border-bottom: 4px solid #005ea2;
+}
+
+.recalls-hero__heading {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.recalls-hero__body {
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: #dfe1e2;
+  max-width: 640px;
+}
+
+/* ============================================================
+   Category navigation tabs
+   ============================================================ */
+
+.recalls-tabs {
+  background-color: #005ea2;
+  border-bottom: 3px solid #003d6a;
+}
+
+.recalls-tabs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.recalls-tabs__item {
+  margin: 0;
+}
+
+.recalls-tabs__link {
+  display: block;
+  padding: 0.75rem 1rem;
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #cce4f6;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.recalls-tabs__link:hover,
+.recalls-tabs__link:focus {
+  color: #ffffff;
+  border-bottom-color: #ffffff;
+  text-decoration: none;
+  outline-offset: -3px;
+}
+
+.recalls-tabs__link[aria-current="page"] {
+  color: #ffffff;
+  border-bottom-color: #ffbe2e;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 640px) {
+  .recalls-tabs__list {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .recalls-tabs__link {
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 3px solid transparent;
+  }
+
+  .recalls-tabs__link[aria-current="page"] {
+    border-left-color: #ffbe2e;
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .recalls-tabs__link:hover,
+  .recalls-tabs__link:focus {
+    border-left-color: #ffffff;
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* ============================================================
+   Agency cards
+   ============================================================ */
+
+.agency-cards {
+  padding: 2.5rem 0 3rem;
+}
+
+.agency-card {
+  border: 1px solid #c9c9c9;
+  border-radius: 4px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.agency-card__logo-wrap {
+  padding: 1.25rem 1.25rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  background: #f8f9fa;
+  border-radius: 4px 4px 0 0;
+}
+
+.agency-card__logo {
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  height: 56px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.agency-card__body {
+  padding: 1.25rem;
+  flex: 1;
+}
+
+.agency-card__heading {
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #1b1b1b;
+  margin-bottom: 0.5rem;
+}
+
+.agency-card__text {
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #3d4551;
+  margin-bottom: 0;
+}
+
+.agency-card__footer {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+/* ============================================================
+   Info banner (page-level)
+   ============================================================ */
+
+.recalls-info-banner {
+  background-color: #e7f2f8;
+  border-left: 4px solid #005ea2;
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.9375rem;
+  color: #1b1b1b;
+}
+
+.recalls-info-banner p {
+  margin: 0;
+}
+
+.recalls-info-banner strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+}
+
+/* ============================================================
+   Page intro section
+   ============================================================ */
+
+.page-intro {
+  padding: 2rem 0 0;
+}
+
+.page-intro__heading {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1b1b1b;
+  margin-bottom: 0.75rem;
+}
+
+.page-intro__body {
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: #3d4551;
+  max-width: 700px;
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   Footer customization
+   ============================================================ */
+
+.recalls-footer-note {
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.875rem;
+  color: #71767a;
+  padding: 1rem 0;
+  border-top: 1px solid #dfe1e2;
+  margin-top: 1rem;
+}
+
+/* ============================================================
+   Utility — screen-reader only text
+   ============================================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================
+   Responsive grid helpers for card rows
+   ============================================================ */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Recalls.gov is the official one-stop resource for U.S. federal product recalls from six federal agencies, including consumer products, motor vehicles, food, medicine, and more." />
+  <title>Home | Recalls.gov | U.S. Consumer Product Safety Commission</title>
+
+  <!-- Preconnect for USWDS CDN fonts -->
+  <link rel="preconnect" href="https://unpkg.com" />
+
+  <!-- USWDS 3.x CSS via CDN -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/@uswds/uswds@3.13.0/dist/css/uswds.min.css"
+  />
+
+  <!-- Site-specific overrides -->
+  <link rel="stylesheet" href="assets/css/recalls.css" />
+</head>
+<body>
+
+  <!-- Skip navigation: must be the first focusable element -->
+  <a class="usa-skipnav" href="#main-content">Skip to main content</a>
+
+  <!-- Official U.S. government banner -->
+  <section class="usa-banner" aria-label="Official website of the United States government">
+    <div class="usa-accordion">
+      <header class="usa-banner__header">
+        <div class="usa-banner__inner">
+          <div class="grid-col-auto">
+            <img
+              aria-hidden="true"
+              class="usa-banner__header-flag"
+              src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/us_flag_small.png"
+              alt=""
+            />
+          </div>
+          <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+            <p class="usa-banner__header-text">
+              An official website of the United States government
+            </p>
+            <p class="usa-banner__header-action">Here's how you know</p>
+          </div>
+          <button
+            type="button"
+            class="usa-accordion__button usa-banner__button"
+            aria-expanded="false"
+            aria-controls="gov-banner-recalls-home"
+          >
+            <span class="usa-banner__button-text">Here's how you know</span>
+          </button>
+        </div>
+      </header>
+      <div
+        class="usa-banner__content usa-accordion__content"
+        id="gov-banner-recalls-home"
+        hidden
+      >
+        <div class="grid-row grid-gap-lg">
+          <div class="usa-banner__guidance tablet:grid-col-6">
+            <img
+              class="usa-banner__icon usa-media-block__img"
+              src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/icon-dot-gov.svg"
+              role="img"
+              alt=""
+              aria-hidden="true"
+            />
+            <div class="usa-media-block__body">
+              <p>
+                <strong>Official websites use .gov</strong><br />
+                A <strong>.gov</strong> website belongs to an official government
+                organization in the United States.
+              </p>
+            </div>
+          </div>
+          <div class="usa-banner__guidance tablet:grid-col-6">
+            <img
+              class="usa-banner__icon usa-media-block__img"
+              src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/icon-https.svg"
+              role="img"
+              alt=""
+              aria-hidden="true"
+            />
+            <div class="usa-media-block__body">
+              <p>
+                <strong>Secure .gov websites use HTTPS</strong><br />
+                A <strong>lock</strong> or <strong>https://</strong> means you've
+                safely connected to the .gov website. Share sensitive information
+                only on official, secure websites.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Site header -->
+  <header class="usa-header usa-header--extended" role="banner">
+    <div class="usa-navbar">
+      <div class="usa-logo">
+        <div class="site-logo-lockup">
+          <img
+            class="site-logo-img"
+            src="assets/logos/cpsc.svg"
+            alt="U.S. Consumer Product Safety Commission"
+          />
+          <em class="usa-logo__text">
+            <a href="index.html" title="Recalls.gov — Home" aria-label="Recalls.gov — Home">
+              Recalls.gov
+            </a>
+          </em>
+        </div>
+      </div>
+      <button type="button" class="usa-menu-btn">Menu</button>
+    </div>
+    <nav aria-label="Primary navigation" class="usa-nav">
+      <div class="usa-nav__inner">
+        <button type="button" class="usa-nav__close">
+          <img
+            src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/usa-icons/close.svg"
+            role="img"
+            alt="Close"
+          />
+        </button>
+        <ul class="usa-nav__primary usa-accordion">
+          <li class="usa-nav__primary-item">
+            <a href="consumer-products.html" class="usa-nav__link">
+              <span>Consumer Products</span>
+            </a>
+          </li>
+          <li class="usa-nav__primary-item">
+            <a href="motor-vehicles.html" class="usa-nav__link">
+              <span>Motor Vehicles</span>
+            </a>
+          </li>
+          <li class="usa-nav__primary-item">
+            <a href="boats.html" class="usa-nav__link">
+              <span>Boats</span>
+            </a>
+          </li>
+          <li class="usa-nav__primary-item">
+            <a href="food.html" class="usa-nav__link">
+              <span>Food</span>
+            </a>
+          </li>
+          <li class="usa-nav__primary-item">
+            <a href="medicine.html" class="usa-nav__link">
+              <span>Medicine</span>
+            </a>
+          </li>
+          <li class="usa-nav__primary-item">
+            <a href="cosmetics.html" class="usa-nav__link">
+              <span>Cosmetics</span>
+            </a>
+          </li>
+          <li class="usa-nav__primary-item">
+            <a href="environmental.html" class="usa-nav__link">
+              <span>Environmental</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main content -->
+  <main id="main-content">
+
+    <!-- Hero -->
+    <section class="recalls-hero" aria-labelledby="hero-heading">
+      <div class="grid-container">
+        <h1 class="recalls-hero__heading" id="hero-heading">
+          The Official U.S. Federal Recalls Resource
+        </h1>
+        <p class="recalls-hero__body">
+          Six federal agencies have joined together to provide a single source for U.S.
+          government recalls. Select a category below to find the latest recall information,
+          learn how to report a dangerous product, and access important safety tips.
+        </p>
+      </div>
+    </section>
+
+    <!-- Category tab navigation -->
+    <nav class="recalls-tabs" aria-label="Recall categories">
+      <ul class="recalls-tabs__list">
+        <li class="recalls-tabs__item">
+          <a href="consumer-products.html" class="recalls-tabs__link">Consumer Products</a>
+        </li>
+        <li class="recalls-tabs__item">
+          <a href="motor-vehicles.html" class="recalls-tabs__link">Motor Vehicles</a>
+        </li>
+        <li class="recalls-tabs__item">
+          <a href="boats.html" class="recalls-tabs__link">Boats</a>
+        </li>
+        <li class="recalls-tabs__item">
+          <a href="food.html" class="recalls-tabs__link">Food</a>
+        </li>
+        <li class="recalls-tabs__item">
+          <a href="medicine.html" class="recalls-tabs__link">Medicine</a>
+        </li>
+        <li class="recalls-tabs__item">
+          <a href="cosmetics.html" class="recalls-tabs__link">Cosmetics</a>
+        </li>
+        <li class="recalls-tabs__item">
+          <a href="environmental.html" class="recalls-tabs__link">Environmental</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- About section -->
+    <section class="usa-section" aria-labelledby="about-heading">
+      <div class="grid-container">
+        <h2 id="about-heading">About Recalls.gov</h2>
+        <p class="usa-intro">
+          Recalls.gov is provided as a public service by the U.S. Consumer Product
+          Safety Commission (CPSC), in cooperation with federal partner agencies.
+          Each agency listed below maintains its own recall database. Select a category
+          to visit that agency's official recall page.
+        </p>
+
+        <!-- Category overview cards -->
+        <div class="cards-grid" role="list">
+
+          <article class="agency-card" role="listitem">
+            <div class="agency-card__logo-wrap">
+              <img
+                class="agency-card__logo"
+                src="assets/logos/cpsc.svg"
+                alt="U.S. Consumer Product Safety Commission"
+              />
+            </div>
+            <div class="agency-card__body">
+              <h3 class="agency-card__heading">Consumer Products</h3>
+              <p class="agency-card__text">
+                Recalls of household items, children's products, electronics, furniture,
+                and other consumer goods regulated by the CPSC.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a
+                href="consumer-products.html"
+                class="usa-button"
+              >
+                View Consumer Product Recalls
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card" role="listitem">
+            <div class="agency-card__logo-wrap">
+              <img
+                class="agency-card__logo"
+                src="assets/logos/nhtsa.svg"
+                alt="National Highway Traffic Safety Administration"
+              />
+            </div>
+            <div class="agency-card__body">
+              <h3 class="agency-card__heading">Motor Vehicles</h3>
+              <p class="agency-card__text">
+                Recalls of cars, trucks, motorcycles, tires, child safety seats, and
+                other motor vehicle equipment regulated by NHTSA.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="motor-vehicles.html" class="usa-button">
+                View Motor Vehicle Recalls
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card" role="listitem">
+            <div class="agency-card__logo-wrap">
+              <img
+                class="agency-card__logo"
+                src="assets/logos/uscg.svg"
+                alt="United States Coast Guard"
+              />
+            </div>
+            <div class="agency-card__body">
+              <h3 class="agency-card__heading">Boats</h3>
+              <p class="agency-card__text">
+                Recalls of recreational boats and associated marine equipment regulated
+                by the U.S. Coast Guard Boating Safety Division.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="boats.html" class="usa-button">
+                View Boat Recalls
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card" role="listitem">
+            <div class="agency-card__logo-wrap">
+              <img
+                class="agency-card__logo"
+                src="assets/logos/usda.svg"
+                alt="U.S. Department of Agriculture Food Safety and Inspection Service"
+              />
+            </div>
+            <div class="agency-card__body">
+              <h3 class="agency-card__heading">Food</h3>
+              <p class="agency-card__text">
+                Recalls of food products regulated by the FDA and USDA/FSIS, including
+                meat, poultry, egg products, and packaged goods.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="food.html" class="usa-button">
+                View Food Recalls
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card" role="listitem">
+            <div class="agency-card__logo-wrap">
+              <img
+                class="agency-card__logo"
+                src="assets/logos/fda.svg"
+                alt="U.S. Food and Drug Administration"
+              />
+            </div>
+            <div class="agency-card__body">
+              <h3 class="agency-card__heading">Medicine</h3>
+              <p class="agency-card__text">
+                Recalls of prescription drugs, over-the-counter medications, medical
+                devices, and biologics regulated by the FDA.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="medicine.html" class="usa-button">
+                View Medicine Recalls
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card" role="listitem">
+            <div class="agency-card__logo-wrap">
+              <img
+                class="agency-card__logo"
+                src="assets/logos/fda.svg"
+                alt="U.S. Food and Drug Administration"
+              />
+            </div>
+            <div class="agency-card__body">
+              <h3 class="agency-card__heading">Cosmetics</h3>
+              <p class="agency-card__text">
+                Safety alerts and recalls for cosmetics, personal care products, and
+                related items regulated by the FDA.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="cosmetics.html" class="usa-button">
+                View Cosmetics Recalls
+              </a>
+            </div>
+          </article>
+
+          <article class="agency-card" role="listitem">
+            <div class="agency-card__logo-wrap">
+              <img
+                class="agency-card__logo"
+                src="assets/logos/epa.svg"
+                alt="U.S. Environmental Protection Agency"
+              />
+            </div>
+            <div class="agency-card__body">
+              <h3 class="agency-card__heading">Environmental Products</h3>
+              <p class="agency-card__text">
+                Recalls and safety actions for pesticides, chemicals, and other
+                environmentally regulated products overseen by the EPA.
+              </p>
+            </div>
+            <div class="agency-card__footer">
+              <a href="environmental.html" class="usa-button">
+                View Environmental Recalls
+              </a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- How to report section -->
+    <section class="usa-section usa-section--light" aria-labelledby="report-heading">
+      <div class="grid-container">
+        <div class="grid-row grid-gap">
+          <div class="tablet:grid-col-8">
+            <h2 id="report-heading">Report a Dangerous Product</h2>
+            <p>
+              If you believe a product poses an immediate safety risk, report it to the
+              appropriate federal agency. Direct your report to the agency that regulates
+              the type of product involved.
+            </p>
+            <ul class="usa-list">
+              <li>
+                <strong>Consumer products:</strong>
+                <a
+                  href="https://www.saferproducts.gov/"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Report a consumer product hazard on SaferProducts.gov (opens in a new tab)"
+                >
+                  SaferProducts.gov
+                </a>
+                — CPSC's incident reporting system
+              </li>
+              <li>
+                <strong>Vehicles, tires, child safety seats:</strong>
+                <a
+                  href="https://www.nhtsa.gov/report-a-safety-problem"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Report a vehicle safety problem on NHTSA.gov (opens in a new tab)"
+                >
+                  NHTSA vehicle safety complaint portal
+                </a>
+              </li>
+              <li>
+                <strong>Food and drugs:</strong>
+                <a
+                  href="https://www.fda.gov/safety/medwatch-fda-safety-information-and-adverse-event-reporting-program"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Report a food or drug safety concern on FDA MedWatch (opens in a new tab)"
+                >
+                  FDA MedWatch
+                </a>
+              </li>
+              <li>
+                <strong>Meat, poultry, and eggs:</strong>
+                <a
+                  href="https://www.fsis.usda.gov/contact/report-problem"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Report a meat or poultry safety issue on USDA FSIS (opens in a new tab)"
+                >
+                  USDA FSIS Meat and Poultry Hotline
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="tablet:grid-col-4">
+            <div class="usa-alert usa-alert--info" role="status">
+              <div class="usa-alert__body">
+                <h3 class="usa-alert__heading">Questions about this site?</h3>
+                <p class="usa-alert__text">
+                  Contact the Recalls.gov web team at
+                  <a href="mailto:webteam@cpsc.gov">webteam@cpsc.gov</a>.
+                  For questions about a specific recall, contact the
+                  responsible agency directly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="usa-footer usa-footer--slim">
+    <div class="grid-container usa-footer__return-to-top">
+      <a href="#">Return to top</a>
+    </div>
+    <div class="usa-footer__primary-section">
+      <div class="grid-container">
+        <div class="usa-footer__primary-content grid-row grid-gap">
+          <nav
+            class="usa-footer__nav mobile-lg:grid-col-8 desktop:grid-col-10"
+            aria-label="Footer navigation"
+          >
+            <ul class="grid-row grid-gap usa-list usa-list--unstyled">
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                <a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/privacy-policy">
+                  Privacy Policy
+                </a>
+              </li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                <a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility">
+                  Accessibility Statement
+                </a>
+              </li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                <a class="usa-footer__primary-link" href="https://www.cpsc.gov/vulnerability-disclosure-policy">
+                  Vulnerability Disclosure Policy
+                </a>
+              </li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                <a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/foia">
+                  FOIA
+                </a>
+              </li>
+              <li class="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                <a class="usa-footer__primary-link" href="https://www.cpsc.gov/about-cpsc/no-fear-act">
+                  No FEAR Act Data
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+        <p class="recalls-footer-note">
+          This site is provided as a public resource for federal recalls. Direct
+          questions about specific recalls to the appropriate federal agency listed
+          above. For questions about this website, contact
+          <a href="mailto:webteam@cpsc.gov">webteam@cpsc.gov</a>.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Identifier: required on all federal sites -->
+  <div class="usa-identifier">
+    <section
+      class="usa-identifier__section usa-identifier__section--masthead"
+      aria-label="Agency identifier"
+    >
+      <div class="usa-identifier__container">
+        <div class="usa-identifier__logos">
+          <a
+            href="https://www.cpsc.gov"
+            class="usa-identifier__logo"
+            aria-label="U.S. Consumer Product Safety Commission homepage"
+          >
+            <img
+              class="usa-identifier__logo-img"
+              src="assets/logos/cpsc.svg"
+              alt="U.S. Consumer Product Safety Commission"
+            />
+          </a>
+        </div>
+        <section
+          class="usa-identifier__identity"
+          aria-label="Agency description"
+        >
+          <p class="usa-identifier__identity-domain">recalls.gov</p>
+          <p class="usa-identifier__identity-disclaimer">
+            An official website of the
+            <a href="https://www.cpsc.gov">
+              U.S. Consumer Product Safety Commission
+            </a>
+          </p>
+        </section>
+      </div>
+    </section>
+    <nav
+      class="usa-identifier__section usa-identifier__section--required-links"
+      aria-label="Important links"
+    >
+      <div class="usa-identifier__container">
+        <ul class="usa-identifier__required-links-list">
+          <li class="usa-identifier__required-links-item">
+            <a href="https://www.cpsc.gov/about-cpsc" class="usa-identifier__required-link usa-link">
+              About CPSC
+            </a>
+          </li>
+          <li class="usa-identifier__required-links-item">
+            <a href="https://www.cpsc.gov/about-cpsc/agency-information/cpsc-website-accessibility" class="usa-identifier__required-link usa-link">
+              Accessibility Statement
+            </a>
+          </li>
+          <li class="usa-identifier__required-links-item">
+            <a href="https://www.cpsc.gov/about-cpsc/foia" class="usa-identifier__required-link usa-link">
+              FOIA Requests
+            </a>
+          </li>
+          <li class="usa-identifier__required-links-item">
+            <a href="https://www.cpsc.gov/about-cpsc/no-fear-act" class="usa-identifier__required-link usa-link">
+              No FEAR Act Data
+            </a>
+          </li>
+          <li class="usa-identifier__required-links-item">
+            <a href="https://oig.cpsc.gov" class="usa-identifier__required-link usa-link">
+              Office of Inspector General
+            </a>
+          </li>
+          <li class="usa-identifier__required-links-item">
+            <a href="https://www.cpsc.gov/about-cpsc/privacy-policy" class="usa-identifier__required-link usa-link">
+              Privacy Policy
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <section
+      class="usa-identifier__section usa-identifier__section--usagov"
+      aria-label="U.S. government information and services"
+    >
+      <div class="usa-identifier__container">
+        <div class="usa-identifier__usagov-description">
+          Looking for U.S. government information and services?
+        </div>
+        <a href="https://www.usa.gov/" class="usa-link">Visit USA.gov</a>
+      </div>
+    </section>
+  </div>
+
+  <!-- USWDS JavaScript: uswds-init must load before uswds -->
+  <script src="https://unpkg.com/@uswds/uswds@3.13.0/dist/js/uswds-init.min.js"></script>
+  <script src="https://unpkg.com/@uswds/uswds@3.13.0/dist/js/uswds.min.js"></script>
+
+</body>
+</html>

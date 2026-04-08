@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" role="img" aria-label="U.S. Food and Drug Administration">
+  <title>U.S. Food and Drug Administration</title>
+  <rect width="200" height="60" fill="#0071bc"/>
+  <text x="10" y="30" font-family="'Source Sans Pro', Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">FDA</text>
+  <text x="60" y="24" font-family="'Source Sans Pro', Arial, sans-serif" font-size="8" fill="#cce4f6">U.S. Food and</text>
+  <text x="60" y="36" font-family="'Source Sans Pro', Arial, sans-serif" font-size="8" fill="#cce4f6">Drug Administration</text>
+</svg>

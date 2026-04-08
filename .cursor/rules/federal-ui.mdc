@@ -1,0 +1,190 @@
+---
+description: Federal web UI standards for AI agents building internal and external government websites. Enforces USWDS 3.x, Section 508 / WCAG 2.1 AA, security requirements, and professional design discipline. Apply to every file in this project.
+alwaysApply: true
+---
+
+# Federal Web UI — AI Agent Standards
+
+You are building a U.S. federal government web interface. These rules are non-negotiable. Read every rule before writing a single line of markup, CSS, or JavaScript.
+
+---
+
+## 1. Design System — USWDS 3.x
+
+- Use **USWDS 3.x** exclusively. Load via the project's configured Sass/npm pipeline or via `unpkg.com/@uswds/uswds@latest` for static prototypes.
+- Never invent utility classes that parallel or override USWDS tokens. Use `$theme-*` settings and USWDS design tokens only.
+- Never use Tailwind, Bootstrap, Material, or any other CSS framework alongside USWDS. One system only.
+- Spacing, color, typography, and layout must be expressed with USWDS tokens (`units()`, `color()`, `font()`, `typeset()`).
+- Component markup must match USWDS component HTML exactly — class names, element order, ARIA attributes, and data attributes.
+
+## 2. Required Page Shell — Every Page
+
+Every HTML page must include these elements in this order:
+
+```html
+<!-- 1. Skip navigation (before everything) -->
+<a class="usa-skipnav" href="#main-content">Skip to main content</a>
+
+<!-- 2. Official government banner -->
+<section class="usa-banner" aria-label="Official website of the United States government">
+  <!-- usa-banner component markup -->
+</section>
+
+<!-- 3. Site header -->
+<header class="usa-header usa-header--extended" role="banner">
+  <!-- usa-header component markup -->
+</header>
+
+<!-- 4. Main content landmark -->
+<main id="main-content">
+  <!-- page content -->
+</main>
+
+<!-- 5. Footer -->
+<footer class="usa-footer">
+  <!-- usa-footer component markup -->
+</footer>
+
+<!-- 6. Identifier (parent agency attribution) -->
+<div class="usa-identifier">
+  <!-- usa-identifier component markup -->
+</div>
+```
+
+Never omit the banner, skip-nav, `id="main-content"`, or identifier. These are federal compliance requirements, not suggestions.
+
+## 3. Accessibility — Section 508 / WCAG 2.1 AA
+
+### Semantic Structure
+- One `<h1>` per page. Headings must be hierarchically ordered: `h1` → `h2` → `h3`. No skipping levels.
+- Use HTML5 landmark elements: `<header>`, `<nav>`, `<main>`, `<aside>`, `<footer>`, `<section aria-label="...">`.
+- Every `<nav>` must have a unique `aria-label` if more than one nav exists on the page.
+- Use `<ul>` or `<ol>` for navigation lists; screen readers announce list item counts.
+
+### Images and Media
+- Every `<img>` requires an `alt` attribute. Descriptive alt text for informational images. `alt=""` only for purely decorative images.
+- Never use CSS `background-image` for informational images; use `<img>` with alt text.
+- All video requires closed captions. All audio requires a transcript.
+- SVG icons used as UI controls require `aria-label` or `<title>` inside the SVG.
+
+### Forms
+- Every `<input>`, `<select>`, and `<textarea>` must have a programmatically associated `<label>` (using `for`/`id` pairing). Never use `placeholder` as a label substitute.
+- Required fields: mark with an asterisk (*) in the label AND `required` attribute on the input. Include a legend at the top of the form: "Required fields are marked with an asterisk (*)."
+- Every form field should have a `hint` element using `aria-describedby` for format guidance (e.g., "Enter date as MM/DD/YYYY").
+- Use `<fieldset>` and `<legend>` for groups of related controls (radio buttons, checkboxes).
+- Validation error messages must be injected adjacent to the field and announced via `aria-live="polite"` or `role="alert"`.
+- Use the USWDS `usa-form`, `usa-label`, `usa-input`, `usa-hint`, `usa-error-message` classes exactly as documented.
+
+### Keyboard and Focus
+- All interactive elements must be reachable and operable via keyboard alone (Tab, Shift+Tab, Enter, Space, arrow keys).
+- Never remove the focus outline. USWDS provides focus styles; do not override with `outline: none` or `outline: 0`.
+- Modal dialogs must trap focus within the modal while open and return focus to the trigger element on close.
+- Custom components (dropdowns, accordions, tabs) must implement the ARIA authoring patterns from `www.w3.org/WAI/ARIA/apg`.
+
+### Color and Contrast
+- Text contrast ratio: minimum 4.5:1 for normal text, 3:1 for large text (18pt / 14pt bold).
+- Never convey information by color alone. Always pair color with text, icon, or pattern.
+- Test all color combinations using USWDS color tokens only; do not hardcode hex values.
+- Do not use `color-scheme: dark` or automatic dark mode without explicit design review.
+
+### Interaction
+- Link text must be descriptive on its own — never "click here," "read more," or "learn more" without context.
+- External links must indicate they open in a new tab if `target="_blank"` is used, with `aria-label` or visible text.
+- Avoid `target="_blank"` unless the link opens a document or tool where navigation context loss is harmful.
+
+## 4. Typography
+
+- **Body font:** Source Sans Pro (loaded via USWDS). Set `$theme-font-body: 'source-sans-pro'`.
+- **Heading font:** Merriweather (loaded via USWDS). Set `$theme-font-heading: 'merriweather'`.
+- **UI / label font:** Source Sans Pro. Set `$theme-font-ui: 'source-sans-pro'`.
+- Never use `system-ui`, `Arial`, `Helvetica`, or any generic sans-serif as the primary font.
+- Never import fonts from Google Fonts, Adobe Fonts, or any non-federal CDN without explicit security approval. USWDS self-hosts all approved fonts.
+- Font size: minimum 16px (1rem) for body copy. Never set body text below 16px.
+- Line height: minimum 1.5 for body paragraphs.
+
+## 5. Visual Design Discipline
+
+- **No AI slop.** Do not generate: gradient mesh backgrounds, glassmorphism panels, floating card shadows with colored blurs, stock photo heroes, or any visual pattern that signals generic AI-generated aesthetics.
+- **No emojis.** Not in UI text, button labels, headings, alt text, tooltips, placeholder text, code comments, or commit messages.
+- **No filler content.** Do not use lorem ipsum or placeholder copy in any output that will be reviewed. Every text block must be real, purposeful, and reviewed for plain language (8th grade reading level target per federal plain language guidelines).
+- Icons must come from the USWDS icon set (`usa-icon`). Do not import third-party icon fonts (Font Awesome, Material Icons, etc.).
+- Photography and illustration: use only agency-approved imagery. Never use stock photo URLs or unsplash/pexels links.
+- Animations: USWDS transitions only. Respect `prefers-reduced-motion`. No auto-playing carousels.
+
+## 6. Layout and Responsiveness
+
+- Use the USWDS 12-column grid: `usa-grid`, `usa-grid-container`, `grid-col-*`, `tablet:grid-col-*`, `desktop:grid-col-*`.
+- Mobile-first. Write styles for 320px viewport first, then add `tablet:` and `desktop:` prefixes.
+- Never use fixed pixel widths on containers. Use `grid-container` (max 1200px) or `grid-container--widescreen`.
+- Test at 320px, 480px, 640px (mobile-lg), 768px (tablet), 1024px (desktop), and 1400px (widescreen).
+- Touch targets must be at least 44x44px.
+
+## 7. Security
+
+- No inline event handlers (`onclick="..."`, `onload="..."`, `onerror="..."`). Attach all event listeners in external JS files.
+- No `eval()`, `innerHTML` assignments with untrusted data, or `document.write()`.
+- All markup must be compatible with a strict Content Security Policy (`default-src 'self'`). Do not embed base64 data URIs in HTML.
+- No third-party analytics, tracking pixels, or tag manager scripts without explicit agency IT security approval.
+- External links to non-.gov or non-.mil domains must not use `rel="noreferrer"` removal unless intentional.
+- Forms must include CSRF protection tokens when submitting to a server.
+- Never hardcode API keys, credentials, or sensitive configuration values in source files.
+
+## 8. Page Title Convention
+
+Every page `<title>` must follow this exact pattern:
+
+```
+[Page Name] | [Site Name] | [Agency Full Name]
+```
+
+Examples:
+- `Consumer Product Recalls | Recalls.gov | U.S. Consumer Product Safety Commission`
+- `Contact Us | Agency Portal | U.S. Department of Homeland Security`
+
+## 9. Navigation and Wayfinding
+
+- Interior pages must include `usa-breadcrumb` immediately inside `<main>` before the page heading.
+- Active navigation item must be marked with `aria-current="page"`.
+- Primary nav items must not exceed 7 items (cognitive load limit).
+- Navigation labels must be plain English nouns or short noun phrases — no jargon, acronyms-without-expansion, or verbs-as-menu-items.
+
+## 10. Content and Plain Language
+
+- Reading level: target 8th grade (Flesch-Kincaid). Use short sentences, active voice, and common words.
+- Headings must describe the content that follows. No heading should be "Overview" or "Introduction" without context.
+- Do not use "utilize" when "use" suffices. Do not use "leverage" as a verb. Do not use "synergy" anywhere.
+- Dates: spell out month names (`April 8, 2026`). Never use ambiguous formats (`04/08/26`).
+- Phone numbers: format as `(800) 555-0100`. Always provide a TTY alternative where voice phone is listed.
+- Addresses: follow USPS standard format.
+
+## 11. Reusable Components
+
+- Any markup block repeated more than once must be extracted to an include, partial, component, or template file.
+- Name component files with a `usa-` prefix for USWDS wrappers, or an agency-specific prefix for custom components.
+- Document every custom component with: purpose, props/inputs, accessibility notes, and usage example.
+- Do not build a custom component if a USWDS component already satisfies the need.
+
+## 12. File and Code Organization
+
+- HTML files: lowercase, hyphenated filenames (`consumer-products.html`, not `ConsumerProducts.html`).
+- CSS: custom overrides go in a single `_theme-settings.scss` file using USWDS tokens. Never edit USWDS source files directly.
+- JavaScript: one purpose per file. Filename describes the behavior (`accordion-init.js`, not `scripts.js`).
+- No commented-out code blocks in committed files. Remove dead code; use version control for history.
+- No `TODO` comments in production-bound files.
+
+## 13. Federal Footer Requirements
+
+The footer must contain (at minimum):
+- Link to **Privacy Policy**
+- Link to **Accessibility Statement**
+- Link to **Vulnerability Disclosure Policy**
+- Link to **No FEAR Act Data** (if required by agency)
+- Link to agency **FOIA** page
+- The `usa-identifier` component listing the parent agency
+
+## 14. What to Do When Uncertain
+
+- If a design decision is ambiguous, choose the USWDS default. Do not invent custom patterns.
+- If a component does not exist in USWDS, check `designsystem.digital.gov/patterns` for a documented pattern before building from scratch.
+- If a security question arises, err on the side of restriction and document the decision.
+- If accessibility guidance conflicts with a visual design request, accessibility wins.

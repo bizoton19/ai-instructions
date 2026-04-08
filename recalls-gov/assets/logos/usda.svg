@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" role="img" aria-label="U.S. Department of Agriculture Food Safety and Inspection Service">
+  <title>U.S. Department of Agriculture Food Safety and Inspection Service</title>
+  <rect width="200" height="60" fill="#2e5f2e"/>
+  <text x="10" y="22" font-family="'Source Sans Pro', Arial, sans-serif" font-size="12" font-weight="700" fill="#ffffff">USDA FSIS</text>
+  <text x="10" y="36" font-family="'Source Sans Pro', Arial, sans-serif" font-size="8" fill="#aaddaa">Food Safety and</text>
+  <text x="10" y="48" font-family="'Source Sans Pro', Arial, sans-serif" font-size="8" fill="#aaddaa">Inspection Service</text>
+</svg>
