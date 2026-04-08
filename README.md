@@ -26,26 +26,24 @@ template-instructions/
 ├── .github/                     # GitHub Copilot instructions
 │   ├── copilot-instructions.md           # Frontend (equivalent to federal-ui.mdc)
 │   ├── copilot-backend-security.md       # Backend security
-│   └── copilot-backend-architecture.md   # Backend architecture
+│   ├── copilot-backend-architecture.md   # Backend architecture
+│   ├── copilot-auth-public.md            # Public authentication
+│   └── copilot-auth-internal.md          # Internal authentication
 │
-├── skills/                      # AI agent skills (step-by-step workflows)
-│   ├── federal-ui-design/
-│   │   └── SKILL.md            # Frontend implementation workflow
-│   ├── 508-audit/
-│   │   └── SKILL.md            # Accessibility audit workflow
-│   ├── backend-security/
-│   │   └── SKILL.md            # Security audit and implementation
-│   ├── backend-architecture/
-│   │   ├── SKILL.md            # Architecture design workflow
-│   │   └── workflow-bpmn.md   # Workflow/BPMN implementation
-│   └── ...
-│
-└── recalls-gov/                 # Example: Recalls.gov recreation
-    ├── index.html
-    ├── *.html                   # Category pages
-    └── assets/
-        ├── css/recalls.css
-        └── logos/               # Real agency logos
+└── skills/                      # AI agent skills (step-by-step workflows)
+    ├── federal-ui-design/
+    │   └── SKILL.md            # Frontend implementation workflow
+    ├── 508-audit/
+    │   └── SKILL.md            # Accessibility audit workflow
+    ├── backend-security/
+    │   └── SKILL.md            # Security audit and implementation
+    ├── backend-architecture/
+    │   ├── SKILL.md            # Architecture design workflow
+    │   └── workflow-bpmn.md   # Workflow/BPMN implementation
+    ├── auth-public/
+    │   └── SKILL.md            # Login.gov integration workflow
+    └── auth-internal/
+        └── SKILL.md            # Azure AD/Entra ID integration workflow
 ```
 
 ## Frontend Standards
@@ -160,17 +158,26 @@ For workflow-style applications (approvals, business processes), use open-source
 - Activiti (open-source BPMN)
 - jBPM (Red Hat enterprise)
 
-## Example: Recalls.gov Recreation
+## Authentication Standards
 
-The `recalls-gov/` directory contains a complete recreation of www.recalls.gov using these standards:
+### Public-Facing Applications
 
-- USWDS 3.x components and design tokens
-- Section 508 compliant (semantic HTML, ARIA, keyboard nav)
-- CPSC.gov blue + neutral USWDS + Google Workspace color theme
-- Real agency logos (NHTSA, FDA, USDA, EPA, CPSC, USCG)
-- Valid USWDS icons (245 icons from sprite.svg)
-- Original OMB-approved content text preserved
-- Modern, distinctive design within federal framework
+**Login.gov Integration (Mandatory):**
+- OIDC with `private_key_jwt` authentication
+- NIST 800-63-3 service levels (AAL2, IAL2)
+- Identity verification workflows
+- Minimal PII storage
+- Production deployment via Partner Portal
+
+### Internal Applications
+
+**Azure AD / Entra ID Integration (Mandatory):**
+- Azure Government cloud support (GCC, GCC High, DoD)
+- OIDC and SAML 2.0 protocols
+- PIV/CAC smartcard authentication (HSPD-12)
+- Conditional Access policies
+- Group-based authorization and RBAC
+- Microsoft Graph API integration
 
 ## Usage
 
