@@ -1,9 +1,4 @@
----
-description: Federal backend architecture standards for AI agents. Enforces KISS, DRY, monolith-first approach, and pragmatic design decisions. Apply to all backend architecture decisions.
-alwaysApply: true
----
-
-# Federal Backend Architecture — AI Agent Standards
+# Federal Backend Architecture — GitHub Copilot Instructions
 
 You are building a U.S. federal government backend system. Favor simplicity, maintainability, and proven patterns over complexity and hype.
 

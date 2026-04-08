@@ -462,19 +462,126 @@ def update_document(current_user, document_id):
 
 ### Use Relational Database by Default
 
-PostgreSQL is the default choice for federal systems:
-- Excellent JSON support (JSONB)
+**Federal Government Default: SQL Server / Azure SQL**
+- FedRAMP authorized (Azure Government Cloud)
+- Excellent JSON support (JSON functions, FOR JSON)
 - Full-text search
 - Row-level security
-- Mature, stable, well-documented
+- Transparent Data Encryption (TDE)
+- Always Encrypted for column-level encryption
+- Mature, stable, enterprise support
+
+**Alternative: PostgreSQL**
+- For on-premises or multi-cloud deployments
+- Excellent JSON support (JSONB)
+- Strong open-source community
 - FIPS 140-2 validated encryption
 
-### Schema Design Principles
+### Normalization Strategy by Application Type
+
+**System of Record (3NF - Strict):**
+- HR systems, financial systems, master data
+- Data integrity is paramount
+
+**Transactional Apps (3NF - Default):**
+- Case management, document management
+- Balance integrity with performance
+
+**Intermediary/Review Apps (2NF or Denormalized):**
+- Review queues, staging databases, validation apps
+- Data is temporary, optimize for read performance
+
+**Reporting/Analytics (Denormalized):**
+- Data warehouses, dashboards
+- Star/snowflake schemas for read-heavy workloads
+
+### Schema Design Examples
+
+**SQL Server (Federal Default):**
 
 ```sql
--- Good: Normalized schema with proper constraints
+-- System of Record: Normalized (3NF) schema
+CREATE TABLE Users (
+    UserId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    Email NVARCHAR(255) NOT NULL UNIQUE,
+    PasswordHash NVARCHAR(255) NOT NULL,
+    FirstName NVARCHAR(100) NOT NULL,
+    LastName NVARCHAR(100) NOT NULL,
+    Role NVARCHAR(50) NOT NULL CHECK (Role IN ('user', 'admin', 'auditor')),
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    DeletedAt DATETIME2 NULL,
+    
+    INDEX IX_Users_Email NONCLUSTERED (Email) WHERE DeletedAt IS NULL,
+    INDEX IX_Users_Role NONCLUSTERED (Role) WHERE IsActive = 1
+);
+
+CREATE TABLE Documents (
+    DocumentId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    OwnerId UNIQUEIDENTIFIER NOT NULL FOREIGN KEY REFERENCES Users(UserId) ON DELETE CASCADE,
+    Title NVARCHAR(255) NOT NULL,
+    Content NVARCHAR(MAX),
+    Classification NVARCHAR(50) NOT NULL DEFAULT 'unclassified',
+    Version INT DEFAULT 1,
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    DeletedAt DATETIME2 NULL,
+    
+    CONSTRAINT CK_Documents_Classification CHECK (
+        Classification IN ('unclassified', 'cui', 'confidential', 'secret')
+    ),
+    
+    INDEX IX_Documents_Owner NONCLUSTERED (OwnerId) WHERE DeletedAt IS NULL,
+    INDEX IX_Documents_Classification NONCLUSTERED (Classification)
+);
+
+-- Audit log table
+CREATE TABLE AuditLog (
+    AuditLogId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    EventType NVARCHAR(100) NOT NULL,
+    UserId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Users(UserId),
+    ResourceType NVARCHAR(100),
+    ResourceId UNIQUEIDENTIFIER,
+    Action NVARCHAR(50) NOT NULL,
+    Result NVARCHAR(50) NOT NULL,
+    IpAddress NVARCHAR(45),
+    UserAgent NVARCHAR(MAX),
+    Details NVARCHAR(MAX),  -- JSON data
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+    
+    INDEX IX_AuditLog_User NONCLUSTERED (UserId, CreatedAt DESC),
+    INDEX IX_AuditLog_Resource NONCLUSTERED (ResourceType, ResourceId),
+    INDEX IX_AuditLog_Created NONCLUSTERED (CreatedAt DESC)
+);
+
+-- Intermediary/Review App: Denormalized for read performance
+CREATE TABLE DocumentReviewQueue (
+    QueueItemId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    DocumentId UNIQUEIDENTIFIER NOT NULL,
+    DocumentTitle NVARCHAR(255) NOT NULL,  -- Denormalized
+    DocumentContent NVARCHAR(MAX),         -- Denormalized
+    AuthorId UNIQUEIDENTIFIER NOT NULL,
+    AuthorName NVARCHAR(200) NOT NULL,     -- Denormalized
+    AuthorEmail NVARCHAR(255) NOT NULL,    -- Denormalized
+    ReviewerId UNIQUEIDENTIFIER,
+    ReviewerName NVARCHAR(200),            -- Denormalized
+    Status NVARCHAR(50) NOT NULL DEFAULT 'pending',
+    SubmittedAt DATETIME2 NOT NULL,
+    AssignedAt DATETIME2,
+    ReviewedAt DATETIME2,
+    
+    INDEX IX_ReviewQueue_Status NONCLUSTERED (Status, SubmittedAt),
+    INDEX IX_ReviewQueue_Reviewer NONCLUSTERED (ReviewerId) WHERE Status = 'assigned'
+);
+```
+
+**PostgreSQL (Alternative):**
+
+```sql
+-- Same structure, PostgreSQL syntax
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
@@ -488,78 +595,51 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_email ON users(email) WHERE deleted_at IS NULL;
 CREATE INDEX idx_users_role ON users(role) WHERE is_active = TRUE;
-
-CREATE TABLE documents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    content TEXT,
-    classification VARCHAR(50) NOT NULL DEFAULT 'unclassified',
-    version INTEGER DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL,
-    
-    CONSTRAINT valid_classification CHECK (
-        classification IN ('unclassified', 'cui', 'confidential', 'secret')
-    )
-);
-
-CREATE INDEX idx_documents_owner ON documents(owner_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_documents_classification ON documents(classification);
-
--- Audit log table
-CREATE TABLE audit_log (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_type VARCHAR(100) NOT NULL,
-    user_id UUID REFERENCES users(id),
-    resource_type VARCHAR(100),
-    resource_id UUID,
-    action VARCHAR(50) NOT NULL,
-    result VARCHAR(50) NOT NULL,
-    ip_address INET,
-    user_agent TEXT,
-    details JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_audit_log_user ON audit_log(user_id, created_at DESC);
-CREATE INDEX idx_audit_log_resource ON audit_log(resource_type, resource_id);
-CREATE INDEX idx_audit_log_created ON audit_log(created_at DESC);
 ```
 
 ### Migration Strategy
 
-Use a migration tool:
-- **Python**: Alembic (Flask-Migrate)
-- **Node.js**: Knex.js, Sequelize migrations
-- **Ruby**: ActiveRecord migrations
+**SQL Server:**
+- **Entity Framework Migrations** (.NET)
+- **Flyway** (Java, multi-platform)
+- **DbUp** (.NET, lightweight)
+- **SSDT** (SQL Server Data Tools) for database projects
 
-```python
-# Example Alembic migration
-"""Add classification to documents
+**PostgreSQL:**
+- **Alembic** (Python/Flask-Migrate)
+- **Knex.js** (Node.js)
+- **Flyway** (multi-platform)
 
-Revision ID: 001
-Revises: 
-Create Date: 2026-04-08
-"""
-
-from alembic import op
-import sqlalchemy as sa
-
-def upgrade():
-    op.add_column('documents',
-        sa.Column('classification', sa.String(50), nullable=False, server_default='unclassified')
-    )
-    op.create_check_constraint(
-        'valid_classification',
-        'documents',
-        "classification IN ('unclassified', 'cui', 'confidential', 'secret')"
-    )
-
-def downgrade():
-    op.drop_constraint('valid_classification', 'documents')
-    op.drop_column('documents', 'classification')
+```csharp
+// Example Entity Framework migration (SQL Server)
+public partial class AddClassificationToDocuments : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.AddColumn<string>(
+            name: "Classification",
+            table: "Documents",
+            type: "nvarchar(50)",
+            nullable: false,
+            defaultValue: "unclassified");
+        
+        migrationBuilder.AddCheckConstraint(
+            name: "CK_Documents_Classification",
+            table: "Documents",
+            sql: "Classification IN ('unclassified', 'cui', 'confidential', 'secret')");
+    }
+    
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropCheckConstraint(
+            name: "CK_Documents_Classification",
+            table: "Documents");
+        
+        migrationBuilder.DropColumn(
+            name: "Classification",
+            table: "Documents");
+    }
+}
 ```
 
 ---
