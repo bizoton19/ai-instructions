@@ -1,0 +1,519 @@
+# Federal Public-Facing Authentication — AI Agent Standards
+
+You are building a U.S. federal government public-facing application. Authentication for public users is strictly regulated.
+
+---
+
+## 1. Login.gov — Mandatory for Public Authentication
+
+**Login.gov is the required identity provider for federal public-facing applications.**
+
+### Why Login.gov?
+
+- **FedRAMP Moderate approved** multifactor authentication and identity proofing platform
+- **NIST 800-63-3 compliant** (AAL2 and IAL2 support)
+- **Centralized identity** — users create one account for all federal services
+- **No PII storage** — agencies receive minimal attributes, Login.gov manages identity
+- **Free for federal agencies** (funded through IAA)
+
+### When to Use Login.gov
+
+- ✅ Public-facing applications (citizens, businesses, non-federal users)
+- ✅ Applications requiring identity verification (benefits, permits, licenses)
+- ✅ Applications requiring MFA for public users
+- ✅ Applications with >1000 public users
+
+### When NOT to Use Login.gov
+
+- ❌ Internal federal employee applications (use Azure AD / Entra ID)
+- ❌ Applications with <100 users (may use simple auth, but plan for Login.gov)
+- ❌ Applications requiring real-time identity attributes (Login.gov provides minimal claims)
+
+---
+
+## 2. Login.gov Integration — OIDC (Preferred)
+
+### Service Levels
+
+Login.gov provides three identity assurance levels:
+
+**Authentication Only (AAL2):**
+```
+urn:acr.login.gov:auth-only
+```
+- Email address, password, and MFA (phone, authenticator app, security key, PIV/CAC)
+- Meets NIST 800-63-3 AAL2 standard
+- Use for: Applications requiring secure login without identity verification
+
+**Identity Verification without Facial Match:**
+```
+urn:acr.login.gov:verified
+```
+- All of auth-only plus identity proofing (driver's license, passport)
+- Does NOT meet NIST 800-63-3 IAL2 standard
+- Use for: Applications requiring some identity verification
+
+**Identity Verification with Facial Match (IAL2):**
+```
+urn:acr.login.gov:verified-facial-match-required
+```
+- All of verified plus facial match biometric verification
+- Meets NIST 800-63-3 IAL2 standard
+- Use for: High-assurance applications (benefits, financial, controlled access)
+
+### OIDC Configuration
+
+**Endpoints:**
+- **Sandbox**: `https://idp.int.identitysandbox.gov/openid_connect/authorize`
+- **Production**: `https://secure.login.gov/openid_connect/authorize`
+- **Auto-discovery**: `https://secure.login.gov/.well-known/openid-configuration`
+
+**Authentication Method:**
+- Use **private_key_jwt** for web applications (preferred)
+- Use **PKCE** for native mobile applications
+- Never use implicit flow or client_secret (not supported for security reasons)
+
+**Required Parameters:**
+```
+client_id: your-client-id
+redirect_uri: https://your-app.gov/auth/callback
+response_type: code
+scope: openid email profile
+acr_values: urn:acr.login.gov:auth-only  (or verified, or verified-facial-match-required)
+nonce: random-value-for-replay-protection
+state: random-value-for-csrf-protection
+prompt: select_account  (optional, forces account selection)
+```
+
+### User Attributes Returned
+
+Login.gov returns minimal PII to protect user privacy:
+
+**Authentication Only (auth-only):**
+- `sub` — Unique identifier (UUID, different per agency)
+- `email` — User's email address
+- `email_verified` — Boolean
+
+**Identity Verified (verified or verified-facial-match-required):**
+- All of auth-only plus:
+- `given_name` — First name
+- `family_name` — Last name
+- `birthdate` — Date of birth (YYYY-MM-DD)
+- `social_security_number` — SSN (if requested and approved)
+- `address` — Verified address (structured JSON)
+- `phone` — Verified phone number
+- `verified_at` — Timestamp of identity verification
+
+**Important**: The `sub` (subject) claim is **unique per agency**. The same user will have different `sub` values for different agencies.
+
+---
+
+## 3. Login.gov Integration — SAML (Alternative)
+
+Use SAML if your application framework doesn't support OIDC well.
+
+**Endpoints:**
+- **Sandbox**: `https://idp.int.identitysandbox.gov/api/saml/auth2026`
+- **Production**: `https://secure.login.gov/api/saml/auth2026`
+- **Metadata**: `https://secure.login.gov/api/saml/metadata2026`
+
+**Note**: SAML endpoints rotate annually (e.g., `/auth2026` in 2026, `/auth2027` in 2027).
+
+**Service Level (AuthnContextClassRef):**
+```xml
+<saml:AuthnContextClassRef>
+  urn:acr.login.gov:auth-only
+</saml:AuthnContextClassRef>
+```
+
+---
+
+## 4. Alternative: Azure AD B2C / Entra External ID
+
+**IMPORTANT**: Azure AD B2C is **NOT available in Azure Government clouds** (GCC, GCC High, DoD).
+
+### When to Use Azure AD B2C (Commercial Cloud Only)
+
+- Public-facing applications deployed to **commercial Azure** (not Azure Government)
+- Applications requiring **social identity providers** (Google, Facebook, Microsoft Account)
+- Applications requiring **custom branding** and user flows
+- Applications with **complex sign-up workflows**
+
+### Limitations for Federal Use
+
+- ❌ Not FedRAMP authorized
+- ❌ Not available in Azure Government
+- ❌ Cannot federate with Login.gov (requires custom OIDC parameters not supported)
+- ❌ Not compliant with federal public authentication mandates
+
+**Recommendation**: Use Login.gov for federal public-facing applications. Only use Azure AD B2C for non-federal or commercial cloud deployments.
+
+---
+
+## 5. Implementation Patterns
+
+### Pattern 1: OIDC with private_key_jwt (Recommended)
+
+**Python / Flask Example:**
+
+```python
+from authlib.integrations.flask_client import OAuth
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+
+app = Flask(__name__)
+oauth = OAuth(app)
+
+# Load private key for JWT signing
+with open('private_key.pem', 'rb') as f:
+    private_key = serialization.load_pem_private_key(
+        f.read(),
+        password=None,
+        backend=default_backend()
+    )
+
+# Configure Login.gov OIDC
+logingov = oauth.register(
+    name='logingov',
+    client_id=os.getenv('LOGINGOV_CLIENT_ID'),
+    server_metadata_url='https://secure.login.gov/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile',
+        'token_endpoint_auth_method': 'private_key_jwt',
+        'token_endpoint_auth_signing_alg': 'RS256'
+    }
+)
+
+@app.route('/login')
+def login():
+    redirect_uri = url_for('authorize', _external=True, _scheme='https')
+    
+    # Generate nonce and state for security
+    nonce = secrets.token_urlsafe(32)
+    state = secrets.token_urlsafe(32)
+    
+    # Store in session for validation
+    session['nonce'] = nonce
+    session['state'] = state
+    
+    return logingov.authorize_redirect(
+        redirect_uri,
+        nonce=nonce,
+        state=state,
+        acr_values='urn:acr.login.gov:auth-only'  # or verified, or verified-facial-match-required
+    )
+
+@app.route('/auth/callback')
+def authorize():
+    # Validate state parameter (CSRF protection)
+    if request.args.get('state') != session.get('state'):
+        abort(400, 'Invalid state parameter')
+    
+    # Exchange authorization code for token
+    token = logingov.authorize_access_token(
+        client_assertion_type='urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+        client_assertion=create_client_assertion(private_key)
+    )
+    
+    # Validate nonce in ID token
+    if token['id_token']['nonce'] != session.get('nonce'):
+        abort(400, 'Invalid nonce')
+    
+    # Get user info
+    user_info = token['userinfo']
+    
+    # Create or update user in local database
+    user = User.query.filter_by(login_gov_sub=user_info['sub']).first()
+    if not user:
+        user = User(
+            login_gov_sub=user_info['sub'],
+            email=user_info['email'],
+            email_verified=user_info['email_verified']
+        )
+        db.session.add(user)
+    else:
+        user.email = user_info['email']
+        user.last_login = datetime.utcnow()
+    
+    db.session.commit()
+    
+    # Create session
+    session['user_id'] = user.id
+    
+    return redirect(url_for('dashboard'))
+
+def create_client_assertion(private_key):
+    """Create JWT assertion for token endpoint"""
+    import jwt
+    
+    now = int(time.time())
+    
+    claims = {
+        'iss': os.getenv('LOGINGOV_CLIENT_ID'),
+        'sub': os.getenv('LOGINGOV_CLIENT_ID'),
+        'aud': 'https://secure.login.gov/api/openid_connect/token',
+        'jti': secrets.token_urlsafe(32),
+        'exp': now + 300,  # 5 minutes
+        'iat': now
+    }
+    
+    return jwt.encode(claims, private_key, algorithm='RS256')
+```
+
+### Pattern 2: SAML Integration
+
+**C# / ASP.NET Core Example:**
+
+```csharp
+// Startup.cs or Program.cs
+services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = "LoginGov";
+})
+.AddCookie()
+.AddSaml2("LoginGov", options =>
+{
+    options.SPOptions.EntityId = new EntityId("urn:gov:gsa:SAML:2.0.profiles:sp:sso:agency-name");
+    options.SPOptions.ReturnUrl = new Uri("https://your-app.gov/");
+    
+    options.IdentityProviders.Add(new IdentityProvider(
+        new EntityId("urn:gov:gsa:SAML:2.0.profiles:idp:sso:login.gov"),
+        options.SPOptions)
+    {
+        MetadataLocation = "https://secure.login.gov/api/saml/metadata2026",
+        LoadMetadata = true,
+        
+        // Request authentication level
+        AuthenticationRequestPreferredBindings = new[]
+        {
+            Saml2BindingType.HttpPost
+        }
+    });
+    
+    // Request specific authentication context (service level)
+    options.SPOptions.AuthenticationRequestCustomization = (request) =>
+    {
+        request.RequestedAuthnContext = new Saml2RequestedAuthnContext(
+            new Uri("urn:acr.login.gov:auth-only"),
+            AuthnContextComparisonType.Minimum
+        );
+    };
+});
+
+// Controller
+[Authorize]
+public class DashboardController : Controller
+{
+    public IActionResult Index()
+    {
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        // Find or create user
+        var user = _userService.GetOrCreateUser(sub, email);
+        
+        return View(user);
+    }
+}
+```
+
+---
+
+## 6. Production Deployment Requirements
+
+Before deploying to Login.gov production:
+
+### Required Items
+
+- [ ] **Signed Interagency Agreement (IAA)** listing this integration
+- [ ] **Authority to Operate (ATO)** for your environment
+- [ ] **Production .gov, .mil, or dedicated .com domain**
+- [ ] **Agency logo** (PNG or SVG, 1:1 aspect ratio, transparent background)
+- [ ] **Failure to proof URL** (if requesting identity-verified attributes)
+- [ ] **Privacy policy URL**
+- [ ] **Terms of service URL**
+
+### Configuration Process
+
+1. Create sandbox account at https://dashboard.int.identitysandbox.gov/
+2. Test integration in sandbox environment
+3. Create production configuration in Partner Portal
+4. Submit launch request via Partner Support Help Desk
+5. Allow **2+ weeks** for review and deployment
+
+### Production Checklist
+
+- [ ] IAA signed and integration listed
+- [ ] ATO approved for production environment
+- [ ] SSL/TLS certificate valid and trusted
+- [ ] Redirect URIs use HTTPS only
+- [ ] Public key uploaded to Partner Portal (OIDC) or certificate registered (SAML)
+- [ ] User experience reviewed per Login.gov guidelines
+- [ ] Privacy policy and terms of service published
+- [ ] Agency logo provided
+- [ ] Launch request submitted 2+ weeks before go-live
+
+---
+
+## 7. Security Requirements
+
+### Session Management
+
+- **Session timeout**: Maximum 30 minutes of inactivity
+- **Absolute timeout**: Maximum 12 hours
+- **Secure cookies**: HTTPOnly, Secure, SameSite=Lax
+- **Session fixation protection**: Regenerate session ID after login
+
+```python
+# Flask session configuration
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
+```
+
+### Token Validation
+
+- **Validate JWT signature** using Login.gov's public keys (from JWKS endpoint)
+- **Validate nonce** to prevent replay attacks
+- **Validate state** to prevent CSRF attacks
+- **Validate issuer** (`https://secure.login.gov`)
+- **Validate audience** (your client_id)
+- **Validate expiration** (exp claim)
+- **Validate issued-at** (iat claim, reject if >5 minutes old)
+
+### Logout
+
+- **Local logout**: Clear application session
+- **Login.gov logout**: Redirect to Login.gov logout endpoint
+- **Logout URL**: `https://secure.login.gov/openid_connect/logout`
+
+```python
+@app.route('/logout')
+def logout():
+    # Get ID token for logout
+    id_token = session.get('id_token')
+    
+    # Clear local session
+    session.clear()
+    
+    # Redirect to Login.gov logout
+    logout_url = (
+        'https://secure.login.gov/openid_connect/logout'
+        f'?id_token_hint={id_token}'
+        f'&post_logout_redirect_uri={url_for("index", _external=True, _scheme="https")}'
+        '&state=' + secrets.token_urlsafe(32)
+    )
+    
+    return redirect(logout_url)
+```
+
+---
+
+## 8. User Data Management
+
+### Minimal PII Storage
+
+- **Store only the `sub` claim** as the primary user identifier
+- **Do not store** SSN, birthdate, or address unless absolutely necessary
+- **Encrypt sensitive attributes** at rest if you must store them
+- **Request only necessary attributes** in your OIDC scope
+
+### User Linking
+
+```python
+# Good: Link Login.gov identity to local user account
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    login_gov_sub = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(255), nullable=False)
+    email_verified = db.Column(db.Boolean, default=False)
+    
+    # Application-specific fields
+    profile_completed = db.Column(db.Boolean, default=False)
+    preferences = db.Column(db.JSON)
+    
+    # Audit fields
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+```
+
+### Account Deletion
+
+- **Support user-initiated account deletion** per Privacy Act
+- **Delete all user data** within 30 days of request
+- **Notify Login.gov** if user requests account deletion (they manage the identity)
+
+---
+
+## 9. Error Handling
+
+### Common Login.gov Errors
+
+**`access_denied`**: User cancelled login or failed identity verification
+```python
+if request.args.get('error') == 'access_denied':
+    flash('Login cancelled. Please try again or contact support.')
+    return redirect(url_for('index'))
+```
+
+**`invalid_request`**: Malformed authentication request
+```python
+# Check your OIDC parameters, especially acr_values and redirect_uri
+```
+
+**`server_error`**: Login.gov service error
+```python
+# Retry with exponential backoff, display user-friendly error
+flash('Authentication service temporarily unavailable. Please try again in a few minutes.')
+```
+
+---
+
+## 10. Testing
+
+### Sandbox Environment
+
+- **Dashboard**: https://dashboard.int.identitysandbox.gov/
+- **Test accounts**: Create test users with different verification levels
+- **Test all flows**: Authentication, identity verification, logout, error cases
+
+### Test Checklist
+
+- [ ] Successful authentication with auth-only
+- [ ] Successful authentication with verified (if needed)
+- [ ] Token validation (signature, nonce, state, expiration)
+- [ ] User creation and linking
+- [ ] Session management (timeout, logout)
+- [ ] Error handling (access_denied, invalid_request, server_error)
+- [ ] CSRF protection (state parameter)
+- [ ] Replay protection (nonce parameter)
+- [ ] Logout (local and Login.gov)
+
+---
+
+## 11. Compliance and Documentation
+
+### Required Documentation
+
+- **Privacy Policy**: Explain what data you collect from Login.gov and how you use it
+- **Terms of Service**: Explain user responsibilities
+- **System Security Plan (SSP)**: Document Login.gov integration in your SSP
+- **Privacy Impact Assessment (PIA)**: Document PII handling
+
+### NIST 800-63-3 Compliance
+
+- **AAL2**: Use `urn:acr.login.gov:auth-only` (MFA required)
+- **IAL2**: Use `urn:acr.login.gov:verified-facial-match-required`
+- **FAL2**: Use OIDC with private_key_jwt (cryptographic binding)
+
+---
+
+## 12. What to Do When Uncertain
+
+- If unsure about service level, **start with auth-only** and upgrade later if needed
+- If unsure about OIDC vs SAML, **use OIDC** (more modern, better support)
+- If unsure about attributes, **request only email** and add more later if approved
+- If Login.gov integration is blocked, **consult your agency IAA contact**
+- For technical questions, **submit ticket to Login.gov Partner Support**
