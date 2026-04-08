@@ -1,0 +1,495 @@
+---
+description: Federal backend architecture standards for AI agents. Enforces KISS, DRY, monolith-first approach, and pragmatic design decisions. Apply to all backend architecture decisions.
+alwaysApply: true
+---
+
+# Federal Backend Architecture — AI Agent Standards
+
+You are building a U.S. federal government backend system. Favor simplicity, maintainability, and proven patterns over complexity and hype.
+
+---
+
+## 1. Core Principles
+
+### KISS — Keep It Simple, Stupid
+
+- **Simple solutions are easier to secure, maintain, and debug.**
+- Choose the simplest solution that meets requirements. Complexity is a liability.
+- If you can solve a problem with a library function, use it. Don't reinvent the wheel.
+- If you can solve a problem with a SQL query, don't write application logic.
+- Avoid premature optimization. Solve the problem first, optimize later if needed.
+
+### DRY — Don't Repeat Yourself
+
+- **Extract repeated code into functions, classes, or modules.**
+- Use configuration files for repeated settings, not hardcoded values.
+- Use database constraints and triggers to enforce business rules, not just application logic.
+- Document once in a single source of truth. Link to it, don't duplicate it.
+
+**When NOT to apply DRY:**
+- Don't abstract too early. Wait until you have 3+ instances of duplication before extracting.
+- Don't create abstractions that are harder to understand than the duplication.
+- Duplication is cheaper than the wrong abstraction.
+
+### YAGNI — You Aren't Gonna Need It
+
+- **Don't build features you don't need yet.**
+- Don't add configuration options "just in case."
+- Don't build abstractions for future flexibility that may never be needed.
+- Build for today's requirements. Refactor when requirements change.
+
+---
+
+## 2. Monolith-First Architecture
+
+**Default to a monolithic architecture.** Only move to microservices when you have clear evidence of need.
+
+### Why Monolith First?
+
+- **Simpler to develop**: One codebase, one deployment, one database.
+- **Simpler to debug**: All code in one place, easier to trace execution.
+- **Simpler to deploy**: One artifact, one deployment pipeline.
+- **Simpler to secure**: One attack surface, one set of security controls.
+- **Faster iteration**: No network calls between services, no distributed transaction complexity.
+- **Lower operational overhead**: One server to monitor, one log stream to analyze.
+
+### When to Consider Microservices
+
+Only consider microservices when **all** of the following are true:
+
+1. **Team size**: You have 50+ engineers who cannot coordinate effectively in a monolith.
+2. **User scale**: You have millions of users with distinct scaling needs per feature.
+3. **Domain complexity**: You have truly independent bounded contexts that change at different rates.
+4. **Organizational maturity**: You have mature DevOps practices, observability, and incident response.
+
+**If in doubt, stay monolithic.** You can always extract services later. It's much harder to merge microservices back into a monolith.
+
+### Modular Monolith
+
+If your monolith is growing large, use a **modular monolith** pattern:
+
+- Organize code by **domain modules** (e.g., `users/`, `documents/`, `reports/`).
+- Each module has its own **models, services, and API routes**.
+- Modules communicate through **well-defined interfaces**, not direct database access.
+- Enforce module boundaries with **linting rules** or **architecture tests**.
+
+```
+app/
+├── modules/
+│   ├── users/
+│   │   ├── models.py
+│   │   ├── services.py
+│   │   ├── routes.py
+│   │   └── tests/
+│   ├── documents/
+│   │   ├── models.py
+│   │   ├── services.py
+│   │   ├── routes.py
+│   │   └── tests/
+│   └── reports/
+│       ├── models.py
+│       ├── services.py
+│       ├── routes.py
+│       └── tests/
+├── shared/
+│   ├── auth.py
+│   ├── database.py
+│   └── utils.py
+└── main.py
+```
+
+---
+
+## 3. Design Patterns — Use Sparingly
+
+**Design patterns are tools, not goals.** Use them when they solve a real problem, not because they're "best practice."
+
+### When to Use Design Patterns
+
+- **Repository Pattern**: When you need to swap database implementations (rare in federal systems).
+- **Factory Pattern**: When object creation logic is complex and repeated.
+- **Strategy Pattern**: When you have multiple algorithms for the same task (e.g., payment processors).
+- **Observer Pattern**: When you need to notify multiple components of state changes.
+
+### When NOT to Use Design Patterns
+
+- Don't use patterns "because the book says so."
+- Don't use patterns to make code "more professional."
+- Don't use patterns that add indirection without clear benefit.
+- Don't use patterns that require 5+ files to do what 1 file could do.
+
+### Pattern Smell Test
+
+Before applying a pattern, ask:
+1. Does this solve a real problem I have today?
+2. Will this make the code easier to understand?
+3. Will this make the code easier to change?
+4. Can I explain this pattern to a junior developer in 2 minutes?
+
+If you answer "no" to any of these, don't use the pattern.
+
+---
+
+## 4. Event-Driven Architecture — Only When Scaling
+
+**Default to synchronous request-response.** Only use event-driven architecture when you have clear scaling needs.
+
+### When to Use Event-Driven Architecture
+
+- **High-volume asynchronous operations**: Email sending, report generation, data processing.
+- **Decoupling for scale**: One service produces events, multiple services consume.
+- **Audit trails**: Every state change must be logged immutably.
+- **Complex workflows**: Multi-step processes with retries and compensation logic.
+
+### When NOT to Use Event-Driven Architecture
+
+- Don't use events for simple CRUD operations.
+- Don't use events when a function call would suffice.
+- Don't use events to "decouple" services that are tightly coupled by domain.
+- Don't use events when you need immediate consistency.
+
+### Event-Driven Complexity Tax
+
+Event-driven systems introduce:
+- **Eventual consistency**: Data may be stale.
+- **Debugging complexity**: Tracing events across services is hard.
+- **Ordering guarantees**: Events may arrive out of order.
+- **Failure handling**: What happens if an event handler fails?
+
+Only pay this tax when the benefits are clear.
+
+---
+
+## 5. Domain-Driven Design (DDD) — Only for Complex Domains
+
+**DDD is overkill for most federal applications.** Use it only when domain complexity justifies the overhead.
+
+### When to Use DDD
+
+- **Complex business rules**: Insurance underwriting, tax calculation, regulatory compliance.
+- **Large teams**: 20+ developers working on the same domain.
+- **Long-lived systems**: 10+ year lifespan with frequent requirement changes.
+
+### When NOT to Use DDD
+
+- Don't use DDD for CRUD applications.
+- Don't use DDD for simple workflows (form submission, approval, notification).
+- Don't use DDD when your "domain experts" are developers.
+- Don't use DDD when you have fewer than 10 engineers.
+
+### DDD Lite
+
+If you need some DDD concepts without full DDD:
+
+- Use **service layer** to encapsulate business logic (don't put it in controllers or models).
+- Use **value objects** for domain concepts (e.g., `Email`, `PhoneNumber`, `SSN`).
+- Use **domain events** for audit logging (not for inter-service communication).
+- Skip aggregates, repositories, and bounded contexts unless you need them.
+
+---
+
+## 6. Database Strategy
+
+### Single Database for Monoliths
+
+- Use **one database** for your monolith. Don't split into multiple databases "for microservices later."
+- Use **database schemas** to organize tables by domain (e.g., `users.*`, `documents.*`).
+- Use **foreign keys** to enforce referential integrity.
+- Use **database transactions** to ensure consistency.
+
+### Database Selection
+
+- **PostgreSQL**: Default choice for relational data. Excellent JSON support, full-text search, and extensions.
+- **SQLite**: For small, embedded, or single-user applications.
+- **MySQL/MariaDB**: If you have existing MySQL expertise or infrastructure.
+
+**Avoid NoSQL unless you have a specific need:**
+- Time-series data (InfluxDB, TimescaleDB)
+- Document storage with flexible schema (MongoDB, but consider PostgreSQL JSONB first)
+- Key-value caching (Redis, Memcached)
+
+### Schema Design
+
+- Use **normalized schemas** (3NF) by default. Denormalize only for proven performance needs.
+- Use **UUIDs for primary keys** if you may need to merge databases later.
+- Use **timestamps** (`created_at`, `updated_at`) on all tables.
+- Use **soft deletes** (`deleted_at`) for audit trails, not hard deletes.
+- Use **database constraints** to enforce business rules (NOT NULL, CHECK, UNIQUE, FOREIGN KEY).
+
+---
+
+## 7. API Design
+
+### RESTful APIs by Default
+
+- Use **REST** for public-facing APIs. It's well-understood and has excellent tooling.
+- Use **JSON** for request/response bodies. Avoid XML unless required by legacy systems.
+- Use **standard HTTP methods**: GET (read), POST (create), PUT (replace), PATCH (update), DELETE (remove).
+- Use **standard HTTP status codes**: 200 (OK), 201 (Created), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 500 (Internal Server Error).
+
+### API Versioning
+
+- Version your API from day one: `/api/v1/users`.
+- Maintain backward compatibility within a major version.
+- Deprecate old versions with at least 6 months notice.
+
+### GraphQL — Only for Specific Use Cases
+
+Use GraphQL only when:
+- You have a complex data graph with many relationships.
+- You have multiple clients with different data needs (mobile, web, desktop).
+- You need to reduce over-fetching and under-fetching.
+
+**Don't use GraphQL:**
+- For simple CRUD APIs.
+- If your team doesn't have GraphQL expertise.
+- If you need fine-grained authorization (GraphQL makes this harder).
+
+---
+
+## 8. Workflow and BPMN — Favor Open Source Frameworks
+
+For workflow-style applications (approval workflows, business processes), use proven open-source frameworks instead of building from scratch.
+
+### Recommended Workflow Frameworks
+
+#### Python
+- **Temporal.io**: Durable execution engine for workflows. Excellent for long-running processes with retries.
+- **Airflow**: Workflow orchestration for data pipelines. Overkill for simple workflows.
+- **Prefect**: Modern alternative to Airflow with better developer experience.
+
+#### Node.js
+- **Temporal.io**: Same as Python, with Node.js SDK.
+- **Bull/BullMQ**: Redis-based job queue for background tasks.
+- **Camunda**: Full BPMN 2.0 engine with visual workflow designer.
+
+#### Java
+- **Camunda**: Industry-standard BPMN 2.0 engine. Best choice for complex workflows.
+- **Activiti**: Open-source BPMN engine, less actively maintained than Camunda.
+- **jBPM**: Red Hat's BPMN engine, good for enterprise environments.
+
+### When to Use Workflow Frameworks
+
+- **Multi-step approval processes**: Document review, procurement, hiring.
+- **Long-running processes**: Processes that span days or weeks.
+- **Human-in-the-loop**: Processes that require manual intervention.
+- **Compensation logic**: Processes that need to undo previous steps on failure.
+
+### When NOT to Use Workflow Frameworks
+
+- Don't use workflow engines for simple state machines (use a `status` column).
+- Don't use workflow engines for real-time request-response APIs.
+- Don't use workflow engines when a cron job would suffice.
+
+### BPMN Best Practices
+
+- Use **BPMN 2.0** for visual workflow modeling. It's an ISO standard.
+- Keep workflows **simple**: 5-10 steps max. Split complex workflows into sub-processes.
+- Use **service tasks** for automated steps, **user tasks** for manual steps.
+- Implement **error handling** and **retry logic** in workflow definitions.
+- Version workflow definitions. Never modify a running workflow definition.
+
+---
+
+## 9. Background Jobs and Task Queues
+
+### When to Use Background Jobs
+
+- **Long-running operations**: Report generation, data export, batch processing.
+- **External API calls**: Email sending, payment processing, third-party integrations.
+- **Scheduled tasks**: Daily reports, data cleanup, cache warming.
+
+### Recommended Task Queue Libraries
+
+- **Python**: Celery (mature, feature-rich), RQ (simple, Redis-based), Dramatiq (modern, reliable).
+- **Node.js**: Bull/BullMQ (Redis-based), Agenda (MongoDB-based).
+- **Ruby**: Sidekiq (Redis-based, excellent performance).
+
+### Task Queue Best Practices
+
+- Make tasks **idempotent**: Running the same task twice should be safe.
+- Implement **retry logic** with exponential backoff.
+- Set **task timeouts** to prevent hung workers.
+- Monitor **queue depth** and **task failure rates**.
+- Use **dead letter queues** for permanently failed tasks.
+
+---
+
+## 10. Caching Strategy
+
+### When to Cache
+
+- **Expensive database queries**: Queries that take >100ms.
+- **External API responses**: Third-party data that changes infrequently.
+- **Computed results**: Report summaries, aggregations, search indexes.
+
+### Caching Layers
+
+1. **Application cache**: In-memory cache (e.g., Python `functools.lru_cache`, Node.js `node-cache`).
+2. **Distributed cache**: Redis, Memcached for multi-server deployments.
+3. **HTTP cache**: CDN, reverse proxy (Nginx, Varnish) for static content.
+4. **Database cache**: Query result cache, materialized views.
+
+### Cache Invalidation
+
+- Use **time-based expiration** (TTL) for data that changes predictably.
+- Use **event-based invalidation** for data that changes unpredictably.
+- Use **cache-aside pattern**: Check cache, if miss, query database, then cache result.
+- Never cache **sensitive data** (passwords, tokens, PII) without encryption.
+
+---
+
+## 11. Testing Strategy
+
+### Test Pyramid
+
+- **70% unit tests**: Fast, isolated, test business logic.
+- **20% integration tests**: Test database interactions, external APIs.
+- **10% end-to-end tests**: Test full user workflows.
+
+### What to Test
+
+- **Business logic**: All service layer functions.
+- **API endpoints**: All routes, including error cases.
+- **Database queries**: Complex queries, migrations.
+- **Authentication and authorization**: All access control logic.
+
+### What NOT to Test
+
+- Don't test framework code (e.g., Flask, Express internals).
+- Don't test third-party libraries (trust their tests).
+- Don't test getters and setters (unless they have logic).
+
+---
+
+## 12. Performance Guidelines
+
+### Premature Optimization is Evil
+
+- **Don't optimize until you have a performance problem.**
+- Measure first, optimize second. Use profilers, not guesses.
+- Optimize the bottleneck, not everything.
+
+### Common Performance Wins
+
+- **Database indexes**: Add indexes for frequently queried columns.
+- **N+1 query elimination**: Use joins or eager loading instead of loops.
+- **Connection pooling**: Reuse database connections.
+- **Caching**: Cache expensive operations (see section 10).
+- **Pagination**: Never return unbounded result sets.
+
+### Performance Targets
+
+- **API response time**: <200ms for p50, <500ms for p95, <1s for p99.
+- **Database query time**: <50ms for simple queries, <200ms for complex queries.
+- **Background job processing**: <5 minutes for user-facing jobs, <1 hour for batch jobs.
+
+---
+
+## 13. Deployment and Operations
+
+### Single Runtime Preference
+
+- **Deploy as a single process** (monolith) by default.
+- Use **process managers** (systemd, supervisord, PM2) for reliability.
+- Use **load balancers** (Nginx, HAProxy, AWS ALB) for horizontal scaling.
+
+### Containerization
+
+- Use **Docker** for consistent environments across dev, staging, and production.
+- Use **Docker Compose** for local development with multiple services.
+- Use **Kubernetes** only if you have 10+ services and dedicated DevOps team.
+
+### Configuration Management
+
+- Use **environment variables** for configuration (12-factor app).
+- Use **configuration files** (YAML, JSON) for complex settings.
+- Never commit secrets to version control. Use secrets management tools.
+
+### Health Checks and Monitoring
+
+- Implement **/health** endpoint for liveness checks (returns 200 if app is running).
+- Implement **/ready** endpoint for readiness checks (returns 200 if app can serve traffic).
+- Expose **/metrics** endpoint for Prometheus scraping (if using Prometheus).
+- Log structured JSON for easy parsing by log aggregators.
+
+---
+
+## 14. Code Organization
+
+### Project Structure (Python/Flask Example)
+
+```
+my-app/
+├── app/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   └── document.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── user_service.py
+│   │   └── document_service.py
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── user_routes.py
+│   │   └── document_routes.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── auth.py
+│       └── validation.py
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+├── migrations/
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+```
+
+### Naming Conventions
+
+- **Files**: `snake_case.py`, `kebab-case.js`
+- **Classes**: `PascalCase`
+- **Functions/methods**: `snake_case` (Python), `camelCase` (JavaScript)
+- **Constants**: `UPPER_SNAKE_CASE`
+- **Private methods**: `_leading_underscore` (Python), `#privateField` (JavaScript)
+
+---
+
+## 15. Documentation Requirements
+
+### Code Documentation
+
+- Write **docstrings** for all public functions, classes, and modules.
+- Write **inline comments** only for non-obvious logic. Don't comment what, comment why.
+- Keep documentation **close to code**. Don't maintain separate docs that get stale.
+
+### API Documentation
+
+- Use **OpenAPI/Swagger** for REST APIs.
+- Use **GraphQL introspection** for GraphQL APIs.
+- Include **examples** for all endpoints.
+- Document **error responses** and **rate limits**.
+
+### Architecture Documentation
+
+- Maintain **architecture decision records (ADRs)** for significant decisions.
+- Create **system diagrams** (C4 model recommended) for high-level architecture.
+- Document **deployment architecture** (servers, databases, external services).
+
+---
+
+## 16. What to Do When Uncertain
+
+- If an architectural decision is ambiguous, **choose the simpler option**.
+- If unsure about a pattern, **don't use it**. Wait until the need is clear.
+- If unsure about microservices, **stay monolithic**.
+- If unsure about event-driven, **use synchronous request-response**.
+- If unsure about DDD, **use a simple service layer**.
+- If unsure about NoSQL, **use PostgreSQL**.
+- When in doubt, **ask for a code review** before committing to a complex solution.
