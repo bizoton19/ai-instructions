@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import settings
@@ -32,3 +33,10 @@ def init_db():
     from app import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    # Lightweight schema evolution for local SQLite dev.
+    with engine.begin() as conn:
+        if engine.dialect.name == "sqlite":
+            cols = conn.execute(text("PRAGMA table_info(workspaces)")).fetchall()
+            names = {c[1] for c in cols}
+            if "active_template_asset_id" not in names:
+                conn.execute(text("ALTER TABLE workspaces ADD COLUMN active_template_asset_id VARCHAR(36)"))

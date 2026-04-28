@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -15,7 +14,7 @@ from app.schemas import GenerateIn, GenerateOut
 router = APIRouter(prefix="/workspaces/{workspace_id}/sessions/{session_id}", tags=["generate"])
 
 
-def _must_workspace(db: Session, workspace_id: UUID, user_id: UUID) -> Workspace:
+def _must_workspace(db: Session, workspace_id: str, user_id: str) -> Workspace:
     ws = db.query(Workspace).filter(Workspace.id == workspace_id, Workspace.owner_user_id == user_id).first()
     if not ws:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
@@ -24,13 +23,13 @@ def _must_workspace(db: Session, workspace_id: UUID, user_id: UUID) -> Workspace
 
 @router.post("/generate", response_model=GenerateOut)
 def generate_sow(
-    workspace_id: UUID,
-    session_id: UUID,
+    workspace_id: str,
+    session_id: str,
     payload: GenerateIn,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    _must_workspace(db, workspace_id, user.id)
+    ws = _must_workspace(db, workspace_id, user.id)
     session = db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
@@ -46,7 +45,10 @@ def generate_sow(
     context_block = "\n\n".join(context_block_parts)[:120000]
 
     template_hints_parts: list[str] = []
-    for t in templates[:5]:
+    chosen_templates = templates
+    if ws.active_template_asset_id:
+        chosen_templates = [t for t in templates if t.id == ws.active_template_asset_id]
+    for t in chosen_templates[:1]:
         if t.extracted_outline_json:
             try:
                 obj = json.loads(t.extracted_outline_json)

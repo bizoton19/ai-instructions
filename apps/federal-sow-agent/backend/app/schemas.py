@@ -1,11 +1,10 @@
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
 class UserOut(BaseModel):
-    id: UUID
+    id: str
     email: str
 
     model_config = {"from_attributes": True}
@@ -21,9 +20,10 @@ class WorkspaceCreate(BaseModel):
 
 
 class WorkspaceOut(BaseModel):
-    id: UUID
+    id: str
     name: str
-    owner_user_id: UUID
+    owner_user_id: str
+    active_template_asset_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -35,8 +35,8 @@ class SessionCreate(BaseModel):
 
 
 class AgentSessionOut(BaseModel):
-    id: UUID
-    workspace_id: UUID
+    id: str
+    workspace_id: str
     title: str
     status: str
     created_at: datetime
@@ -46,8 +46,8 @@ class AgentSessionOut(BaseModel):
 
 
 class MessageOut(BaseModel):
-    id: UUID
-    session_id: UUID
+    id: str
+    session_id: str
     role: str
     content: str
     created_at: datetime
@@ -60,8 +60,8 @@ class MessageCreate(BaseModel):
 
 
 class TemplateAssetOut(BaseModel):
-    id: UUID
-    workspace_id: UUID
+    id: str
+    workspace_id: str
     filename: str
     mime_type: str
     size_bytes: int
@@ -71,8 +71,8 @@ class TemplateAssetOut(BaseModel):
 
 
 class ContextAssetOut(BaseModel):
-    id: UUID
-    workspace_id: UUID
+    id: str
+    workspace_id: str
     filename: str
     mime_type: str
     kind: str
@@ -108,6 +108,6 @@ class GenerateOut(BaseModel):
 
 
 class MergeIn(BaseModel):
-    template_asset_id: UUID
+    template_asset_id: str
     sections: SOWSectionsModel | None = None
     use_latest_generation: bool = True

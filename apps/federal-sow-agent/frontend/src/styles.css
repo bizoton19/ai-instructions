@@ -1,5 +1,3 @@
-@import url("https://unpkg.com/@uswds/uswds@3.13.0/dist/css/uswds.min.css");
-
 body {
   margin: 0;
 }
@@ -36,5 +34,68 @@ body {
   border: 1px solid;
   max-height: 20rem;
   overflow-y: auto;
+}
+
+.workspace-tree {
+  border: 1px solid;
+  padding: 0.75rem;
+}
+
+.tree-folder {
+  font-weight: 700;
+}
+
+.tree-list {
+  margin: 0.25rem 0 0 0.75rem;
+}
+
+.dropzone {
+  border: 2px dashed;
+  padding: 0.75rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.workspace-shell {
+  display: grid;
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.workspace-rail {
+  border: 1px solid;
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.workspace-rail-section + .workspace-rail-section {
+  margin-top: 1.25rem;
+}
+
+.workspace-canvas {
+  border: 1px solid;
+  padding: 1rem;
+  min-height: 70vh;
+}
+
+.workspace-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  border-bottom: 1px solid;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+@media (max-width: 64em) {
+  .workspace-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-rail {
+    position: static;
+  }
 }
 

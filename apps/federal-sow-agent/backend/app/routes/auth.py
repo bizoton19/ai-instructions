@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.auth_crypto import hash_password, verify_password
@@ -8,8 +8,7 @@ from app.config import settings
 from app.database import get_db
 from app.models import User
 from app.schemas import LoginIn, UserOut
-from app.deps import get_current_user
-from app.session_cookie import clear_session_cookie, set_session_cookie
+from app.session_cookie import clear_session_cookie, get_session_user_id, set_session_cookie
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -49,7 +48,13 @@ def logout(response: Response):
     return {"ok": True}
 
 
-@router.get("/me", response_model=UserOut)
-def me(user=Depends(get_current_user)):
-    return user
+@router.get("/me")
+def me(request: Request, db: Session = Depends(get_db)):
+    uid = get_session_user_id(request)
+    if not uid:
+        return {"authenticated": False}
+    user = db.query(User).filter(User.id == uid).first()
+    if not user:
+        return {"authenticated": False}
+    return {"authenticated": True, "user": UserOut.model_validate(user).model_dump()}
 

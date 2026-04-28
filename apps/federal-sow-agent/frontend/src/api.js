@@ -52,6 +52,10 @@ export const api = {
       body: fd,
     });
   },
+  deleteContext: (workspaceId, assetId) =>
+    request(`/workspaces/${workspaceId}/context/${assetId}`, {
+      method: "DELETE",
+    }),
   uploadTemplate: (workspaceId, file) => {
     const fd = new FormData();
     fd.append("file", file);
@@ -60,6 +64,14 @@ export const api = {
       body: fd,
     });
   },
+  deleteTemplate: (workspaceId, assetId) =>
+    request(`/workspaces/${workspaceId}/templates/${assetId}`, {
+      method: "DELETE",
+    }),
+  activateTemplate: (workspaceId, assetId) =>
+    request(`/workspaces/${workspaceId}/templates/${assetId}/activate`, {
+      method: "POST",
+    }),
   generate: (workspaceId, sessionId, additionalInstructions) =>
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/generate`, {
       method: "POST",
