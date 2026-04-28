@@ -6,7 +6,6 @@ from fastapi.responses import Response
 
 from app.config import settings
 from app.database import init_db
-from app.routes.auth import router as auth_router
 from app.routes.generate import router as generate_router
 from app.routes.merge import router as merge_router
 from app.routes.sessions import router as sessions_router
@@ -53,7 +52,6 @@ def ready():
     return {"status": "ready"}
 
 
-app.include_router(auth_router)
 app.include_router(workspaces_router)
 app.include_router(sessions_router)
 app.include_router(uploads_router)

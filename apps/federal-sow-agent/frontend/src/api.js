@@ -21,12 +21,6 @@ async function request(path, opts = {}) {
 }
 
 export const api = {
-  login: (email, password) =>
-    request("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
-  me: () => request("/auth/me"),
   listWorkspaces: () => request("/workspaces"),
   createWorkspace: (name) => request("/workspaces", { method: "POST", body: JSON.stringify({ name }) }),
   listSessions: (workspaceId) => request(`/workspaces/${workspaceId}/sessions`),

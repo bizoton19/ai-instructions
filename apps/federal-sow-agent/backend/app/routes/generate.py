@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from app.agent.sow_chain import run_sow_chain
 from app.database import get_db
-from app.deps import get_current_user
 from app.models import AgentSession, ContextAsset, Message, TemplateAsset, Workspace
 from app.schemas import GenerateIn, GenerateOut
 
@@ -15,7 +14,7 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/sessions/{session_id}", ta
 
 
 def _must_workspace(db: Session, workspace_id: str, user_id: str) -> Workspace:
-    ws = db.query(Workspace).filter(Workspace.id == workspace_id, Workspace.owner_user_id == user_id).first()
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
     if not ws:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
     return ws
@@ -27,9 +26,8 @@ def generate_sow(
     session_id: str,
     payload: GenerateIn,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
 ):
-    ws = _must_workspace(db, workspace_id, user.id)
+    ws = _must_workspace(db, workspace_id, "local-user")
     session = db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")

@@ -2,10 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [email, setEmail] = useState("dev@example.gov");
-  const [password, setPassword] = useState("devpassword-change-me");
-
   const [workspaces, setWorkspaces] = useState([]);
   const [workspaceId, setWorkspaceId] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -28,15 +24,7 @@ function App() {
   const activeTemplateId = activeWorkspace?.active_template_asset_id || null;
 
   useEffect(() => {
-    api.me()
-      .then((resp) => {
-        if (resp?.authenticated && resp.user) {
-          setUser(resp.user);
-          return loadWorkspaces();
-        }
-        return null;
-      })
-      .catch(() => {});
+    loadWorkspaces().catch(() => {});
   }, []);
 
   async function loadWorkspaces() {
@@ -75,21 +63,6 @@ function App() {
       .then(setMessages)
       .catch((e) => setNotice(e.message));
   }, [workspaceId, sessionId]);
-
-  async function onLogin(e) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const me = await api.login(email, password);
-      setUser(me);
-      await loadWorkspaces();
-      setNotice("Signed in.");
-    } catch (err) {
-      setNotice(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function onCreateWorkspace() {
     const name = prompt("Workspace name") || "Default Workspace";
@@ -277,20 +250,7 @@ function App() {
             </div>
           ) : null}
 
-          {!user ? (
-            <section className="usa-section bg-base-lightest radius-lg padding-3">
-              <h2 className="margin-top-0">Sign in</h2>
-              <p>Prototype sign-in for lab use only.</p>
-              <form className="usa-form maxw-mobile-lg" onSubmit={onLogin} aria-label="Prototype sign in form">
-                <label className="usa-label" htmlFor="email">Email</label>
-                <input className="usa-input" id="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <label className="usa-label" htmlFor="password">Password</label>
-                <input className="usa-input" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                <button className="usa-button margin-top-2" disabled={loading}>Sign in</button>
-              </form>
-            </section>
-          ) : (
-            <div className="workspace-shell">
+          <div className="workspace-shell">
               <aside className="workspace-rail" aria-label="Workspace and session navigation">
                 <div className="workspace-rail-section">
                   <h2>Workspaces</h2>
@@ -586,8 +546,7 @@ function App() {
                   </section>
                 )}
               </section>
-            </div>
-          )}
+          </div>
         </div>
       </main>
 

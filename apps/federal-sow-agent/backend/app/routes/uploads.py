@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
 from app.config import settings
 from app.ingestion.dispatch import ingest_context_file, normalize_mime
 from app.ingestion.docx_extract import extract_docx_text_and_outline
@@ -18,7 +17,7 @@ router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["uploads"])
 
 
 def _must_workspace(db: Session, workspace_id: str, user_id: str) -> Workspace:
-    ws = db.query(Workspace).filter(Workspace.id == workspace_id, Workspace.owner_user_id == user_id).first()
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
     if not ws:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
     return ws
@@ -29,9 +28,8 @@ async def upload_template(
     workspace_id: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
 ):
-    ws = _must_workspace(db, workspace_id, user.id)
+    ws = _must_workspace(db, workspace_id, "local-user")
     data = await file.read()
     if not data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty upload")
@@ -61,8 +59,8 @@ async def upload_template(
 
 
 @router.get("/templates", response_model=list[TemplateAssetOut])
-def list_templates(workspace_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    _must_workspace(db, workspace_id, user.id)
+def list_templates(workspace_id: str, db: Session = Depends(get_db)):
+    _must_workspace(db, workspace_id, "local-user")
     return db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id).order_by(TemplateAsset.created_at.desc()).all()
 
 
@@ -71,9 +69,8 @@ async def upload_context(
     workspace_id: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
 ):
-    _must_workspace(db, workspace_id, user.id)
+    _must_workspace(db, workspace_id, "local-user")
     data = await file.read()
     if not data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty upload")
@@ -99,14 +96,14 @@ async def upload_context(
 
 
 @router.get("/context", response_model=list[ContextAssetOut])
-def list_context(workspace_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    _must_workspace(db, workspace_id, user.id)
+def list_context(workspace_id: str, db: Session = Depends(get_db)):
+    _must_workspace(db, workspace_id, "local-user")
     return db.query(ContextAsset).filter(ContextAsset.workspace_id == workspace_id).order_by(ContextAsset.created_at.desc()).all()
 
 
 @router.delete("/context/{asset_id}")
-def delete_context_asset(workspace_id: str, asset_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    _must_workspace(db, workspace_id, user.id)
+def delete_context_asset(workspace_id: str, asset_id: str, db: Session = Depends(get_db)):
+    _must_workspace(db, workspace_id, "local-user")
     item = db.query(ContextAsset).filter(ContextAsset.workspace_id == workspace_id, ContextAsset.id == asset_id).first()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Context asset not found")
@@ -116,8 +113,8 @@ def delete_context_asset(workspace_id: str, asset_id: str, db: Session = Depends
 
 
 @router.delete("/templates/{asset_id}")
-def delete_template_asset(workspace_id: str, asset_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    ws = _must_workspace(db, workspace_id, user.id)
+def delete_template_asset(workspace_id: str, asset_id: str, db: Session = Depends(get_db)):
+    ws = _must_workspace(db, workspace_id, "local-user")
     item = db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id, TemplateAsset.id == asset_id).first()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template asset not found")
@@ -136,8 +133,8 @@ def delete_template_asset(workspace_id: str, asset_id: str, db: Session = Depend
 
 
 @router.post("/templates/{asset_id}/activate")
-def activate_template(workspace_id: str, asset_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    ws = _must_workspace(db, workspace_id, user.id)
+def activate_template(workspace_id: str, asset_id: str, db: Session = Depends(get_db)):
+    ws = _must_workspace(db, workspace_id, "local-user")
     item = db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id, TemplateAsset.id == asset_id).first()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template asset not found")

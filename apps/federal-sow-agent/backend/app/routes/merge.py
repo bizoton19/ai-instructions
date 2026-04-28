@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
 from app.merge.docx_merge import merge_docx, sow_model_to_flat
 from app.models import AgentSession, Message, TemplateAsset, Workspace
 from app.schemas import MergeIn, SOWSectionsModel
@@ -18,8 +16,8 @@ from app.storage import resolve_storage_key
 router = APIRouter(prefix="/workspaces/{workspace_id}/sessions/{session_id}", tags=["merge"])
 
 
-def _must_workspace(db: Session, workspace_id: UUID, user_id: UUID) -> Workspace:
-    ws = db.query(Workspace).filter(Workspace.id == workspace_id, Workspace.owner_user_id == user_id).first()
+def _must_workspace(db: Session, workspace_id: str, user_id: str) -> Workspace:
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
     if not ws:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
     return ws
@@ -27,13 +25,12 @@ def _must_workspace(db: Session, workspace_id: UUID, user_id: UUID) -> Workspace
 
 @router.post("/merge")
 def merge_sow_docx(
-    workspace_id: UUID,
-    session_id: UUID,
+    workspace_id: str,
+    session_id: str,
     payload: MergeIn,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
 ):
-    _must_workspace(db, workspace_id, user.id)
+    _must_workspace(db, workspace_id, "local-user")
     session = db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
