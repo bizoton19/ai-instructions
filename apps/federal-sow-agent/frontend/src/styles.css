@@ -1,0 +1,40 @@
+@import url("https://unpkg.com/@uswds/uswds@3.13.0/dist/css/uswds.min.css");
+
+body {
+  margin: 0;
+}
+
+.panel-list {
+  margin-bottom: 2rem;
+}
+
+.is-active {
+  font-weight: 700;
+}
+
+.chat-panel {
+  min-height: 20rem;
+  max-height: 35rem;
+  overflow-y: auto;
+  border: 1px solid;
+  padding: 1rem;
+}
+
+.chat-message {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-left: 4px solid;
+}
+
+.chat-message.user {
+  margin-left: 1rem;
+}
+
+.preview {
+  white-space: pre-wrap;
+  padding: 1rem;
+  border: 1px solid;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+

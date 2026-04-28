@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sow
+      POSTGRES_PASSWORD: sow_dev_change_me
+      POSTGRES_DB: sow_agent
+    ports:
+      - "5433:5432"
+    volumes:
+      - sow_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sow -d sow_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin_change_me
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - sow_minio_data:/data
+
+volumes:
+  sow_pg_data:
+  sow_minio_data:

@@ -1,0 +1,9 @@
+backend/.venv/
+backend/uploads/
+backend/data/
+frontend/node_modules/
+frontend/dist/
+*.pyc
+__pycache__/
+.DS_Store
+

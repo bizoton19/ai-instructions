@@ -1,0 +1,28 @@
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    database_url: str = "sqlite:///./data/sow_agent.db"
+    secret_key: str = "dev-secret-change-in-production-use-openssl-rand-hex-32"
+    upload_dir: Path = Path(__file__).resolve().parent.parent / "uploads"
+    data_dir: Path = Path(__file__).resolve().parent.parent / "data"
+    max_upload_bytes: int = 25 * 1024 * 1024  # 25 MB
+
+    openai_api_key: str | None = None
+    azure_openai_endpoint: str | None = None
+    azure_openai_api_key: str | None = None
+    azure_openai_deployment: str | None = None
+    llm_model: str = "gpt-4o-mini"
+
+    session_cookie_name: str = "sow_session"
+    session_max_age_seconds: int = 60 * 60 * 12  # 12 hours
+
+    dev_login_email: str = "dev@example.gov"
+    dev_login_password: str = "devpassword-change-me"
+
+
+settings = Settings()
