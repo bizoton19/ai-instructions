@@ -9,9 +9,8 @@ import {
   FileUp,
   FolderOpen,
   LayoutTemplate,
-  MessageSquareTerminal,
+  Terminal,
   Plus,
-  TerminalSquare,
   Trash2,
   Workflow,
   Zap,
@@ -367,7 +366,7 @@ function App() {
                       <motion.div key="step0" variants={fadeUp} initial="hidden" animate="visible" exit="exit" className="card">
                         <div className="card-header">
                           <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <TerminalSquare color="var(--text-accent)" /> System Initialization
+                            <Terminal color="var(--text-accent)" /> System Initialization
                           </h3>
                         </div>
                         <div className="card-body">
@@ -498,7 +497,7 @@ function App() {
                         <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                           <div className="card-header" style={{ padding: "16px 24px" }}>
                             <h3 className="card-title" style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 12 }}>
-                              <MessageSquareTerminal size={16} color="var(--text-accent)" /> Session Terminal
+                              <Terminal size={16} color="var(--text-accent)" /> Session Terminal
                             </h3>
                           </div>
                           
