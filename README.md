@@ -49,12 +49,14 @@ template-instructions/
 ## Frontend Standards
 
 ### USWDS 3.x Compliance
+
 - Exclusive use of U.S. Web Design System
 - Design tokens for spacing, color, typography
 - Component markup matches USWDS exactly
 - USWDS icon sprite (245+ icons, no Font Awesome)
 
 ### Section 508 / WCAG 2.1 AA
+
 - Semantic HTML5 structure
 - Proper heading hierarchy
 - Form labels and ARIA attributes
@@ -63,6 +65,7 @@ template-instructions/
 - Alt text for all images
 
 ### Design Excellence
+
 - Visual hierarchy and whitespace
 - Icon-led components (USWDS icons only)
 - Modern layout patterns (cards, grids)
@@ -70,6 +73,7 @@ template-instructions/
 - No emojis, no AI slop, no generic designs
 
 ### GSA Content Standards
+
 - Timeliness (3-year review cycle)
 - Plain language (8th grade reading level target)
 - No duplication (prohibited by OMB M-23-22)
@@ -79,6 +83,7 @@ template-instructions/
 ## Backend Standards
 
 ### Security (OWASP Top 10)
+
 - **A01**: Server-side access control, RBAC, ownership validation
 - **A02**: TLS 1.2+, bcrypt/Argon2, AES-256, FIPS 140-2
 - **A03**: Parameterized queries, input validation, no eval()
@@ -91,11 +96,13 @@ template-instructions/
 - **A10**: URL validation, allowlists, block internal IPs
 
 ### NIST Compliance
+
 - **SP 800-53**: Access control, audit, authentication controls
 - **SP 800-63B**: AAL2 for privileged accounts, password policies
 - **SP 800-190**: Container security (minimal images, non-root)
 
 ### DevSecOps Pipeline
+
 - SAST (Bandit, ESLint Security, SonarQube)
 - Dependency scanning (pip-audit, npm audit, Snyk)
 - Container scanning (Trivy, Clair)
@@ -105,16 +112,19 @@ template-instructions/
 ### Architecture Principles
 
 **KISS (Keep It Simple):**
+
 - Simple solutions over complexity
 - Use library functions, don't reinvent
 - Avoid premature optimization
 
 **DRY (Don't Repeat Yourself):**
+
 - Extract after 3+ instances of duplication
 - Wait for clear patterns before abstracting
 - Duplication is cheaper than wrong abstraction
 
 **Monolith-First:**
+
 - Default to monolithic architecture
 - Only consider microservices when:
   - 50+ engineers who cannot coordinate
@@ -123,11 +133,13 @@ template-instructions/
   - Mature DevOps and observability
 
 **Design Patterns - Use Sparingly:**
+
 - Only when solving real problems
 - Must make code easier to understand
 - Pass the 4-question smell test
 
 **Database Strategy:**
+
 - **SQL Server / Azure SQL** default (FedRAMP authorized)
 - PostgreSQL alternative for on-premises
 - Normalization by app type:
@@ -144,16 +156,19 @@ template-instructions/
 For workflow-style applications (approvals, business processes), use open-source frameworks:
 
 **Python:**
+
 - Temporal.io (durable execution, long-running)
 - Celery (background jobs)
 - Airflow/Prefect (data pipelines)
 
 **Node.js:**
+
 - Temporal.io (same as Python)
 - Bull/BullMQ (Redis-based queues)
 - Camunda (BPMN 2.0 engine)
 
 **Java:**
+
 - Camunda (industry standard, visual designer)
 - Activiti (open-source BPMN)
 - jBPM (Red Hat enterprise)
@@ -163,6 +178,7 @@ For workflow-style applications (approvals, business processes), use open-source
 ### Public-Facing Applications
 
 **Login.gov Integration (Mandatory):**
+
 - OIDC with `private_key_jwt` authentication
 - NIST 800-63-3 service levels (AAL2, IAL2)
 - Identity verification workflows
@@ -172,6 +188,7 @@ For workflow-style applications (approvals, business processes), use open-source
 ### Internal Applications
 
 **Azure AD / Entra ID Integration (Mandatory):**
+
 - Azure Government cloud support (GCC, GCC High, DoD)
 - OIDC and SAML 2.0 protocols
 - PIV/CAC smartcard authentication (HSPD-12)
@@ -196,6 +213,7 @@ For workflow-style applications (approvals, business processes), use open-source
 ### For AI Agents
 
 Reference the SKILL.md files when working with AI agents:
+
 - "Follow the federal-ui-design skill"
 - "Audit security using the backend-security skill"
 - "Design architecture using the backend-architecture skill"
@@ -213,8 +231,10 @@ Improvements welcome. Ensure all changes maintain compliance with federal standa
 Questions about these templates: Create an issue in this repository.
 
 Questions about specific federal requirements:
-- USWDS: https://designsystem.digital.gov/
-- Section 508: https://www.section508.gov/
-- OWASP: https://owasp.org/
-- NIST: https://csrc.nist.gov/
-- GSA Web Style Guide: https://www.gsa.gov/reference/gsa-web-style-guide
+
+- USWDS: [https://designsystem.digital.gov/](https://designsystem.digital.gov/)
+- Section 508: [https://www.section508.gov/](https://www.section508.gov/)
+- OWASP: [https://owasp.org/](https://owasp.org/)
+- NIST: [https://csrc.nist.gov/](https://csrc.nist.gov/)
+- GSA Web Style Guide: [https://www.gsa.gov/reference/gsa-web-style-guide](https://www.gsa.gov/reference/gsa-web-style-guide)
+
