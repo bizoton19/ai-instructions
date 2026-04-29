@@ -43,6 +43,7 @@ class AgentSession(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workspace_id: Mapped[str] = mapped_column(String(36), ForeignKey("workspaces.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="New session")
+    agent_type: Mapped[str] = mapped_column(String(64), nullable=False, default="sow_writer")
     status: Mapped[str] = mapped_column(String(64), default="active")  # active | archived
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

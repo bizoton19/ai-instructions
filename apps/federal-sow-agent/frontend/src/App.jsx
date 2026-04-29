@@ -198,9 +198,10 @@ function App() {
     setWizardStep((prev) => Math.max(prev - 1, 0));
   }
 
+  // Load icons from the local sprite downloaded to public/assets/img/sprite.svg
   const Icon = ({ name, size = 3, className = "" }) => (
     <svg className={`usa-icon usa-icon--size-${size} ${className}`} aria-hidden="true" focusable="false" role="img">
-      <use xlinkHref={`https://unpkg.com/@uswds/uswds@3.13.0/dist/img/sprite.svg#${name}`}></use>
+      <use xlinkHref={`/assets/img/sprite.svg#${name}`}></use>
     </svg>
   );
 
@@ -208,511 +209,464 @@ function App() {
     <div className="app-container">
       <a className="usa-skipnav" href="#main-content">Skip to main content</a>
 
-      {/* Official Government Banner */}
-      <section className="usa-banner" aria-label="Official website of the United States government">
-        <header className="usa-banner__header">
+      {/* Official Government Banner - Compact */}
+      <section className="usa-banner usa-banner--slim" aria-label="Official website of the United States government">
+        <header className="usa-banner__header padding-y-05">
           <div className="usa-banner__inner">
             <div className="grid-col-auto">
-              <img aria-hidden="true" className="usa-banner__header-flag" src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/us_flag_small.png" alt="" />
+              <img aria-hidden="true" className="usa-banner__header-flag width-2" src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/us_flag_small.png" alt="" />
             </div>
-            <div className="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
-              <p className="usa-banner__header-text">An official website of the United States government</p>
+            <div className="grid-col-fill tablet:grid-col-auto margin-left-1" aria-hidden="true">
+              <p className="usa-banner__header-text text-sm">An official website of the United States government</p>
             </div>
           </div>
         </header>
       </section>
 
-      {/* Federal Header */}
+      {/* Federal Header - Compact */}
       <header className="federal-header" role="banner">
-        <div className="display-flex flex-justify flex-align-center padding-y-2 padding-x-4">
+        <div className="display-flex flex-justify flex-align-center padding-y-1 padding-x-4">
           <div className="display-flex flex-align-center">
-            <h1 className="margin-0 font-heading-lg text-white font-sans text-uppercase text-bold letter-spacing-2">
+            <h1 className="margin-0 font-heading-md text-white font-sans text-uppercase text-bold letter-spacing-1">
               Federal SOW Agent
             </h1>
           </div>
-          <div className="display-flex flex-align-center gap-2">
-            <Icon name="account_circle" size="4" />
-            <span className="font-sans text-bold text-uppercase letter-spacing-1">Contracting Officer</span>
+          <div className="display-flex flex-align-center gap-1">
+            <Icon name="account_circle" size="3" />
+            <span className="font-sans text-bold text-uppercase letter-spacing-1 text-sm">Contracting Officer</span>
           </div>
         </div>
       </header>
 
-      {/* Main Layout */}
-      <main id="main-content">
-        <div className="grid-row display-flex">
+      {/* Main Layout - Height fills remaining viewport */}
+      <main id="main-content" className="main-content-layout">
+        
+        {/* Left Rail (Workspaces) */}
+        <aside className="rail-container" aria-label="Workspace and session navigation">
+          <div className="rail-header">
+            <h2 className="margin-0 font-heading-sm text-ink text-editorial">Workspaces</h2>
+            <button 
+              className="usa-button usa-button--unstyled text-ink display-flex flex-align-center" 
+              onClick={onCreateWorkspace} 
+              aria-label="New Workspace"
+            >
+              <Icon name="add" size="3" />
+            </button>
+          </div>
           
-          {/* Left Rail (Workspaces) */}
-          <aside className="grid-col-12 tablet:grid-col-4 desktop:grid-col-3 rail-container" aria-label="Workspace and session navigation">
-            <div className="rail-header">
-              <h2 className="margin-0 font-heading-md text-ink text-editorial">Workspaces</h2>
-              <button 
-                className="usa-button usa-button--unstyled text-ink display-flex flex-align-center" 
-                onClick={onCreateWorkspace} 
-                aria-label="New Workspace"
-              >
-                <Icon name="add" size="4" />
-              </button>
-            </div>
-            
-            <nav aria-label="Workspaces">
-              {workspaces.map((ws) => (
-                <div key={ws.id}>
-                  <button 
-                    className={`workspace-button ${workspaceId === ws.id ? "is-active" : ""}`}
-                    onClick={() => setWorkspaceId(ws.id)}
-                  >
-                    <span>{ws.name}</span>
-                    {workspaceId === ws.id && (
-                      <span 
-                        className="display-flex flex-align-center" 
-                        onClick={(e) => { e.stopPropagation(); onCreateSession(); }}
-                        title="New Session"
-                        aria-label="New Session"
-                      >
-                        <Icon name="add" size="3" className="text-white" />
-                      </span>
-                    )}
-                  </button>
-                  
+          <nav aria-label="Workspaces" className="rail-nav">
+            {workspaces.map((ws) => (
+              <div key={ws.id}>
+                <button 
+                  className={`workspace-button ${workspaceId === ws.id ? "is-active" : ""}`}
+                  onClick={() => setWorkspaceId(ws.id)}
+                >
+                  <span className="text-sm">{ws.name}</span>
                   {workspaceId === ws.id && (
-                    <div className="bg-paper padding-bottom-2">
-                      {sessions.length === 0 ? (
-                        <p className="margin-0 padding-2 text-italic font-sans text-base-dark">No sessions yet.</p>
-                      ) : (
-                        sessions.map((s) => (
-                          <button 
-                            key={s.id}
-                            className={`session-button ${sessionId === s.id ? "is-active" : ""}`}
-                            onClick={() => setSessionId(s.id)}
-                          >
-                            {s.title}
-                          </button>
-                        ))
-                      )}
-                    </div>
+                    <span 
+                      className="display-flex flex-align-center" 
+                      onClick={(e) => { e.stopPropagation(); onCreateSession(); }}
+                      title="New Session"
+                      aria-label="New Session"
+                    >
+                      <Icon name="add" size="3" className="text-white" />
+                    </span>
                   )}
-                </div>
-              ))}
-            </nav>
-          </aside>
-
-          {/* Main Canvas */}
-          <section className="grid-col-12 tablet:grid-col-8 desktop:grid-col-9 canvas-container" aria-label="Workspace canvas">
-            {notice && (
-              <div className="usa-alert usa-alert--info border-3 border-ink radius-0 shadow-none margin-bottom-4">
-                <div className="usa-alert__body font-sans text-bold text-ink">{notice}</div>
-              </div>
-            )}
-
-            {/* Toolbar */}
-            <div className="display-flex flex-justify flex-align-start margin-bottom-4 border-bottom-3 border-ink padding-bottom-3">
-              <div>
-                <h2 className="margin-0 text-editorial font-heading-xl text-ink">
-                  {activeWorkspace?.name || "Select a Workspace"}
-                </h2>
-                {activeWorkspace && (
-                  <div className="margin-top-2">
-                    <span className="stat-tag">Context: {contextDocs.length}</span>
-                    <span className="stat-tag accent">Templates: {templates.length}</span>
-                    <span className="stat-tag primary">Sessions: {sessions.length}</span>
+                </button>
+                
+                {workspaceId === ws.id && (
+                  <div className="bg-paper padding-bottom-1">
+                    {sessions.length === 0 ? (
+                      <p className="margin-0 padding-1 text-italic font-sans text-xs text-base-dark">No sessions yet.</p>
+                    ) : (
+                      sessions.map((s) => (
+                        <button 
+                          key={s.id}
+                          className={`session-button text-xs ${sessionId === s.id ? "is-active" : ""}`}
+                          onClick={() => setSessionId(s.id)}
+                        >
+                          {s.title}
+                        </button>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main Canvas */}
+        <section className="canvas-container flex-fill" aria-label="Workspace canvas">
+          {notice && (
+            <div className="usa-alert usa-alert--info usa-alert--slim border-3 border-ink radius-0 shadow-none margin-bottom-2">
+              <div className="usa-alert__body font-sans text-bold text-ink text-sm">{notice}</div>
+            </div>
+          )}
+
+          {/* Toolbar */}
+          <div className="display-flex flex-justify flex-align-start margin-bottom-2 border-bottom-3 border-ink padding-bottom-2">
+            <div>
+              <h2 className="margin-0 text-editorial font-heading-lg text-ink">
+                {activeWorkspace?.name || "Select a Workspace"}
+              </h2>
               {activeWorkspace && (
-                <div className="display-flex gap-2">
-                  <button
-                    className={`usa-button ${viewMode === "wizard" ? "" : "usa-button--outline"}`}
-                    onClick={() => setViewMode("wizard")}
-                  >
-                    Drafting Wizard
-                  </button>
-                  <button
-                    className={`usa-button ${viewMode === "manager" ? "" : "usa-button--outline"}`}
-                    onClick={() => setViewMode("manager")}
-                  >
-                    File Manager
-                  </button>
+                <div className="margin-top-1">
+                  <span className="stat-tag">Context: {contextDocs.length}</span>
+                  <span className="stat-tag accent">Templates: {templates.length}</span>
+                  <span className="stat-tag primary">Sessions: {sessions.length}</span>
                 </div>
               )}
             </div>
-
-            {viewMode === "wizard" && activeWorkspace ? (
-              <div className="wizard-flow">
-                {/* Stepper */}
-                <div className="usa-step-indicator margin-bottom-5" aria-label="progress">
-                  <ol className="usa-step-indicator__segments">
-                    <li className={`usa-step-indicator__segment ${wizardStep === 0 ? "usa-step-indicator__segment--current" : wizardStep > 0 ? "usa-step-indicator__segment--complete" : ""}`}>
-                      <span className="usa-step-indicator__segment-label">Start <span className="usa-sr-only">{wizardStep === 0 ? "not completed" : "completed"}</span></span>
-                    </li>
-                    <li className={`usa-step-indicator__segment ${wizardStep === 1 ? "usa-step-indicator__segment--current" : wizardStep > 1 ? "usa-step-indicator__segment--complete" : ""}`}>
-                      <span className="usa-step-indicator__segment-label">Context <span className="usa-sr-only">{wizardStep === 1 ? "not completed" : wizardStep > 1 ? "completed" : ""}</span></span>
-                    </li>
-                    <li className={`usa-step-indicator__segment ${wizardStep === 2 ? "usa-step-indicator__segment--current" : wizardStep > 2 ? "usa-step-indicator__segment--complete" : ""}`}>
-                      <span className="usa-step-indicator__segment-label">Template <span className="usa-sr-only">{wizardStep === 2 ? "not completed" : wizardStep > 2 ? "completed" : ""}</span></span>
-                    </li>
-                    <li className={`usa-step-indicator__segment ${wizardStep === 3 ? "usa-step-indicator__segment--current" : ""}`}>
-                      <span className="usa-step-indicator__segment-label">Draft & Export <span className="usa-sr-only">{wizardStep === 3 ? "not completed" : ""}</span></span>
-                    </li>
-                  </ol>
-                </div>
-
-                {wizardStep === 0 && (
-                  <div className="editorial-card">
-                    <div className="editorial-card__header">
-                      <h2>Welcome to the SOW Assembly Engine</h2>
-                    </div>
-                    <div className="editorial-card__body font-sans text-lg">
-                      <p className="margin-top-0 text-bold text-ink">This engine compiles federal requirements into rigorous Statements of Work.</p>
-                      <ul className="usa-list line-height-sans-5 text-ink margin-top-3">
-                        <li><strong>1. Provide Material:</strong> Supply raw documents, schedules, or spreadsheets.</li>
-                        <li><strong>2. Define Structure:</strong> Upload a boilerplate agency template.</li>
-                        <li><strong>3. Execute:</strong> Instruct the AI agent to draft and refine the text.</li>
-                        <li><strong>4. Compile:</strong> Download the perfectly formatted document.</li>
-                      </ul>
-                    </div>
-                    <div className="editorial-card__footer">
-                      <button className="usa-button" onClick={nextStep}>Commence Process <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
-                    </div>
-                  </div>
-                )}
-
-                {wizardStep === 1 && (
-                  <div className="editorial-card">
-                    <div className="editorial-card__header">
-                      <h2>Phase 1: Knowledge Ingestion</h2>
-                    </div>
-                    <div className="editorial-card__body">
-                      <p className="font-sans margin-top-0 text-ink text-bold">Provide raw materials (PDFs, Docs, spreadsheets) the agent will study.</p>
-                      
-                      <div
-                        className="dropzone-editorial margin-y-4"
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          uploadManyContext(Array.from(e.dataTransfer.files || []));
-                        }}
-                      >
-                        <Icon name="file_upload" size="7" className="margin-bottom-2 text-primary" />
-                        <div className="text-bold">Drag and drop raw context documents</div>
-                        <div className="font-sans text-base margin-top-1 text-base-dark">or click to browse local files</div>
-                        <input className="usa-file-input display-none" id="context-file" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.md,.txt,image/*" onChange={onUploadContext} />
-                        <label htmlFor="context-file" className="usa-button margin-top-3">Select Files</label>
-                      </div>
-                      
-                      {contextDocs.length > 0 && (
-                        <div className="border-top-3 border-ink padding-top-3">
-                          <h3 className="font-heading-sm text-editorial margin-top-0">Ingested Files:</h3>
-                          <ul className="usa-list usa-list--unstyled">
-                            {contextDocs.map((d) => (
-                              <li key={d.id} className="file-list-item">
-                                <Icon name="description" size="4" className="margin-right-2 text-primary" />
-                                <span className="font-sans text-bold text-ink flex-fill">{d.filename}</span>
-                                <span className="stat-tag bg-base-light text-ink">{d.kind}</span>
-                                <button className="usa-button usa-button--unstyled text-secondary hover:text-secondary-dark margin-left-2" onClick={() => onDeleteContext(d.id)} aria-label="Remove file">
-                                  <Icon name="delete" size="3" />
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                    <div className="editorial-card__footer">
-                      <button className="usa-button usa-button--outline" onClick={prevStep}>Previous</button>
-                      <button className="usa-button" onClick={nextStep}>Advance <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
-                    </div>
-                  </div>
-                )}
-
-                {wizardStep === 2 && (
-                  <div className="editorial-card">
-                    <div className="editorial-card__header">
-                      <h2>Phase 2: Template Designation</h2>
-                    </div>
-                    <div className="editorial-card__body">
-                      <p className="font-sans margin-top-0 text-ink text-bold">Upload boilerplate templates (.docx) and designate the master target format.</p>
-                      
-                      <div
-                        className="dropzone-editorial margin-y-4"
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          uploadManyTemplates(Array.from(e.dataTransfer.files || []));
-                        }}
-                      >
-                        <Icon name="file_upload" size="7" className="margin-bottom-2 text-accent" />
-                        <div className="text-bold">Drag and drop agency template files</div>
-                        <div className="font-sans text-base margin-top-1 text-base-dark">or click to browse local files</div>
-                        <input className="usa-file-input display-none" id="template-file" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
-                        <label htmlFor="template-file" className="usa-button usa-button--accent-warm margin-top-3 text-ink">Select Templates</label>
-                      </div>
-                      
-                      {templates.length > 0 && (
-                        <div className="border-top-3 border-ink padding-top-3">
-                          <h3 className="font-heading-sm text-editorial margin-top-0">Available Templates:</h3>
-                          <ul className="usa-list usa-list--unstyled">
-                            {templates.map((t) => (
-                              <li key={t.id} className="file-list-item">
-                                <div className="usa-radio">
-                                  <input
-                                    className="usa-radio__input"
-                                    type="radio"
-                                    name="active-template"
-                                    id={`tpl-${t.id}`}
-                                    checked={activeTemplateId === t.id}
-                                    onChange={() => onActivateTemplate(t.id)}
-                                  />
-                                  <label className="usa-radio__label font-sans text-bold text-ink margin-top-0" htmlFor={`tpl-${t.id}`}>
-                                    {t.filename}
-                                  </label>
-                                </div>
-                                <button className="usa-button usa-button--unstyled text-secondary margin-left-auto" onClick={() => onDeleteTemplate(t.id)}>
-                                  <Icon name="delete" size="3" />
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                    <div className="editorial-card__footer">
-                      <button className="usa-button usa-button--outline" onClick={prevStep}>Previous</button>
-                      <button className="usa-button" onClick={nextStep}>Advance <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
-                    </div>
-                  </div>
-                )}
-
-                {wizardStep === 3 && (
-                  <>
-                    <div className="editorial-card">
-                      <div className="editorial-card__header">
-                        <h2>Phase 3: Generation Protocol</h2>
-                      </div>
-                      <div className="editorial-card__body padding-x-0">
-                        {/* Chat Interface */}
-                        <div className="editorial-chat margin-x-2">
-                          {messages.length === 0 ? (
-                            <div className="padding-4 text-center">
-                              <Icon name="info" size="5" className="text-base-dark margin-bottom-2" />
-                              <p className="font-sans text-bold text-ink">No communication logged. Input directives below to commence.</p>
-                            </div>
-                          ) : null}
-                          {messages.map((m) => (
-                            <div key={m.id} className={`chat-bubble ${m.role}`}>
-                              <div className="chat-bubble__name">{m.role === "assistant" ? "System Agent" : "Contracting Officer"}</div>
-                              <div className="chat-bubble__text">{m.content}</div>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <form className="padding-x-3" onSubmit={onSendMessage}>
-                          <label className="usa-label text-bold font-sans text-uppercase letter-spacing-1" htmlFor="chat-message">Add Session Directive</label>
-                          <div className="display-flex flex-align-end gap-2 margin-top-1">
-                            <textarea
-                              className="usa-textarea flex-fill"
-                              id="chat-message"
-                              value={messageText}
-                              onChange={(e) => setMessageText(e.target.value)}
-                              rows="2"
-                              placeholder="E.g., Focus specifically on the hardware requirements..."
-                            />
-                            <button className="usa-button margin-bottom-0 padding-y-2" disabled={loading || !sessionId}>Transmit</button>
-                          </div>
-                        </form>
-                        
-                        <div className="border-top-3 border-ink margin-top-4 padding-top-3 padding-x-3">
-                          <label className="usa-label text-bold font-sans text-uppercase letter-spacing-1" htmlFor="extra-instructions">
-                            Final Compile Instructions
-                          </label>
-                          <textarea
-                            className="usa-textarea width-full margin-top-1"
-                            id="extra-instructions"
-                            value={instructions}
-                            onChange={(e) => setInstructions(e.target.value)}
-                            rows="2"
-                            placeholder="Final adjustments before writing..."
-                          />
-                          
-                          <div className="margin-top-4 display-flex gap-3">
-                            <button className="usa-button padding-y-2 flex-1" onClick={onGenerate} disabled={loading || !sessionId}>
-                              Generate SOW Draft
-                            </button>
-                            <button
-                              className="usa-button padding-y-2 flex-1"
-                              style={{ backgroundColor: "var(--federal-accent)", color: "var(--federal-ink)" }}
-                              onClick={onMergeDownload}
-                              disabled={loading || !sessionId || !activeTemplateId}
-                            >
-                              Compile & Download Word .DOCX
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="editorial-card__footer">
-                        <button className="usa-button usa-button--outline" onClick={prevStep}>Previous</button>
-                      </div>
-                    </div>
-                    
-                    {generation?.sections?.full_markdown && (
-                      <div className="margin-top-5">
-                        <h2 className="text-editorial font-heading-xl text-ink margin-bottom-3">Generated Output</h2>
-                        <div className="preview-box">
-                          {generation.sections.full_markdown}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
+            {activeWorkspace && (
+              <div className="display-flex gap-1">
+                <button
+                  className={`usa-button padding-y-1 ${viewMode === "wizard" ? "" : "usa-button--outline"}`}
+                  onClick={() => setViewMode("wizard")}
+                >
+                  Wizard
+                </button>
+                <button
+                  className={`usa-button padding-y-1 ${viewMode === "manager" ? "" : "usa-button--outline"}`}
+                  onClick={() => setViewMode("manager")}
+                >
+                  Files
+                </button>
               </div>
-            ) : viewMode === "manager" && activeWorkspace ? (
-              <div className="manager-view">
+            )}
+          </div>
+
+          {viewMode === "wizard" && activeWorkspace ? (
+            <div className="wizard-flow">
+              {/* Compact Stepper */}
+              <div className="usa-step-indicator usa-step-indicator--counters-sm margin-bottom-3" aria-label="progress">
+                <ol className="usa-step-indicator__segments">
+                  <li className={`usa-step-indicator__segment ${wizardStep === 0 ? "usa-step-indicator__segment--current" : wizardStep > 0 ? "usa-step-indicator__segment--complete" : ""}`}>
+                    <span className="usa-step-indicator__segment-label">Start</span>
+                  </li>
+                  <li className={`usa-step-indicator__segment ${wizardStep === 1 ? "usa-step-indicator__segment--current" : wizardStep > 1 ? "usa-step-indicator__segment--complete" : ""}`}>
+                    <span className="usa-step-indicator__segment-label">Context</span>
+                  </li>
+                  <li className={`usa-step-indicator__segment ${wizardStep === 2 ? "usa-step-indicator__segment--current" : wizardStep > 2 ? "usa-step-indicator__segment--complete" : ""}`}>
+                    <span className="usa-step-indicator__segment-label">Template</span>
+                  </li>
+                  <li className={`usa-step-indicator__segment ${wizardStep === 3 ? "usa-step-indicator__segment--current" : ""}`}>
+                    <span className="usa-step-indicator__segment-label">Draft & Export</span>
+                  </li>
+                </ol>
+              </div>
+
+              {wizardStep === 0 && (
                 <div className="editorial-card">
-                  <div className="editorial-card__header">
-                    <h2>Context Knowledge Base</h2>
+                  <div className="editorial-card__header padding-y-1">
+                    <h2 className="font-heading-md">Assembly Engine</h2>
                   </div>
-                  <div className="editorial-card__body">
+                  <div className="editorial-card__body padding-y-2 text-sm">
+                    <p className="margin-top-0 text-bold text-ink">This engine compiles federal requirements into rigorous Statements of Work.</p>
+                    <ul className="usa-list text-ink margin-top-2">
+                      <li><strong>1. Material:</strong> Supply raw documents.</li>
+                      <li><strong>2. Structure:</strong> Upload a boilerplate agency template.</li>
+                      <li><strong>3. Execute:</strong> Instruct the AI agent to draft and refine the text.</li>
+                      <li><strong>4. Compile:</strong> Download the perfectly formatted document.</li>
+                    </ul>
+                  </div>
+                  <div className="editorial-card__footer padding-y-1">
+                    <button className="usa-button padding-y-1" onClick={nextStep}>Commence <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 1 && (
+                <div className="editorial-card">
+                  <div className="editorial-card__header padding-y-1">
+                    <h2 className="font-heading-md">Phase 1: Knowledge</h2>
+                  </div>
+                  <div className="editorial-card__body padding-y-2 text-sm">
+                    
                     <div
-                      className="dropzone-editorial margin-bottom-4 padding-y-3"
+                      className="dropzone-editorial padding-y-2 margin-bottom-2"
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
                         e.preventDefault();
                         uploadManyContext(Array.from(e.dataTransfer.files || []));
                       }}
                     >
-                      <Icon name="file_upload" size="5" className="margin-bottom-1 text-primary" />
-                      <div className="text-bold">Add context file</div>
-                      <input className="usa-file-input display-none" id="context-file-mgr" type="file" multiple onChange={onUploadContext} />
-                      <label htmlFor="context-file-mgr" className="usa-button margin-top-2">Browse</label>
+                      <div className="display-flex flex-align-center flex-justify-center gap-1">
+                        <Icon name="file_upload" size="4" className="text-primary" />
+                        <div className="text-bold text-base">Drag & drop raw documents</div>
+                      </div>
+                      <input className="usa-file-input display-none" id="context-file" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.md,.txt,image/*" onChange={onUploadContext} />
+                      <label htmlFor="context-file" className="usa-button usa-button--outline margin-top-1 padding-y-1">Browse Files</label>
                     </div>
-                    {contextDocs.length > 0 ? (
-                      <ul className="usa-list usa-list--unstyled">
-                        {contextDocs.map((d) => (
-                          <li key={d.id} className="file-list-item">
-                            <Icon name="description" size="4" className="margin-right-2 text-primary" />
-                            <span className="font-sans text-bold flex-fill">{d.filename}</span>
-                            <span className="stat-tag bg-base-light text-ink">{d.kind}</span>
-                            <button className="usa-button usa-button--unstyled text-secondary margin-left-2" onClick={() => onDeleteContext(d.id)}>
-                              <Icon name="delete" size="3" />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : <p className="font-sans text-italic">No knowledge base documents.</p>}
+                    
+                    {contextDocs.length > 0 && (
+                      <div className="border-top-3 border-ink padding-top-1">
+                        <ul className="usa-list usa-list--unstyled file-list-compact">
+                          {contextDocs.map((d) => (
+                            <li key={d.id} className="file-list-item padding-y-05">
+                              <Icon name="description" size="3" className="margin-right-1 text-primary" />
+                              <span className="font-sans text-bold text-ink flex-fill text-xs">{d.filename}</span>
+                              <span className="stat-tag bg-base-light text-ink text-xs">{d.kind}</span>
+                              <button className="usa-button usa-button--unstyled text-secondary hover:text-secondary-dark margin-left-1" onClick={() => onDeleteContext(d.id)} aria-label="Remove file">
+                                <Icon name="delete" size="3" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <div className="editorial-card__footer padding-y-1">
+                    <button className="usa-button usa-button--outline padding-y-1" onClick={prevStep}>Prev</button>
+                    <button className="usa-button padding-y-1" onClick={nextStep}>Next <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
                   </div>
                 </div>
+              )}
 
+              {wizardStep === 2 && (
                 <div className="editorial-card">
-                  <div className="editorial-card__header">
-                    <h2>Template Repository</h2>
+                  <div className="editorial-card__header padding-y-1">
+                    <h2 className="font-heading-md">Phase 2: Templates</h2>
                   </div>
-                  <div className="editorial-card__body">
+                  <div className="editorial-card__body padding-y-2 text-sm">
+                    
                     <div
-                      className="dropzone-editorial margin-bottom-4 padding-y-3"
+                      className="dropzone-editorial padding-y-2 margin-bottom-2"
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
                         e.preventDefault();
                         uploadManyTemplates(Array.from(e.dataTransfer.files || []));
                       }}
                     >
-                      <Icon name="file_upload" size="5" className="margin-bottom-1 text-accent" />
-                      <div className="text-bold">Add template file (.docx)</div>
-                      <input className="usa-file-input display-none" id="template-file-mgr" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
-                      <label htmlFor="template-file-mgr" className="usa-button usa-button--accent-warm margin-top-2 text-ink">Browse</label>
+                      <div className="display-flex flex-align-center flex-justify-center gap-1">
+                        <Icon name="file_upload" size="4" className="text-accent" />
+                        <div className="text-bold text-base">Drag & drop .docx templates</div>
+                      </div>
+                      <input className="usa-file-input display-none" id="template-file" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
+                      <label htmlFor="template-file" className="usa-button usa-button--accent-warm margin-top-1 padding-y-1 text-ink">Browse Templates</label>
                     </div>
-                    {templates.length > 0 ? (
-                      <ul className="usa-list usa-list--unstyled">
-                        {templates.map((t) => (
-                          <li key={t.id} className={`file-list-item ${activeTemplateId === t.id ? 'bg-primary-lightest padding-x-2' : ''}`}>
-                            <div className="usa-radio">
-                              <input
-                                className="usa-radio__input"
-                                type="radio"
-                                name="active-template-manager"
-                                id={`tpl-mgr-${t.id}`}
-                                checked={activeTemplateId === t.id}
-                                onChange={() => onActivateTemplate(t.id)}
-                              />
-                              <label className="usa-radio__label font-sans text-bold text-ink margin-top-0" htmlFor={`tpl-mgr-${t.id}`}>
-                                {t.filename}
-                                {activeTemplateId === t.id && <span className="stat-tag accent margin-left-2">Master</span>}
-                              </label>
-                            </div>
-                            <button className="usa-button usa-button--unstyled text-secondary margin-left-auto" onClick={() => onDeleteTemplate(t.id)}>
-                              <Icon name="delete" size="3" />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : <p className="font-sans text-italic">No templates in repository.</p>}
+                    
+                    {templates.length > 0 && (
+                      <div className="border-top-3 border-ink padding-top-1">
+                        <ul className="usa-list usa-list--unstyled file-list-compact">
+                          {templates.map((t) => (
+                            <li key={t.id} className="file-list-item padding-y-05">
+                              <div className="usa-radio">
+                                <input
+                                  className="usa-radio__input"
+                                  type="radio"
+                                  name="active-template"
+                                  id={`tpl-${t.id}`}
+                                  checked={activeTemplateId === t.id}
+                                  onChange={() => onActivateTemplate(t.id)}
+                                />
+                                <label className="usa-radio__label font-sans text-bold text-ink margin-top-0 text-xs" htmlFor={`tpl-${t.id}`}>
+                                  {t.filename}
+                                </label>
+                              </div>
+                              <button className="usa-button usa-button--unstyled text-secondary margin-left-auto" onClick={() => onDeleteTemplate(t.id)}>
+                                <Icon name="delete" size="3" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <div className="editorial-card__footer padding-y-1">
+                    <button className="usa-button usa-button--outline padding-y-1" onClick={prevStep}>Prev</button>
+                    <button className="usa-button padding-y-1" onClick={nextStep}>Next <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
                   </div>
                 </div>
+              )}
+
+              {wizardStep === 3 && (
+                <div className="display-flex gap-2 full-height-wizard">
+                  <div className="editorial-card flex-fill margin-bottom-0 display-flex flex-column">
+                    <div className="editorial-card__header padding-y-1">
+                      <h2 className="font-heading-md">Phase 3: Generation</h2>
+                    </div>
+                    <div className="editorial-card__body padding-x-0 padding-y-0 display-flex flex-column flex-fill" style={{overflow: 'hidden'}}>
+                      {/* Chat Interface */}
+                      <div className="editorial-chat margin-2 flex-fill">
+                        {messages.length === 0 ? (
+                          <div className="padding-2 text-center">
+                            <Icon name="info" size="4" className="text-base-dark margin-bottom-1" />
+                            <p className="font-sans text-bold text-ink text-sm">Input directives below.</p>
+                          </div>
+                        ) : null}
+                        {messages.map((m) => (
+                          <div key={m.id} className={`chat-bubble padding-1 ${m.role}`}>
+                            <div className="chat-bubble__name text-xs">{m.role === "assistant" ? "System" : "Officer"}</div>
+                            <div className="chat-bubble__text text-sm">{m.content}</div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <form className="padding-x-2 margin-bottom-2" onSubmit={onSendMessage}>
+                        <div className="display-flex flex-align-end gap-1">
+                          <textarea
+                            className="usa-textarea flex-fill text-sm padding-1"
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            rows="2"
+                            placeholder="Directives..."
+                          />
+                          <button className="usa-button margin-bottom-0 padding-y-1" disabled={loading || !sessionId}>Send</button>
+                        </div>
+                      </form>
+                      
+                      <div className="border-top-3 border-ink padding-2 bg-paper">
+                        <textarea
+                          className="usa-textarea width-full text-sm padding-1"
+                          value={instructions}
+                          onChange={(e) => setInstructions(e.target.value)}
+                          rows="2"
+                          placeholder="Final compilation instructions..."
+                        />
+                        
+                        <div className="margin-top-1 display-flex gap-1">
+                          <button className="usa-button padding-y-1 flex-1 text-xs" onClick={onGenerate} disabled={loading || !sessionId}>
+                            Generate
+                          </button>
+                          <button
+                            className="usa-button padding-y-1 flex-1 text-xs"
+                            style={{ backgroundColor: "var(--federal-accent)", color: "var(--federal-ink)" }}
+                            onClick={onMergeDownload}
+                            disabled={loading || !sessionId || !activeTemplateId}
+                          >
+                            Download .DOCX
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {generation?.sections?.full_markdown && (
+                    <div className="flex-fill display-flex flex-column" style={{maxHeight: '100%', overflow: 'hidden'}}>
+                      <h2 className="text-editorial font-heading-md text-ink margin-top-0 margin-bottom-1">Output</h2>
+                      <div className="preview-box flex-fill text-xs padding-2" style={{overflowY: 'auto'}}>
+                        {generation.sections.full_markdown}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : viewMode === "manager" && activeWorkspace ? (
+            <div className="manager-view display-flex gap-2">
+              <div className="editorial-card flex-fill">
+                <div className="editorial-card__header padding-y-1">
+                  <h2 className="font-heading-md">Knowledge Base</h2>
+                </div>
+                <div className="editorial-card__body padding-2">
+                  <div
+                    className="dropzone-editorial padding-y-2 margin-bottom-2"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      uploadManyContext(Array.from(e.dataTransfer.files || []));
+                    }}
+                  >
+                    <div className="display-flex flex-align-center flex-justify-center gap-1">
+                      <Icon name="file_upload" size="4" className="text-primary" />
+                      <div className="text-bold text-sm">Add context</div>
+                    </div>
+                    <input className="usa-file-input display-none" id="context-file-mgr" type="file" multiple onChange={onUploadContext} />
+                    <label htmlFor="context-file-mgr" className="usa-button margin-top-1 padding-y-1 text-xs">Browse</label>
+                  </div>
+                  {contextDocs.length > 0 ? (
+                    <ul className="usa-list usa-list--unstyled file-list-compact">
+                      {contextDocs.map((d) => (
+                        <li key={d.id} className="file-list-item padding-y-05">
+                          <Icon name="description" size="3" className="margin-right-1 text-primary" />
+                          <span className="font-sans text-bold flex-fill text-xs">{d.filename}</span>
+                          <button className="usa-button usa-button--unstyled text-secondary margin-left-1" onClick={() => onDeleteContext(d.id)}>
+                            <Icon name="delete" size="3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="font-sans text-italic text-sm">No documents.</p>}
+                </div>
               </div>
-            ) : (
-              <div className="padding-5 text-center text-base-dark">
-                <Icon name="folder" size="9" className="margin-bottom-3 opacity-50" />
-                <h2 className="text-editorial font-heading-xl text-ink margin-top-0">Awaiting Workspace Designation</h2>
-                <p className="font-sans text-lg">Select a workspace from the left rail or create a new one to begin operations.</p>
+
+              <div className="editorial-card flex-fill">
+                <div className="editorial-card__header padding-y-1">
+                  <h2 className="font-heading-md">Templates</h2>
+                </div>
+                <div className="editorial-card__body padding-2">
+                  <div
+                    className="dropzone-editorial padding-y-2 margin-bottom-2"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      uploadManyTemplates(Array.from(e.dataTransfer.files || []));
+                    }}
+                  >
+                    <div className="display-flex flex-align-center flex-justify-center gap-1">
+                      <Icon name="file_upload" size="4" className="text-accent" />
+                      <div className="text-bold text-sm">Add .docx</div>
+                    </div>
+                    <input className="usa-file-input display-none" id="template-file-mgr" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
+                    <label htmlFor="template-file-mgr" className="usa-button usa-button--accent-warm margin-top-1 padding-y-1 text-ink text-xs">Browse</label>
+                  </div>
+                  {templates.length > 0 ? (
+                    <ul className="usa-list usa-list--unstyled file-list-compact">
+                      {templates.map((t) => (
+                        <li key={t.id} className={`file-list-item padding-y-05 ${activeTemplateId === t.id ? 'bg-primary-lightest padding-x-1' : ''}`}>
+                          <div className="usa-radio">
+                            <input
+                              className="usa-radio__input"
+                              type="radio"
+                              name="active-template-manager"
+                              id={`tpl-mgr-${t.id}`}
+                              checked={activeTemplateId === t.id}
+                              onChange={() => onActivateTemplate(t.id)}
+                            />
+                            <label className="usa-radio__label font-sans text-bold text-ink margin-top-0 text-xs" htmlFor={`tpl-mgr-${t.id}`}>
+                              {t.filename}
+                            </label>
+                          </div>
+                          <button className="usa-button usa-button--unstyled text-secondary margin-left-auto" onClick={() => onDeleteTemplate(t.id)}>
+                            <Icon name="delete" size="3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="font-sans text-italic text-sm">No templates.</p>}
+                </div>
               </div>
-            )}
-          </section>
-        </div>
+            </div>
+          ) : (
+            <div className="padding-3 text-center text-base-dark">
+              <Icon name="folder" size="8" className="margin-bottom-2 opacity-50" />
+              <h2 className="text-editorial font-heading-lg text-ink margin-top-0">Awaiting Workspace Designation</h2>
+              <p className="font-sans text-sm">Select a workspace from the left rail or create a new one to begin operations.</p>
+            </div>
+          )}
+        </section>
       </main>
 
-      {/* Official USWDS Footer */}
+      {/* Official USWDS Footer - Compact */}
       <footer className="usa-footer usa-footer--slim" role="contentinfo">
-        <div className="grid-container usa-footer__return-to-top">
-          <a href="#">Return to top</a>
-        </div>
-        <div className="usa-footer__primary-section bg-federal-ink">
-          <div className="usa-footer__primary-container grid-row">
-            <div className="mobile-lg:grid-col-8">
-              <nav className="usa-footer__nav" aria-label="Footer navigation">
-                <ul className="grid-row grid-gap">
-                  <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
-                    <a className="usa-footer__primary-link text-white" href="#">Privacy Policy</a>
-                  </li>
-                  <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
-                    <a className="usa-footer__primary-link text-white" href="#">Accessibility Statement</a>
-                  </li>
-                  <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
-                    <a className="usa-footer__primary-link text-white" href="#">Vulnerability Disclosure Policy</a>
-                  </li>
-                  <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
-                    <a className="usa-footer__primary-link text-white" href="#">FOIA</a>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-            <div className="mobile-lg:grid-col-4">
-              <address className="usa-footer__address">
-                <div className="usa-footer__contact-info">
-                  <div className="text-white margin-top-1">
-                    System generated drafting portal.<br/>Not for final distribution without human review.
-                  </div>
-                </div>
-              </address>
+        <div className="usa-footer__primary-section bg-federal-ink padding-y-1">
+          <div className="usa-footer__primary-container grid-row display-flex flex-align-center flex-justify">
+            <nav className="usa-footer__nav" aria-label="Footer navigation">
+              <ul className="display-flex gap-3 margin-0 padding-0 list-none">
+                <li><a className="text-white text-xs text-no-underline hover:text-underline" href="#">Privacy Policy</a></li>
+                <li><a className="text-white text-xs text-no-underline hover:text-underline" href="#">Accessibility</a></li>
+                <li><a className="text-white text-xs text-no-underline hover:text-underline" href="#">FOIA</a></li>
+              </ul>
+            </nav>
+            <div className="text-white text-xs text-right">
+              Generated drafting portal. Not for distribution.
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Federal Identifier */}
-      <div className="usa-identifier">
-        <section className="usa-identifier__section usa-identifier__section--masthead" aria-label="Agency identifier">
-          <div className="usa-identifier__container">
-            <div className="usa-identifier__logos">
-              <a href="#" className="usa-identifier__logo">
-                <img className="usa-identifier__logo-img" src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/circle-gray-20.svg" alt="Agency logo" role="img" />
-              </a>
-            </div>
-            <div className="usa-identifier__identity" aria-label="Agency description">
-              <p className="usa-identifier__identity-domain">federal-sow-agent.gov</p>
-              <p className="usa-identifier__identity-disclaimer">An official website of the <a href="#">U.S. Government</a></p>
-            </div>
-          </div>
-        </section>
-      </div>
-
+      {/* Federal Identifier - Hidden to save space on strict 100vh requirement, logic moved to footer/banner */}
     </div>
   );
 }
