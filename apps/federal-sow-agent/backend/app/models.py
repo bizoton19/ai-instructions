@@ -31,7 +31,9 @@ class Workspace(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
     sessions: Mapped[list["AgentSession"]] = relationship(back_populates="workspace")
-    templates: Mapped[list["TemplateAsset"]] = relationship(back_populates="workspace")
+    templates: Mapped[list["TemplateAsset"]] = relationship(
+        back_populates="workspace", foreign_keys="[TemplateAsset.workspace_id]"
+    )
     contexts: Mapped[list["ContextAsset"]] = relationship(back_populates="workspace")
 
 
@@ -73,7 +75,9 @@ class TemplateAsset(Base):
     extracted_outline_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
-    workspace: Mapped["Workspace"] = relationship(back_populates="templates")
+    workspace: Mapped["Workspace"] = relationship(
+        back_populates="templates", foreign_keys=[workspace_id]
+    )
 
 
 class ContextAsset(Base):
