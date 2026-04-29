@@ -43,7 +43,20 @@ def init_db():
                 conn.execute(text("ALTER TABLE workspaces ADD COLUMN active_template_asset_id VARCHAR(36)"))
             
             # agent_sessions table
-            sess_cols = conn.execute(text("PRAGMA table_info(agent_sessions)")).fetchall()
-            sess_names = {c[1] for c in sess_cols}
+            def _session_col_names() -> set[str]:
+                r = conn.execute(text("PRAGMA table_info(agent_sessions)")).fetchall()
+                return {c[1] for c in r}
+
+            sess_names = _session_col_names()
             if "agent_type" not in sess_names:
                 conn.execute(text("ALTER TABLE agent_sessions ADD COLUMN agent_type VARCHAR(64) DEFAULT 'sow_writer' NOT NULL"))
+            for col_name, sql in (
+                ("orchestration_mode", "ALTER TABLE agent_sessions ADD COLUMN orchestration_mode VARCHAR(32) DEFAULT 'manual_review' NOT NULL"),
+                ("pipeline_step", "ALTER TABLE agent_sessions ADD COLUMN pipeline_step INTEGER DEFAULT 0 NOT NULL"),
+                ("pipeline_paused", "ALTER TABLE agent_sessions ADD COLUMN pipeline_paused INTEGER DEFAULT 0 NOT NULL"),
+                ("pipeline_completed", "ALTER TABLE agent_sessions ADD COLUMN pipeline_completed INTEGER DEFAULT 0 NOT NULL"),
+                ("needs_user_clarification", "ALTER TABLE agent_sessions ADD COLUMN needs_user_clarification INTEGER DEFAULT 0 NOT NULL"),
+            ):
+                sess_names = _session_col_names()
+                if col_name not in sess_names:
+                    conn.execute(text(sql))

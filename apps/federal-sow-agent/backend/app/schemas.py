@@ -3,6 +3,14 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+class AgentBrief(BaseModel):
+    """Catalog entry exposed to clients (system prompts remain server-side)."""
+
+    id: str
+    name: str
+    description: str
+
+
 class UserOut(BaseModel):
     id: str
     email: str
@@ -35,12 +43,23 @@ class SessionCreate(BaseModel):
     agent_type: str | None = Field(default="sow_writer", max_length=64)
 
 
+class SessionUpdate(BaseModel):
+    title: str | None = Field(default=None, max_length=255)
+    agent_type: str | None = Field(default=None, max_length=64)
+    orchestration_mode: str | None = Field(default=None, max_length=32)
+
+
 class AgentSessionOut(BaseModel):
     id: str
     workspace_id: str
     title: str
     agent_type: str
     status: str
+    orchestration_mode: str = "manual_review"
+    pipeline_step: int = 0
+    pipeline_paused: bool = False
+    pipeline_completed: bool = False
+    needs_user_clarification: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -107,6 +126,32 @@ class SOWSectionsModel(BaseModel):
 class GenerateOut(BaseModel):
     sections: SOWSectionsModel
     warnings: list[str] = []
+
+
+class PipelineAdvanceIn(BaseModel):
+    additional_instructions: str | None = Field(default=None, description="Instructions for upcoming pipeline phase.")
+    approve_manual_gate: bool = Field(
+        default=False,
+        description="In manual_review, approve output from the completed phase before the next specialist runs.",
+    )
+    clarification_resolved: bool = Field(default=False)
+    execution: str = Field(
+        default="single_phase",
+        description="single_phase | auto_chain — auto_chain runs sequentially until clarification or completion when orchestration_mode=automatic.",
+    )
+
+
+class PipelineAdvanceOut(BaseModel):
+    orchestration_mode: str
+    pipeline_step: int
+    pipeline_total_phases: int
+    pipeline_completed: bool
+    pipeline_paused: bool
+    needs_user_clarification: bool
+    sections: SOWSectionsModel | None = None
+    warnings: list[str] = []
+    phase_name_run: str | None = None
+    phases_run: int = 0
 
 
 class MergeIn(BaseModel):

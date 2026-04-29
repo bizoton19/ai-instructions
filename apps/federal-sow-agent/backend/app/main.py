@@ -14,6 +14,7 @@ from app.routes.workspaces import router as workspaces_router
 from app.storage import ensure_storage_dirs
 
 from app.routes.agents import router as agents_router
+from app.routes.pipelines import router as pipelines_router
 
 app = FastAPI(title="Federal Document Writer Agent API", version="0.1.0")
 
@@ -32,7 +33,11 @@ async def security_headers(request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Content-Security-Policy"] = "default-src 'self' https://unpkg.com; img-src 'self' https://unpkg.com data:; style-src 'self' https://unpkg.com 'unsafe-inline'; script-src 'self'; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000;"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self' https://unpkg.com; img-src 'self' https://unpkg.com data:; "
+        "style-src 'self' https://unpkg.com 'unsafe-inline'; script-src 'self'; "
+        "connect-src 'self' http://127.0.0.1:8000 http://localhost:8000;"
+    )
     return response
 
 
@@ -55,9 +60,9 @@ def ready():
 
 
 app.include_router(agents_router)
+app.include_router(pipelines_router)
 app.include_router(workspaces_router)
 app.include_router(sessions_router)
 app.include_router(uploads_router)
 app.include_router(generate_router)
 app.include_router(merge_router)
-

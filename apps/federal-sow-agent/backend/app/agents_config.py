@@ -71,3 +71,15 @@ AGENTS = {
 
 def get_agent_profile(agent_id: str) -> AgentProfile:
     return AGENTS.get(agent_id) or AGENTS["sow_writer"]
+
+
+# Default multi-specialist drafting order for orchestrated pipelines (single session).
+DEFAULT_PIPELINE_SEQUENCE: tuple[str, ...] = (
+    "requirements_analyst",
+    "market_research",
+    "sow_writer",
+    "cost_estimator",
+)
+
+
+CLARIFICATION_TAG = "CLARIFICATION_NEEDED:"

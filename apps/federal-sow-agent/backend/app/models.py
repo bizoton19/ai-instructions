@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -44,6 +44,12 @@ class AgentSession(Base):
     workspace_id: Mapped[str] = mapped_column(String(36), ForeignKey("workspaces.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="New session")
     agent_type: Mapped[str] = mapped_column(String(64), nullable=False, default="sow_writer")
+    # manual_review: pause after each phase until approve_manual_gate | automatic: run contiguous auto_chain phases
+    orchestration_mode: Mapped[str] = mapped_column(String(32), nullable=False, default="manual_review")
+    pipeline_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    pipeline_paused: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    pipeline_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    needs_user_clarification: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     status: Mapped[str] = mapped_column(String(64), default="active")  # active | archived
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
