@@ -71,6 +71,7 @@ def run_sow_chain(
     context_block: str,
     template_hints: str,
     user_instructions: str,
+    system_prompt: str,
 ) -> tuple[SOWSectionsModel, list[str]]:
     warnings: list[str] = []
     context_block = context_block.strip()[:120000]
@@ -99,7 +100,7 @@ def run_sow_chain(
 
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", SYSTEM_PROMPT),
+            ("system", system_prompt),
             ("human", HUMAN_PROMPT + "\n\n{format_instructions}"),
         ]
     )

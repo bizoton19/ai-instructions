@@ -17,6 +17,9 @@ function App() {
   const [wizardStep, setWizardStep] = useState(0);
   const [viewMode, setViewMode] = useState("wizard"); // wizard | manager
 
+  const [agents, setAgents] = useState([]);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+
   const activeWorkspace = useMemo(
     () => workspaces.find((w) => w.id === workspaceId) || null,
     [workspaces, workspaceId],
@@ -25,7 +28,13 @@ function App() {
 
   useEffect(() => {
     loadWorkspaces().catch(() => {});
+    loadAgents().catch(() => {});
   }, []);
+
+  async function loadAgents() {
+    const data = await api.listAgents();
+    setAgents(data);
+  }
 
   async function loadWorkspaces() {
     const data = await api.listWorkspaces();
@@ -76,10 +85,18 @@ function App() {
     }
   }
 
-  async function onCreateSession() {
+  function onCreateSession() {
     if (!workspaceId) return;
+    setIsCreatingSession(true);
+  }
+
+  async function handleCreateSession(agentId) {
+    if (!workspaceId) return;
+    const title = prompt("Session name:") || "New session";
+    if (!title) return;
+    setIsCreatingSession(false);
     try {
-      const s = await api.createSession(workspaceId, "New SOW Session");
+      const s = await api.createSession(workspaceId, title, agentId);
       const next = await api.listSessions(workspaceId);
       setSessions(next);
       setSessionId(s.id);
@@ -667,6 +684,38 @@ function App() {
       </footer>
 
       {/* Federal Identifier - Hidden to save space on strict 100vh requirement, logic moved to footer/banner */}
+      {isCreatingSession && (
+        <div className="modal-overlay" onClick={() => setIsCreatingSession(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="display-flex flex-justify flex-align-center margin-bottom-3 border-bottom border-base-lighter padding-bottom-2">
+              <h2 className="margin-0 font-heading-lg text-ink">Select an Agent Persona</h2>
+              <button className="usa-button usa-button--unstyled text-secondary" onClick={() => setIsCreatingSession(false)}>
+                <Icon name="close" size="4" />
+              </button>
+            </div>
+            
+            <div className="grid-row grid-gap-2 margin-bottom-3">
+              {agents.map(a => (
+                <div key={a.id} className="tablet:grid-col-6 margin-bottom-2">
+                  <button 
+                    className="usa-button usa-button--unstyled width-full text-left bg-base-lightest padding-2 radius-md border border-base-lighter hover:border-primary transition-all"
+                    onClick={() => handleCreateSession(a.id)}
+                  >
+                    <div className="display-flex flex-align-center margin-bottom-1">
+                      <Icon name={a.id === "sow_writer" ? "description" : a.id === "cost_estimator" ? "payments" : a.id === "requirements_analyst" ? "rule" : "search"} size="4" className="text-primary margin-right-1" />
+                      <span className="font-heading-md text-bold text-ink">{a.name}</span>
+                    </div>
+                    <div className="text-sm text-base-dark">{a.description}</div>
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="text-right">
+              <button className="usa-button usa-button--outline" onClick={() => setIsCreatingSession(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

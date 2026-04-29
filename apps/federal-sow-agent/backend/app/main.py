@@ -13,7 +13,9 @@ from app.routes.uploads import router as uploads_router
 from app.routes.workspaces import router as workspaces_router
 from app.storage import ensure_storage_dirs
 
-app = FastAPI(title="Federal SOW Writer Agent API", version="0.1.0")
+from app.routes.agents import router as agents_router
+
+app = FastAPI(title="Federal Document Writer Agent API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -52,6 +54,7 @@ def ready():
     return {"status": "ready"}
 
 
+app.include_router(agents_router)
 app.include_router(workspaces_router)
 app.include_router(sessions_router)
 app.include_router(uploads_router)

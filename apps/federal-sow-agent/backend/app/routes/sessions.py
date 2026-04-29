@@ -26,7 +26,11 @@ def list_sessions(workspace_id: str, db: Session = Depends(get_db)):
 @router.post("", response_model=AgentSessionOut)
 def create_session(workspace_id: str, payload: SessionCreate, db: Session = Depends(get_db)):
     _must_workspace(db, workspace_id)
-    item = AgentSession(workspace_id=workspace_id, title=(payload.title or "New session").strip())
+    item = AgentSession(
+        workspace_id=workspace_id,
+        title=(payload.title or "New session").strip(),
+        agent_type=(payload.agent_type or "sow_writer").strip()
+    )
     db.add(item)
     db.commit()
     db.refresh(item)

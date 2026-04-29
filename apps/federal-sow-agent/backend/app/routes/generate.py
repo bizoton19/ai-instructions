@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.agent.sow_chain import run_sow_chain
+from app.agents_config import get_agent_profile
 from app.database import get_db
 from app.models import AgentSession, ContextAsset, Message, TemplateAsset, Workspace
 from app.schemas import GenerateIn, GenerateOut
@@ -56,10 +57,13 @@ def generate_sow(
                 template_hints_parts.append(f"{t.filename}: [outline parse error]")
     template_hints = "\n".join(template_hints_parts)
 
+    agent_profile = get_agent_profile(session.agent_type)
+
     sections, warnings = run_sow_chain(
         context_block=context_block,
         template_hints=template_hints,
         user_instructions=payload.additional_instructions or "",
+        system_prompt=agent_profile.system_prompt
     )
 
     assistant_message = Message(

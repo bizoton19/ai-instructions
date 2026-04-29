@@ -21,13 +21,14 @@ async function request(path, opts = {}) {
 }
 
 export const api = {
+  listAgents: () => request("/agents"),
   listWorkspaces: () => request("/workspaces"),
   createWorkspace: (name) => request("/workspaces", { method: "POST", body: JSON.stringify({ name }) }),
   listSessions: (workspaceId) => request(`/workspaces/${workspaceId}/sessions`),
-  createSession: (workspaceId, title) =>
+  createSession: (workspaceId, title, agentType) =>
     request(`/workspaces/${workspaceId}/sessions`, {
       method: "POST",
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, agent_type: agentType }),
     }),
   listMessages: (workspaceId, sessionId) =>
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/messages`),

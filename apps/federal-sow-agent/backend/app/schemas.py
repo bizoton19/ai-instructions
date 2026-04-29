@@ -32,12 +32,14 @@ class WorkspaceOut(BaseModel):
 
 class SessionCreate(BaseModel):
     title: str | None = Field(default="New session", max_length=255)
+    agent_type: str | None = Field(default="sow_writer", max_length=64)
 
 
 class AgentSessionOut(BaseModel):
     id: str
     workspace_id: str
     title: str
+    agent_type: str
     status: str
     created_at: datetime
     updated_at: datetime
