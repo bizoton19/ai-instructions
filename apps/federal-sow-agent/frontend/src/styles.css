@@ -629,6 +629,19 @@ body::before {
   color: var(--text-muted);
 }
 
+.artifact-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 51, 102, 0.1);
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
 .markdown-draft-body {
   background: var(--bg-surface);
 }

@@ -42,4 +42,5 @@ def pipeline_reset(workspace_id: str, session_id: str, db: Session = Depends(get
     payload.setdefault("sections", None)
     payload.setdefault("phase_name_run", None)
     payload.setdefault("phases_run", 0)
+    payload.setdefault("pipeline_artifact_count", 0)
     return PipelineAdvanceOut.model_validate(payload)

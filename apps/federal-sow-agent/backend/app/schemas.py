@@ -60,6 +60,7 @@ class AgentSessionOut(BaseModel):
     pipeline_paused: bool = False
     pipeline_completed: bool = False
     needs_user_clarification: bool = False
+    pipeline_artifact_count: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -148,6 +149,7 @@ class PipelineAdvanceOut(BaseModel):
     pipeline_completed: bool
     pipeline_paused: bool
     needs_user_clarification: bool
+    pipeline_artifact_count: int = 0
     sections: SOWSectionsModel | None = None
     warnings: list[str] = []
     phase_name_run: str | None = None
@@ -156,5 +158,16 @@ class PipelineAdvanceOut(BaseModel):
 
 class MergeIn(BaseModel):
     template_asset_id: str
+    sections: SOWSectionsModel | None = None
+    use_latest_generation: bool = True
+
+
+class ExportIn(BaseModel):
+    """Produce merged Word output when ``template_asset_id`` is set; otherwise Markdown."""
+
+    template_asset_id: str | None = Field(
+        default=None,
+        description="Workspace template asset id for Word merge; omit for Markdown-only export.",
+    )
     sections: SOWSectionsModel | None = None
     use_latest_generation: bool = True

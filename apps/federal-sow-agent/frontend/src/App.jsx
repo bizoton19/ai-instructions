@@ -98,6 +98,25 @@ function App() {
     };
   }, [activeSession, pipelinePlan]);
 
+  const hasDraftContent = useMemo(() => {
+    const s = generation?.sections;
+    if ((s?.full_markdown || "").trim()) return true;
+    if (s) {
+      const keys = [
+        "purpose",
+        "background",
+        "scope",
+        "deliverables",
+        "period_of_performance",
+        "roles_and_responsibilities",
+        "acceptance_criteria",
+        "assumptions_and_constraints",
+      ];
+      if (keys.some((k) => (s[k] || "").trim())) return true;
+    }
+    return messages.some((m) => m.role === "assistant" && (m.content || "").trim());
+  }, [generation, messages]);
+
   function specialistDisplayName(agentTypeId) {
     if (!agentTypeId) return "";
     const name = agentsCatalog.find((a) => a.id === agentTypeId)?.name;
@@ -120,8 +139,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    setClarificationResolved(false);
-  }, [sessionId]);
+    if (!workspaceId || !templates.length || activeTemplateId) return;
+    if (templates.length !== 1) return;
+    api
+      .activateTemplate(workspaceId, templates[0].id)
+      .then(() => refreshWorkspaceData(workspaceId))
+      .catch(() => {});
+  }, [workspaceId, templates, activeTemplateId]);
 
   useEffect(() => {
     setSessionId(null);
@@ -398,9 +422,28 @@ function App() {
     setBusyHint(content.agents.exportingStatus);
     setLoading(true);
     try {
-      const merged = await api.merge(workspaceId, sessionId, activeTemplateId);
+      const merged = await api.exportDocument(workspaceId, sessionId, {
+        template_asset_id: activeTemplateId,
+        use_latest_generation: true,
+      });
       window.open(api.downloadUrl(merged.download_path), "_blank", "noopener");
       showNotice(content.notices.exportReady);
+    } catch (err) {
+      showNotice(err.message);
+    } finally {
+      setBusyHint(null);
+      setLoading(false);
+    }
+  }
+
+  async function onExportMarkdownDownload() {
+    if (!workspaceId || !sessionId) return;
+    setBusyHint(content.agents.markdownExportStatus);
+    setLoading(true);
+    try {
+      const out = await api.exportDocument(workspaceId, sessionId, { use_latest_generation: true });
+      window.open(api.downloadUrl(out.download_path), "_blank", "noopener");
+      showNotice(content.notices.markdownExportReady);
     } catch (err) {
       showNotice(err.message);
     } finally {
@@ -842,6 +885,53 @@ function App() {
                                   rows="2"
                                   placeholder={content.wizard.step3.instructionsPlaceholder}
                                 />
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                  <label htmlFor="workspace-default-template" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)" }}>
+                                    {content.wizard.step3.defaultTemplateLabel}
+                                  </label>
+                                  {templates.length > 0 ? (
+                                    <>
+                                      <select
+                                        id="workspace-default-template"
+                                        className="text-input"
+                                        style={{ maxWidth: "100%" }}
+                                        value={activeTemplateId ?? ""}
+                                        onChange={(e) => {
+                                          const v = e.target.value;
+                                          if (v) onActivateTemplate(v);
+                                        }}
+                                      >
+                                        <option value="">{content.wizard.step3.templateSelectPlaceholder}</option>
+                                        {templates.map((t) => (
+                                          <option key={t.id} value={t.id}>
+                                            {t.filename}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <p className="action-hint">{content.wizard.step3.defaultTemplateHint}</p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="action-hint">{content.wizard.step3.noTemplatesForExport}</p>
+                                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                                        <input
+                                          className="usa-file-input"
+                                          style={{ display: "none" }}
+                                          id="quick-synth-template-upload"
+                                          type="file"
+                                          accept=".docx"
+                                          onChange={onUploadTemplate}
+                                        />
+                                        <label htmlFor="quick-synth-template-upload" className="btn">
+                                          {content.wizard.step3.uploadTemplateQuickBrowse}
+                                        </label>
+                                        <button type="button" className="btn" onClick={() => setWizardStep(2)}>
+                                          {content.wizard.step3.goToTemplateStep}
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
                                 <div className="synthesis-actions">
                                   <div className="synthesis-action">
                                     <button className="btn" style={{ width: "100%", justifyContent: "center" }} onClick={onGenerate} disabled={loading || !sessionId}>
@@ -851,10 +941,23 @@ function App() {
                                   </div>
                                   <div className="synthesis-action">
                                     <button
+                                      className="btn"
+                                      style={{ width: "100%", justifyContent: "center" }}
+                                      onClick={onExportMarkdownDownload}
+                                      disabled={loading || !sessionId || !hasDraftContent}
+                                      type="button"
+                                    >
+                                      <FileText size={14} aria-hidden="true" /> {content.wizard.step3.downloadMarkdownLabel}
+                                    </button>
+                                    <p className="action-hint">{content.wizard.step3.downloadMarkdownHint}</p>
+                                  </div>
+                                  <div className="synthesis-action">
+                                    <button
                                       className="btn btn-primary"
                                       style={{ width: "100%", justifyContent: "center" }}
                                       onClick={onMergeDownload}
                                       disabled={loading || !sessionId || !activeTemplateId}
+                                      type="button"
                                     >
                                       <FileDown size={14} aria-hidden="true" /> {content.wizard.step3.downloadLabel}
                                     </button>
@@ -867,21 +970,37 @@ function App() {
 
                           <div className="card" style={{ flexShrink: 0 }}>
                             <div className="card-body" style={{ padding: "24px" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                                <Workflow size={16} color="var(--text-accent)" aria-hidden="true" />
-                                <h4
-                                  style={{
-                                    margin: 0,
-                                    fontSize: "14px",
-                                    fontFamily: "var(--font-mono)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.05em",
-                                    color: "var(--text-muted)",
-                                  }}
-                                  id="specialist-pipeline-heading"
-                                >
-                                  {content.wizard.step3.pipelineHeading}
-                                </h4>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  gap: 12,
+                                  marginBottom: 12,
+                                  flexWrap: "wrap",
+                                }}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                  <Workflow size={16} color="var(--text-accent)" aria-hidden="true" />
+                                  <h4
+                                    style={{
+                                      margin: 0,
+                                      fontSize: "14px",
+                                      fontFamily: "var(--font-mono)",
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.05em",
+                                      color: "var(--text-muted)",
+                                    }}
+                                    id="specialist-pipeline-heading"
+                                  >
+                                    {content.wizard.step3.pipelineHeading}
+                                  </h4>
+                                </div>
+                                {(activeSession?.pipeline_artifact_count ?? 0) > 0 ? (
+                                  <span className="artifact-pill" title={content.wizard.step3.artifactPillTitle}>
+                                    {content.wizard.step3.artifactPill(activeSession.pipeline_artifact_count)}
+                                  </span>
+                                ) : null}
                               </div>
                               {!sessionId ? (
                                 <p className="action-hint" style={{ margin: 0 }}>

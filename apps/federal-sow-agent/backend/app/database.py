@@ -56,6 +56,7 @@ def init_db():
                 ("pipeline_paused", "ALTER TABLE agent_sessions ADD COLUMN pipeline_paused INTEGER DEFAULT 0 NOT NULL"),
                 ("pipeline_completed", "ALTER TABLE agent_sessions ADD COLUMN pipeline_completed INTEGER DEFAULT 0 NOT NULL"),
                 ("needs_user_clarification", "ALTER TABLE agent_sessions ADD COLUMN needs_user_clarification INTEGER DEFAULT 0 NOT NULL"),
+                ("pipeline_artifact_count", "ALTER TABLE agent_sessions ADD COLUMN pipeline_artifact_count INTEGER DEFAULT 0 NOT NULL"),
             ):
                 sess_names = _session_col_names()
                 if col_name not in sess_names:

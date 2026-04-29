@@ -50,6 +50,7 @@ class AgentSession(Base):
     pipeline_paused: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     pipeline_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     needs_user_clarification: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    pipeline_artifact_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     status: Mapped[str] = mapped_column(String(64), default="active")  # active | archived
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

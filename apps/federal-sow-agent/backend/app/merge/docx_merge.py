@@ -94,6 +94,35 @@ def merge_docx_bytes(template_path: Path, flat_context: dict[str, str]) -> tuple
         out_path.unlink(missing_ok=True)
 
 
+def sow_sections_to_markdown(s: SOWSectionsModel) -> str:
+    """Produce a Markdown string from structured sections (prefers ``full_markdown``)."""
+
+    fm = (s.full_markdown or "").strip()
+    if fm:
+        return fm
+
+    parts: list[str] = []
+    order = [
+        ("Purpose", "purpose"),
+        ("Background", "background"),
+        ("Scope", "scope"),
+        ("Deliverables", "deliverables"),
+        ("Period of Performance", "period_of_performance"),
+        ("Roles and Responsibilities", "roles_and_responsibilities"),
+        ("Acceptance Criteria", "acceptance_criteria"),
+        ("Assumptions and Constraints", "assumptions_and_constraints"),
+    ]
+    data = s.model_dump()
+    for title, key in order:
+        block = (data.get(key) or "").strip()
+        if block:
+            parts.append(f"## {title}\n\n{block}\n")
+    out = "\n".join(parts).strip()
+    if out:
+        return out
+    return "[No generated narrative text was available yet.]"
+
+
 def sow_model_to_flat(s: SOWSectionsModel) -> dict[str, str]:
     return {
         "purpose": s.purpose or "",

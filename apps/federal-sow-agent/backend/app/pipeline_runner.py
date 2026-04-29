@@ -29,6 +29,7 @@ def snapshot(session: AgentSession) -> dict:
         "pipeline_completed": bool(session.pipeline_completed),
         "pipeline_paused": bool(session.pipeline_paused),
         "needs_user_clarification": bool(session.needs_user_clarification),
+        "pipeline_artifact_count": int(session.pipeline_artifact_count or 0),
     }
 
 
@@ -73,6 +74,7 @@ def _run_one_pipeline_phase(
 
     header = f"## Pipeline phase ({step_idx + 1}/{len(seq)}): {profile.name}\n\n"
     db.add(Message(session_id=session.id, role="assistant", content=header + body))
+    session.pipeline_artifact_count = int(session.pipeline_artifact_count or 0) + 1
     session.pipeline_step = step_idx + 1
     session.needs_user_clarification = clar
 
@@ -216,4 +218,5 @@ def reset_pipeline(session: AgentSession, db: Session) -> None:
     session.pipeline_completed = False
     session.pipeline_paused = False
     session.needs_user_clarification = False
+    session.pipeline_artifact_count = 0
     db.commit()

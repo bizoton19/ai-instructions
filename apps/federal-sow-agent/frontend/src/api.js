@@ -114,6 +114,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ template_asset_id: templateAssetId, use_latest_generation: true }),
     }),
+  exportDocument: (workspaceId, sessionId, body) =>
+    request(`/workspaces/${workspaceId}/sessions/${sessionId}/export`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   downloadUrl: (path) => `${API_BASE}${path}`,
 };
 

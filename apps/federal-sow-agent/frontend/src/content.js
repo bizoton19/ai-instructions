@@ -23,6 +23,7 @@ export const content = {
     activeTemplateUpdated: "Active template updated.",
     draftGenerationSuccessful: "Draft Generation Successful.",
     exportReady: "Export ready.",
+    markdownExportReady: "Markdown file ready to download.",
   },
 
   sidebar: {
@@ -53,6 +54,7 @@ export const content = {
       `${specialistLabel} is drafting. This is a single model run for this session.`,
     pipelineRunning: "Pipeline specialists are drafting (server-side orchestration).",
     exportingStatus: "Merging draft into Word template.",
+    markdownExportStatus: "Generating Markdown export.",
     ingestStatus: "Uploading workspace files.",
   },
 
@@ -141,9 +143,17 @@ export const content = {
       generateLabel: "Generate draft",
       generateHint:
         "Runs the drafting agent on this session using workspace context and the instructions below. Preview updates when complete.",
-      downloadLabel: "Download merged DOCX",
+      downloadLabel: "Download Word (DOCX)",
       downloadHint:
-        "Bundles the latest generated draft into the active template and opens or saves your Word file. Requires an active template and a successful generation.",
+        "Requires a workspace default template below. For template-free output, use Download Markdown.",
+      downloadMarkdownLabel: "Download Markdown",
+      downloadMarkdownHint: "Structured sections or latest assistant output as a .md file (no Word template required).",
+      defaultTemplateLabel: "Workspace default template (Word export)",
+      defaultTemplateHint: "Pick which uploaded .docx is active for this workspace. Upload more in the Template wizard step or below.",
+      templateSelectPlaceholder: "Choose workspace default…",
+      noTemplatesForExport: "No Word template in this workspace yet. Upload a .docx to enable Word export, or export Markdown instead.",
+      uploadTemplateQuickBrowse: "Upload .docx template",
+      goToTemplateStep: "Open Template step",
       outputBufferTitle: "Draft preview",
       outputEmpty: "Generate a draft to see formatted preview here.",
 
@@ -169,6 +179,8 @@ export const content = {
       pipelineStatusDone: "Pipeline finished",
       pipelineStatusPhase: (current, total) => `Progress: specialists completed ${Math.min(current, total)} of ${total}`,
       pipelineLastPhaseRun: (name) => (name ? `Last phase completed: ${name}` : ""),
+      artifactPill: (n) => `${n} pipeline artifact${n === 1 ? "" : "s"}`,
+      artifactPillTitle: "Structured outputs produced by completed specialist pipeline phases in this session.",
     },
   },
 
