@@ -364,7 +364,7 @@ function App() {
                         }}
                       >
                         <label className="usa-label margin-0 cursor-pointer" htmlFor="context-file">Drag and drop files here, or click to browse</label>
-                        <input className="usa-file-input display-none" id="context-file" type="file" multiple onChange={onUploadContext} />
+                        <input className="usa-file-input display-none" id="context-file" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.md,.txt,image/*" onChange={onUploadContext} />
                       </div>
                       
                       {contextDocs.length > 0 && (
@@ -406,7 +406,7 @@ function App() {
                         }}
                       >
                         <label className="usa-label margin-0 cursor-pointer" htmlFor="template-file">Drag and drop templates here, or click to browse</label>
-                        <input className="usa-file-input display-none" id="template-file" type="file" multiple onChange={onUploadTemplate} />
+                        <input className="usa-file-input display-none" id="template-file" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
                       </div>
                       
                       {templates.length > 0 && (
@@ -537,7 +537,7 @@ function App() {
                         }}
                       >
                         <label className="usa-label margin-0 cursor-pointer" htmlFor="context-file-manager">Drag and drop files here, or click to browse</label>
-                        <input className="usa-file-input display-none" id="context-file-manager" type="file" multiple onChange={onUploadContext} />
+                        <input className="usa-file-input display-none" id="context-file-manager" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.md,.txt,image/*" onChange={onUploadContext} />
                     </div>
                     {contextDocs.length > 0 ? (
                       <ul className="usa-list usa-list--unstyled">
@@ -571,7 +571,7 @@ function App() {
                         }}
                       >
                         <label className="usa-label margin-0 cursor-pointer" htmlFor="template-file-manager">Drag and drop templates here, or click to browse</label>
-                        <input className="usa-file-input display-none" id="template-file-manager" type="file" multiple onChange={onUploadTemplate} />
+                        <input className="usa-file-input display-none" id="template-file-manager" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
                     </div>
                     {templates.length > 0 ? (
                       <ul className="usa-list usa-list--unstyled">

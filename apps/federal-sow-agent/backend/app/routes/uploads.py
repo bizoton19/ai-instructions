@@ -30,6 +30,8 @@ async def upload_template(
     db: Session = Depends(get_db),
 ):
     ws = _must_workspace(db, workspace_id, "local-user")
+    if not file.filename.lower().endswith(".docx"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only .docx templates are supported")
     data = await file.read()
     if not data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty upload")
@@ -71,6 +73,15 @@ async def upload_context(
     db: Session = Depends(get_db),
 ):
     _must_workspace(db, workspace_id, "local-user")
+    
+    valid_extensions = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".md", ".markdown", ".txt")
+    lower_filename = file.filename.lower()
+    
+    # We also allow image mimetypes
+    is_valid = lower_filename.endswith(valid_extensions) or file.content_type.startswith("image/")
+    if not is_valid:
+         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported file type for context: {file.filename}")
+
     data = await file.read()
     if not data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty upload")

@@ -15,12 +15,16 @@ def guess_kind(filename: str, mime: str) -> str:
     lower = filename.lower()
     if lower.endswith(".pdf"):
         return "pdf"
-    if lower.endswith(".docx"):
+    if lower.endswith(".docx") or lower.endswith(".doc"):
         return "docx"
     if lower.endswith(".xlsx") or lower.endswith(".xls"):
         return "xlsx"
     if lower.endswith(".csv"):
         return "csv"
+    if lower.endswith((".md", ".markdown")):
+        return "markdown"
+    if lower.endswith(".txt"):
+        return "text"
     if lower.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".tiff")):
         return "image"
     mt = mime.lower()
@@ -32,6 +36,10 @@ def guess_kind(filename: str, mime: str) -> str:
         return "xlsx"
     if "csv" in mt:
         return "csv"
+    if "markdown" in mt:
+        return "markdown"
+    if mt.startswith("text/"):
+        return "text"
     if mt.startswith("image/"):
         return "image"
     return "other"
@@ -71,8 +79,12 @@ def ingest_context_file(path: Path, filename: str, mime: str) -> tuple[str, str,
         text = raw.decode("utf-8", errors="replace")[:500000]
     except Exception:
         text = "[Binary or unsupported file type]"
-    meta["note"] = "fallback_decode"
-    return "other", text, meta
+        
+    if kind not in ("markdown", "text"):
+        meta["note"] = "fallback_decode"
+        kind = "other"
+
+    return kind, text, meta
 
 
 def ingest_template_docx(path: Path) -> tuple[str, str]:
