@@ -1,4 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Activity,
+  Box,
+  ChevronRight,
+  Database,
+  FileText,
+  FileUp,
+  FolderOpen,
+  LayoutTemplate,
+  MessageSquareTerminal,
+  Plus,
+  TerminalSquare,
+  Trash2,
+  Workflow,
+  Zap,
+} from "lucide-react";
 import { api } from "./api";
 
 function App() {
@@ -17,9 +34,6 @@ function App() {
   const [wizardStep, setWizardStep] = useState(0);
   const [viewMode, setViewMode] = useState("wizard"); // wizard | manager
 
-  const [agents, setAgents] = useState([]);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
-
   const activeWorkspace = useMemo(
     () => workspaces.find((w) => w.id === workspaceId) || null,
     [workspaces, workspaceId],
@@ -28,13 +42,7 @@ function App() {
 
   useEffect(() => {
     loadWorkspaces().catch(() => {});
-    loadAgents().catch(() => {});
   }, []);
-
-  async function loadAgents() {
-    const data = await api.listAgents();
-    setAgents(data);
-  }
 
   async function loadWorkspaces() {
     const data = await api.listWorkspaces();
@@ -62,7 +70,7 @@ function App() {
 
   useEffect(() => {
     if (!workspaceId) return;
-    refreshWorkspaceData(workspaceId).catch((e) => setNotice(e.message));
+    refreshWorkspaceData(workspaceId).catch((e) => showNotice(e.message));
   }, [workspaceId]);
 
   useEffect(() => {
@@ -70,8 +78,13 @@ function App() {
     api
       .listMessages(workspaceId, sessionId)
       .then(setMessages)
-      .catch((e) => setNotice(e.message));
+      .catch((e) => showNotice(e.message));
   }, [workspaceId, sessionId]);
+
+  function showNotice(msg) {
+    setNotice(msg);
+    setTimeout(() => setNotice(""), 5000);
+  }
 
   async function onCreateWorkspace() {
     const name = prompt("Workspace name") || "Default Workspace";
@@ -81,27 +94,19 @@ function App() {
       await loadWorkspaces();
       setWorkspaceId(ws.id);
     } catch (e) {
-      setNotice(e.message);
+      showNotice(e.message);
     }
   }
 
-  function onCreateSession() {
+  async function onCreateSession() {
     if (!workspaceId) return;
-    setIsCreatingSession(true);
-  }
-
-  async function handleCreateSession(agentId) {
-    if (!workspaceId) return;
-    const title = prompt("Session name:") || "New session";
-    if (!title) return;
-    setIsCreatingSession(false);
     try {
-      const s = await api.createSession(workspaceId, title, agentId);
+      const s = await api.createSession(workspaceId, "New Session");
       const next = await api.listSessions(workspaceId);
       setSessions(next);
       setSessionId(s.id);
     } catch (e) {
-      setNotice(e.message);
+      showNotice(e.message);
     }
   }
 
@@ -110,13 +115,12 @@ function App() {
     setLoading(true);
     try {
       for (const file of files) {
-        // eslint-disable-next-line no-await-in-loop
         await api.uploadContext(workspaceId, file);
       }
       await refreshWorkspaceData(workspaceId);
-      setNotice(`Uploaded ${files.length} context file(s).`);
+      showNotice(`Uploaded ${files.length} context file(s).`);
     } catch (err) {
-      setNotice(err.message);
+      showNotice(err.message);
     } finally {
       setLoading(false);
     }
@@ -127,13 +131,12 @@ function App() {
     setLoading(true);
     try {
       for (const file of files) {
-        // eslint-disable-next-line no-await-in-loop
         await api.uploadTemplate(workspaceId, file);
       }
       await refreshWorkspaceData(workspaceId);
-      setNotice(`Uploaded ${files.length} template file(s).`);
+      showNotice(`Uploaded ${files.length} template file(s).`);
     } catch (err) {
-      setNotice(err.message);
+      showNotice(err.message);
     } finally {
       setLoading(false);
     }
@@ -167,7 +170,7 @@ function App() {
     if (!workspaceId) return;
     await api.activateTemplate(workspaceId, assetId);
     await loadWorkspaces();
-    setNotice("Active template updated.");
+    showNotice("Active template updated.");
   }
 
   async function onSendMessage(e) {
@@ -185,9 +188,9 @@ function App() {
       const result = await api.generate(workspaceId, sessionId, instructions);
       setGeneration(result);
       setMessages(await api.listMessages(workspaceId, sessionId));
-      setNotice("Generated SOW draft.");
+      showNotice("Draft Generation Successful.");
     } catch (err) {
-      setNotice(err.message);
+      showNotice(err.message);
     } finally {
       setLoading(false);
     }
@@ -199,523 +202,481 @@ function App() {
     try {
       const merged = await api.merge(workspaceId, sessionId, activeTemplateId);
       window.open(api.downloadUrl(merged.download_path), "_blank", "noopener");
-      setNotice("Merged document is ready for download.");
+      showNotice("Export ready.");
     } catch (err) {
-      setNotice(err.message);
+      showNotice(err.message);
     } finally {
       setLoading(false);
     }
   }
 
-  function nextStep() {
-    setWizardStep((prev) => Math.min(prev + 1, 3));
-  }
+  const steps = ["Initialization", "Ingestion", "Formatting", "Synthesis"];
 
-  function prevStep() {
-    setWizardStep((prev) => Math.max(prev - 1, 0));
-  }
-
-  // Load icons from the local sprite downloaded to public/assets/img/sprite.svg
-  const Icon = ({ name, size = 3, className = "" }) => (
-    <svg className={`usa-icon usa-icon--size-${size} ${className}`} aria-hidden="true" focusable="false" role="img">
-      <use xlinkHref={`/assets/img/sprite.svg#${name}`}></use>
-    </svg>
-  );
+  // Animation Variants
+  const fadeUp = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+    exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
+  };
 
   return (
     <div className="app-container">
-      <a className="usa-skipnav" href="#main-content">Skip to main content</a>
-
-      {/* Official Government Banner - Compact */}
-      <section className="usa-banner usa-banner--slim" aria-label="Official website of the United States government">
-        <header className="usa-banner__header padding-y-05">
-          <div className="usa-banner__inner">
-            <div className="grid-col-auto">
-              <img aria-hidden="true" className="usa-banner__header-flag width-2" src="https://unpkg.com/@uswds/uswds@3.13.0/dist/img/us_flag_small.png" alt="" />
+      {/* Toast Notice */}
+      <AnimatePresence>
+        {notice && (
+          <motion.div 
+            className="toast-container"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+          >
+            <div className="toast">
+              <span style={{ color: "var(--text-accent)", marginRight: "8px" }}>//</span>
+              {notice}
             </div>
-            <div className="grid-col-fill tablet:grid-col-auto margin-left-1" aria-hidden="true">
-              <p className="usa-banner__header-text text-sm">An official website of the United States government</p>
-            </div>
-          </div>
-        </header>
-      </section>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Federal Header - Compact */}
-      <header className="federal-header" role="banner">
-        <div className="display-flex flex-justify flex-align-center padding-y-1 padding-x-4">
-          <div className="display-flex flex-align-center">
-            <h1 className="margin-0 font-heading-md text-white font-sans text-uppercase text-bold letter-spacing-1">
-              Federal SOW Agent
-            </h1>
-          </div>
-          <div className="display-flex flex-align-center gap-1">
-            <Icon name="account_circle" size="3" />
-            <span className="font-sans text-bold text-uppercase letter-spacing-1 text-sm">Contracting Officer</span>
-          </div>
+      <header className="top-nav">
+        <div className="logo-section">
+          <div className="logo-mark" />
+          <h1 className="app-title">SOW // Assembly Engine</h1>
+        </div>
+        <div className="user-badge">
+          <Activity size={14} color="var(--text-accent)" />
+          <span>System Active</span>
         </div>
       </header>
 
-      {/* Main Layout - Height fills remaining viewport */}
-      <main id="main-content" className="main-content-layout">
-        
-        {/* Left Rail (Workspaces) */}
-        <aside className="rail-container" aria-label="Workspace and session navigation">
-          <div className="rail-header">
-            <h2 className="margin-0 font-heading-sm text-ink text-editorial">Workspaces</h2>
-            <button 
-              className="usa-button usa-button--unstyled text-ink display-flex flex-align-center" 
-              onClick={onCreateWorkspace} 
-              aria-label="New Workspace"
-            >
-              <Icon name="add" size="3" />
+      <main className="main-layout">
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h2 className="sidebar-title">Workspaces</h2>
+            <button className="btn-icon" onClick={onCreateWorkspace} title="Initialize Workspace">
+              <Plus size={16} />
             </button>
           </div>
           
-          <nav aria-label="Workspaces" className="rail-nav">
+          <div className="sidebar-scroll">
             {workspaces.map((ws) => (
               <div key={ws.id}>
                 <button 
-                  className={`workspace-button ${workspaceId === ws.id ? "is-active" : ""}`}
+                  className={`ws-item ${workspaceId === ws.id ? "active" : ""}`}
                   onClick={() => setWorkspaceId(ws.id)}
                 >
-                  <span className="text-sm">{ws.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <FolderOpen size={16} color={workspaceId === ws.id ? "var(--text-accent)" : "currentColor"} />
+                    <span>{ws.name}</span>
+                  </div>
                   {workspaceId === ws.id && (
-                    <span 
-                      className="display-flex flex-align-center" 
+                    <div 
                       onClick={(e) => { e.stopPropagation(); onCreateSession(); }}
+                      style={{ cursor: "pointer" }}
                       title="New Session"
-                      aria-label="New Session"
                     >
-                      <Icon name="add" size="3" className="text-white" />
-                    </span>
+                      <Plus size={14} color="var(--text-main)" />
+                    </div>
                   )}
                 </button>
                 
-                {workspaceId === ws.id && (
-                  <div className="bg-paper padding-bottom-1">
-                    {sessions.length === 0 ? (
-                      <p className="margin-0 padding-1 text-italic font-sans text-xs text-base-dark">No sessions yet.</p>
-                    ) : (
-                      sessions.map((s) => (
-                        <button 
-                          key={s.id}
-                          className={`session-button text-xs ${sessionId === s.id ? "is-active" : ""}`}
-                          onClick={() => setSessionId(s.id)}
-                        >
-                          {s.title}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
+                <AnimatePresence>
+                  {workspaceId === ws.id && (
+                    <motion.div 
+                      className="sessions-container"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                    >
+                      {sessions.length === 0 ? (
+                        <div style={{ padding: "8px 24px 8px 48px", fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>
+                          No sessions active.
+                        </div>
+                      ) : (
+                        sessions.map((s) => (
+                          <button 
+                            key={s.id}
+                            className={`session-item ${sessionId === s.id ? "active" : ""}`}
+                            onClick={() => setSessionId(s.id)}
+                          >
+                            {s.title}
+                          </button>
+                        ))
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
-          </nav>
+          </div>
         </aside>
 
-        {/* Main Canvas */}
-        <section className="canvas-container flex-fill" aria-label="Workspace canvas">
-          {notice && (
-            <div className="usa-alert usa-alert--info usa-alert--slim border-3 border-ink radius-0 shadow-none margin-bottom-2">
-              <div className="usa-alert__body font-sans text-bold text-ink text-sm">{notice}</div>
-            </div>
-          )}
-
-          {/* Toolbar */}
-          <div className="display-flex flex-justify flex-align-start margin-bottom-2 border-bottom-3 border-ink padding-bottom-2">
-            <div>
-              <h2 className="margin-0 text-editorial font-heading-lg text-ink">
-                {activeWorkspace?.name || "Select a Workspace"}
-              </h2>
-              {activeWorkspace && (
-                <div className="margin-top-1">
-                  <span className="stat-tag">Context: {contextDocs.length}</span>
-                  <span className="stat-tag accent">Templates: {templates.length}</span>
-                  <span className="stat-tag primary">Sessions: {sessions.length}</span>
-                </div>
-              )}
-            </div>
-            {activeWorkspace && (
-              <div className="display-flex gap-1">
-                <button
-                  className={`usa-button padding-y-1 ${viewMode === "wizard" ? "" : "usa-button--outline"}`}
-                  onClick={() => setViewMode("wizard")}
-                >
-                  Wizard
-                </button>
-                <button
-                  className={`usa-button padding-y-1 ${viewMode === "manager" ? "" : "usa-button--outline"}`}
-                  onClick={() => setViewMode("manager")}
-                >
-                  Files
-                </button>
-              </div>
-            )}
-          </div>
-
-          {viewMode === "wizard" && activeWorkspace ? (
-            <div className="wizard-flow">
-              {/* Compact Stepper */}
-              <div className="usa-step-indicator usa-step-indicator--counters-sm margin-bottom-3" aria-label="progress">
-                <ol className="usa-step-indicator__segments">
-                  <li className={`usa-step-indicator__segment ${wizardStep === 0 ? "usa-step-indicator__segment--current" : wizardStep > 0 ? "usa-step-indicator__segment--complete" : ""}`}>
-                    <span className="usa-step-indicator__segment-label">Start</span>
-                  </li>
-                  <li className={`usa-step-indicator__segment ${wizardStep === 1 ? "usa-step-indicator__segment--current" : wizardStep > 1 ? "usa-step-indicator__segment--complete" : ""}`}>
-                    <span className="usa-step-indicator__segment-label">Context</span>
-                  </li>
-                  <li className={`usa-step-indicator__segment ${wizardStep === 2 ? "usa-step-indicator__segment--current" : wizardStep > 2 ? "usa-step-indicator__segment--complete" : ""}`}>
-                    <span className="usa-step-indicator__segment-label">Template</span>
-                  </li>
-                  <li className={`usa-step-indicator__segment ${wizardStep === 3 ? "usa-step-indicator__segment--current" : ""}`}>
-                    <span className="usa-step-indicator__segment-label">Draft & Export</span>
-                  </li>
-                </ol>
-              </div>
-
-              {wizardStep === 0 && (
-                <div className="editorial-card">
-                  <div className="editorial-card__header padding-y-1">
-                    <h2 className="font-heading-md">Assembly Engine</h2>
-                  </div>
-                  <div className="editorial-card__body padding-y-2 text-sm">
-                    <p className="margin-top-0 text-bold text-ink">This engine compiles federal requirements into rigorous Statements of Work.</p>
-                    <ul className="usa-list text-ink margin-top-2">
-                      <li><strong>1. Material:</strong> Supply raw documents.</li>
-                      <li><strong>2. Structure:</strong> Upload a boilerplate agency template.</li>
-                      <li><strong>3. Execute:</strong> Instruct the AI agent to draft and refine the text.</li>
-                      <li><strong>4. Compile:</strong> Download the perfectly formatted document.</li>
-                    </ul>
-                  </div>
-                  <div className="editorial-card__footer padding-y-1">
-                    <button className="usa-button padding-y-1" onClick={nextStep}>Commence <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
+        <section className="canvas">
+          {activeWorkspace ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              style={{ display: "flex", flexDirection: "column", height: "100%" }}
+            >
+              <div className="toolbar">
+                <div>
+                  <h2 className="ws-title">{activeWorkspace.name}</h2>
+                  <div className="stats">
+                    <div className="stat-badge">CONTEXT <span>{contextDocs.length}</span></div>
+                    <div className="stat-badge">TEMPLATES <span>{templates.length}</span></div>
+                    <div className="stat-badge">SESSIONS <span>{sessions.length}</span></div>
                   </div>
                 </div>
-              )}
 
-              {wizardStep === 1 && (
-                <div className="editorial-card">
-                  <div className="editorial-card__header padding-y-1">
-                    <h2 className="font-heading-md">Phase 1: Knowledge</h2>
+                <div className="view-toggles">
+                  <button
+                    className={`toggle-btn ${viewMode === "wizard" ? "active" : ""}`}
+                    onClick={() => setViewMode("wizard")}
+                  >
+                    <Workflow size={14} style={{ marginRight: 6, marginBottom: -2 }} /> 
+                    Pipeline
+                  </button>
+                  <button
+                    className={`toggle-btn ${viewMode === "manager" ? "active" : ""}`}
+                    onClick={() => setViewMode("manager")}
+                  >
+                    <Database size={14} style={{ marginRight: 6, marginBottom: -2 }} />
+                    Storage
+                  </button>
+                </div>
+              </div>
+
+              {viewMode === "wizard" ? (
+                <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                  <div className="stepper">
+                    {steps.map((label, idx) => (
+                      <div key={idx} className="step" title={label}>
+                        <motion.div 
+                          className="step-fill"
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: wizardStep >= idx ? 1 : 0 }}
+                          transition={{ duration: 0.4 }}
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <div className="editorial-card__body padding-y-2 text-sm">
-                    
-                    <div
-                      className="dropzone-editorial padding-y-2 margin-bottom-2"
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        uploadManyContext(Array.from(e.dataTransfer.files || []));
-                      }}
-                    >
-                      <div className="display-flex flex-align-center flex-justify-center gap-1">
-                        <Icon name="file_upload" size="4" className="text-primary" />
-                        <div className="text-bold text-base">Drag & drop raw documents</div>
-                      </div>
-                      <input className="usa-file-input display-none" id="context-file" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.md,.txt,image/*" onChange={onUploadContext} />
-                      <label htmlFor="context-file" className="usa-button usa-button--outline margin-top-1 padding-y-1">Browse Files</label>
-                    </div>
-                    
-                    {contextDocs.length > 0 && (
-                      <div className="border-top-3 border-ink padding-top-1">
-                        <ul className="usa-list usa-list--unstyled file-list-compact">
-                          {contextDocs.map((d) => (
-                            <li key={d.id} className="file-list-item padding-y-05">
-                              <Icon name="description" size="3" className="margin-right-1 text-primary" />
-                              <span className="font-sans text-bold text-ink flex-fill text-xs">{d.filename}</span>
-                              <span className="stat-tag bg-base-light text-ink text-xs">{d.kind}</span>
-                              <button className="usa-button usa-button--unstyled text-secondary hover:text-secondary-dark margin-left-1" onClick={() => onDeleteContext(d.id)} aria-label="Remove file">
-                                <Icon name="delete" size="3" />
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+
+                  <AnimatePresence mode="wait">
+                    {wizardStep === 0 && (
+                      <motion.div key="step0" variants={fadeUp} initial="hidden" animate="visible" exit="exit" className="card">
+                        <div className="card-header">
+                          <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <TerminalSquare color="var(--text-accent)" /> System Initialization
+                          </h3>
+                        </div>
+                        <div className="card-body">
+                          <p style={{ fontSize: "16px", lineHeight: 1.6, color: "var(--text-muted)", margin: 0, maxWidth: "600px" }}>
+                            The Assembly Engine synthesizes provided data sources into compliant, highly-structured output documents utilizing your master templates.
+                          </p>
+                          <ul style={{ lineHeight: 2, marginTop: 32, fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-muted)" }}>
+                            <li><strong style={{ color: "var(--text-main)" }}>01.</strong> Ingest contextual data layers (PDF, Docs, CSV).</li>
+                            <li><strong style={{ color: "var(--text-main)" }}>02.</strong> Designate structural output templates.</li>
+                            <li><strong style={{ color: "var(--text-main)" }}>03.</strong> Command the synthesis sequence.</li>
+                            <li><strong style={{ color: "var(--text-main)" }}>04.</strong> Export localized data packet.</li>
+                          </ul>
+                        </div>
+                        <div className="card-footer">
+                          <div />
+                          <button className="btn btn-primary" onClick={() => setWizardStep(1)}>
+                            Initialize Sequence <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      </motion.div>
                     )}
-                  </div>
-                  <div className="editorial-card__footer padding-y-1">
-                    <button className="usa-button usa-button--outline padding-y-1" onClick={prevStep}>Prev</button>
-                    <button className="usa-button padding-y-1" onClick={nextStep}>Next <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
-                  </div>
-                </div>
-              )}
 
-              {wizardStep === 2 && (
-                <div className="editorial-card">
-                  <div className="editorial-card__header padding-y-1">
-                    <h2 className="font-heading-md">Phase 2: Templates</h2>
-                  </div>
-                  <div className="editorial-card__body padding-y-2 text-sm">
-                    
-                    <div
-                      className="dropzone-editorial padding-y-2 margin-bottom-2"
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        uploadManyTemplates(Array.from(e.dataTransfer.files || []));
-                      }}
-                    >
-                      <div className="display-flex flex-align-center flex-justify-center gap-1">
-                        <Icon name="file_upload" size="4" className="text-accent" />
-                        <div className="text-bold text-base">Drag & drop .docx templates</div>
-                      </div>
-                      <input className="usa-file-input display-none" id="template-file" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
-                      <label htmlFor="template-file" className="usa-button usa-button--accent-warm margin-top-1 padding-y-1 text-ink">Browse Templates</label>
+                    {wizardStep === 1 && (
+                      <motion.div key="step1" variants={fadeUp} initial="hidden" animate="visible" exit="exit" className="card">
+                        <div className="card-header">
+                          <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <Database color="var(--text-accent)" /> Context Ingestion
+                          </h3>
+                        </div>
+                        <div className="card-body">
+                          <div
+                            className="dropzone"
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              uploadManyContext(Array.from(e.dataTransfer.files || []));
+                            }}
+                          >
+                            <FileUp size={48} className="dropzone-icon" />
+                            <span style={{ fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>Drop Source Materials</span>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)" }}>PDF, DOCX, XLSX, CSV, TXT</span>
+                            <input className="usa-file-input" style={{ display: "none" }} id="context-file" type="file" multiple onChange={onUploadContext} />
+                            <label htmlFor="context-file" className="btn" style={{ marginTop: 24 }}>Browse Files</label>
+                          </div>
+                          
+                          {contextDocs.length > 0 && (
+                            <div className="item-list">
+                              {contextDocs.map((d) => (
+                                <div key={d.id} className="file-item">
+                                  <FileText size={16} color="var(--text-muted)" />
+                                  <span className="file-name">{d.filename}</span>
+                                  <span className="file-tag">{d.kind}</span>
+                                  <button className="btn-icon" style={{ width: 24, height: 24, border: "none" }} onClick={() => onDeleteContext(d.id)}>
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="card-footer">
+                          <button className="btn" onClick={() => setWizardStep(0)}>Abort</button>
+                          <button className="btn btn-primary" onClick={() => setWizardStep(2)}>
+                            Next Phase <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {wizardStep === 2 && (
+                      <motion.div key="step2" variants={fadeUp} initial="hidden" animate="visible" exit="exit" className="card">
+                        <div className="card-header">
+                          <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <LayoutTemplate color="var(--text-accent)" /> Structure Designation
+                          </h3>
+                        </div>
+                        <div className="card-body">
+                          <div
+                            className="dropzone"
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              uploadManyTemplates(Array.from(e.dataTransfer.files || []));
+                            }}
+                          >
+                            <Box size={48} className="dropzone-icon" />
+                            <span style={{ fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>Drop Master Templates</span>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)" }}>DOCX Format Required</span>
+                            <input className="usa-file-input" style={{ display: "none" }} id="template-file" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
+                            <label htmlFor="template-file" className="btn" style={{ marginTop: 24 }}>Browse Templates</label>
+                          </div>
+                          
+                          {templates.length > 0 && (
+                            <div className="item-list">
+                              {templates.map((t) => (
+                                <div key={t.id} className="file-item" style={{ borderColor: activeTemplateId === t.id ? "var(--text-accent)" : "var(--border-color)" }}>
+                                  <label className="radio-label">
+                                    <input
+                                      className="radio-input"
+                                      type="radio"
+                                      name="active-template"
+                                      checked={activeTemplateId === t.id}
+                                      onChange={() => onActivateTemplate(t.id)}
+                                    />
+                                    <span className="file-name" style={{ marginLeft: 0 }}>{t.filename}</span>
+                                    {activeTemplateId === t.id && <span className="file-tag" style={{ background: "rgba(255, 51, 102, 0.1)", color: "var(--text-accent)", borderColor: "var(--text-accent)" }}>MASTER</span>}
+                                  </label>
+                                  <button className="btn-icon" style={{ width: 24, height: 24, border: "none" }} onClick={() => onDeleteTemplate(t.id)}>
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="card-footer">
+                          <button className="btn" onClick={() => setWizardStep(1)}>Back</button>
+                          <button className="btn btn-primary" onClick={() => setWizardStep(3)}>
+                            Next Phase <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {wizardStep === 3 && (
+                      <motion.div key="step3" variants={fadeUp} initial="hidden" animate="visible" exit="exit" style={{ display: "flex", gap: "24px", flex: 1, minHeight: 0 }}>
+                        
+                        <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                          <div className="card-header" style={{ padding: "16px 24px" }}>
+                            <h3 className="card-title" style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 12 }}>
+                              <MessageSquareTerminal size={16} color="var(--text-accent)" /> Session Terminal
+                            </h3>
+                          </div>
+                          
+                          <div className="card-body" style={{ padding: 0, display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+                            <div className="chat-container">
+                              <div className="chat-history" style={{ border: "none", borderRadius: 0, margin: 0, flex: 1 }}>
+                                {messages.length === 0 ? (
+                                  <div style={{ margin: "auto", textAlign: "center", color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: "12px" }}>
+                                    [ TERMINAL AWAITING DIRECTIVES ]
+                                  </div>
+                                ) : null}
+                                {messages.map((m) => (
+                                  <div key={m.id} className={`chat-bubble ${m.role}`}>
+                                    <div className="bubble-role">{m.role === "assistant" ? "SYS.AGENT" : "OPERATOR"}</div>
+                                    <div className="chat-bubble__text">{m.content}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              <form style={{ padding: "16px 24px", borderTop: "1px solid var(--border-color)", background: "var(--bg-panel)" }} onSubmit={onSendMessage}>
+                                <div className="input-group">
+                                  <textarea
+                                    className="text-input"
+                                    value={messageText}
+                                    onChange={(e) => setMessageText(e.target.value)}
+                                    rows="1"
+                                    placeholder="Input directive..."
+                                  />
+                                  <button className="btn" disabled={loading || !sessionId}>Transmit</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "24px" }}>
+                          <div className="card" style={{ flexShrink: 0 }}>
+                            <div className="card-body" style={{ padding: "24px" }}>
+                              <h4 style={{ margin: "0 0 16px 0", fontSize: "14px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
+                                Synthesis Controls
+                              </h4>
+                              <textarea
+                                className="text-input"
+                                style={{ width: "100%", marginBottom: "16px" }}
+                                value={instructions}
+                                onChange={(e) => setInstructions(e.target.value)}
+                                rows="2"
+                                placeholder="Global compilation directives..."
+                              />
+                              <div style={{ display: "flex", gap: "12px" }}>
+                                <button className="btn" style={{ flex: 1, justifyContent: "center" }} onClick={onGenerate} disabled={loading || !sessionId}>
+                                  <Zap size={14} color="var(--text-accent)" /> Execute
+                                </button>
+                                <button
+                                  className="btn btn-primary"
+                                  style={{ flex: 1, justifyContent: "center" }}
+                                  onClick={onMergeDownload}
+                                  disabled={loading || !sessionId || !activeTemplateId}
+                                >
+                                  Compile & Download
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {generation?.sections?.full_markdown && (
+                            <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                              <div className="card-header" style={{ padding: "16px 24px" }}>
+                                <h3 className="card-title" style={{ fontSize: 14 }}>Output Buffer</h3>
+                              </div>
+                              <div className="card-body" style={{ padding: 0, overflow: "auto" }}>
+                                <div className="preview-box" style={{ border: "none", borderRadius: 0, minHeight: "100%" }}>
+                                  {generation.sections.full_markdown}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="grid-2">
+                  <div className="card">
+                    <div className="card-header">
+                      <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <Database color="var(--text-accent)" /> Storage: Context
+                      </h3>
                     </div>
-                    
-                    {templates.length > 0 && (
-                      <div className="border-top-3 border-ink padding-top-1">
-                        <ul className="usa-list usa-list--unstyled file-list-compact">
+                    <div className="card-body" style={{ overflowY: "auto" }}>
+                      <div
+                        className="dropzone"
+                        style={{ padding: "24px" }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          uploadManyContext(Array.from(e.dataTransfer.files || []));
+                        }}
+                      >
+                        <span style={{ fontSize: "14px", fontWeight: 700 }}>Drop Source Materials</span>
+                        <input className="usa-file-input" style={{ display: "none" }} id="context-mgr" type="file" multiple onChange={onUploadContext} />
+                        <label htmlFor="context-mgr" className="btn" style={{ marginTop: 12 }}>Browse</label>
+                      </div>
+                      
+                      {contextDocs.length > 0 && (
+                        <div className="item-list">
+                          {contextDocs.map((d) => (
+                            <div key={d.id} className="file-item">
+                              <FileText size={16} color="var(--text-muted)" />
+                              <span className="file-name">{d.filename}</span>
+                              <button className="btn-icon" style={{ width: 24, height: 24, border: "none" }} onClick={() => onDeleteContext(d.id)}>
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <LayoutTemplate color="var(--text-accent)" /> Storage: Templates
+                      </h3>
+                    </div>
+                    <div className="card-body" style={{ overflowY: "auto" }}>
+                      <div
+                        className="dropzone"
+                        style={{ padding: "24px" }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          uploadManyTemplates(Array.from(e.dataTransfer.files || []));
+                        }}
+                      >
+                        <span style={{ fontSize: "14px", fontWeight: 700 }}>Drop DOCX Templates</span>
+                        <input className="usa-file-input" style={{ display: "none" }} id="tpl-mgr" type="file" multiple onChange={onUploadTemplate} />
+                        <label htmlFor="tpl-mgr" className="btn" style={{ marginTop: 12 }}>Browse</label>
+                      </div>
+                      
+                      {templates.length > 0 && (
+                        <div className="item-list">
                           {templates.map((t) => (
-                            <li key={t.id} className="file-list-item padding-y-05">
-                              <div className="usa-radio">
+                            <div key={t.id} className="file-item" style={{ borderColor: activeTemplateId === t.id ? "var(--text-accent)" : "var(--border-color)" }}>
+                              <label className="radio-label">
                                 <input
-                                  className="usa-radio__input"
+                                  className="radio-input"
                                   type="radio"
-                                  name="active-template"
-                                  id={`tpl-${t.id}`}
+                                  name="active-template-mgr"
                                   checked={activeTemplateId === t.id}
                                   onChange={() => onActivateTemplate(t.id)}
                                 />
-                                <label className="usa-radio__label font-sans text-bold text-ink margin-top-0 text-xs" htmlFor={`tpl-${t.id}`}>
-                                  {t.filename}
-                                </label>
-                              </div>
-                              <button className="usa-button usa-button--unstyled text-secondary margin-left-auto" onClick={() => onDeleteTemplate(t.id)}>
-                                <Icon name="delete" size="3" />
+                                <span className="file-name" style={{ marginLeft: 0 }}>{t.filename}</span>
+                              </label>
+                              <button className="btn-icon" style={{ width: 24, height: 24, border: "none" }} onClick={() => onDeleteTemplate(t.id)}>
+                                <Trash2 size={14} />
                               </button>
-                            </li>
+                            </div>
                           ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                  <div className="editorial-card__footer padding-y-1">
-                    <button className="usa-button usa-button--outline padding-y-1" onClick={prevStep}>Prev</button>
-                    <button className="usa-button padding-y-1" onClick={nextStep}>Next <Icon name="arrow_forward" size="3" className="margin-left-1" /></button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
-
-              {wizardStep === 3 && (
-                <div className="display-flex gap-2 full-height-wizard">
-                  <div className="editorial-card flex-fill margin-bottom-0 display-flex flex-column">
-                    <div className="editorial-card__header padding-y-1">
-                      <h2 className="font-heading-md">Phase 3: Generation</h2>
-                    </div>
-                    <div className="editorial-card__body padding-x-0 padding-y-0 display-flex flex-column flex-fill" style={{overflow: 'hidden'}}>
-                      {/* Chat Interface */}
-                      <div className="editorial-chat margin-2 flex-fill">
-                        {messages.length === 0 ? (
-                          <div className="padding-2 text-center">
-                            <Icon name="info" size="4" className="text-base-dark margin-bottom-1" />
-                            <p className="font-sans text-bold text-ink text-sm">Input directives below.</p>
-                          </div>
-                        ) : null}
-                        {messages.map((m) => (
-                          <div key={m.id} className={`chat-bubble padding-1 ${m.role}`}>
-                            <div className="chat-bubble__name text-xs">{m.role === "assistant" ? "System" : "Officer"}</div>
-                            <div className="chat-bubble__text text-sm">{m.content}</div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <form className="padding-x-2 margin-bottom-2" onSubmit={onSendMessage}>
-                        <div className="display-flex flex-align-end gap-1">
-                          <textarea
-                            className="usa-textarea flex-fill text-sm padding-1"
-                            value={messageText}
-                            onChange={(e) => setMessageText(e.target.value)}
-                            rows="2"
-                            placeholder="Directives..."
-                          />
-                          <button className="usa-button margin-bottom-0 padding-y-1" disabled={loading || !sessionId}>Send</button>
-                        </div>
-                      </form>
-                      
-                      <div className="border-top-3 border-ink padding-2 bg-paper">
-                        <textarea
-                          className="usa-textarea width-full text-sm padding-1"
-                          value={instructions}
-                          onChange={(e) => setInstructions(e.target.value)}
-                          rows="2"
-                          placeholder="Final compilation instructions..."
-                        />
-                        
-                        <div className="margin-top-1 display-flex gap-1">
-                          <button className="usa-button padding-y-1 flex-1 text-xs" onClick={onGenerate} disabled={loading || !sessionId}>
-                            Generate
-                          </button>
-                          <button
-                            className="usa-button padding-y-1 flex-1 text-xs"
-                            style={{ backgroundColor: "var(--federal-accent)", color: "var(--federal-ink)" }}
-                            onClick={onMergeDownload}
-                            disabled={loading || !sessionId || !activeTemplateId}
-                          >
-                            Download .DOCX
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {generation?.sections?.full_markdown && (
-                    <div className="flex-fill display-flex flex-column" style={{maxHeight: '100%', overflow: 'hidden'}}>
-                      <h2 className="text-editorial font-heading-md text-ink margin-top-0 margin-bottom-1">Output</h2>
-                      <div className="preview-box flex-fill text-xs padding-2" style={{overflowY: 'auto'}}>
-                        {generation.sections.full_markdown}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : viewMode === "manager" && activeWorkspace ? (
-            <div className="manager-view display-flex gap-2">
-              <div className="editorial-card flex-fill">
-                <div className="editorial-card__header padding-y-1">
-                  <h2 className="font-heading-md">Knowledge Base</h2>
-                </div>
-                <div className="editorial-card__body padding-2">
-                  <div
-                    className="dropzone-editorial padding-y-2 margin-bottom-2"
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      uploadManyContext(Array.from(e.dataTransfer.files || []));
-                    }}
-                  >
-                    <div className="display-flex flex-align-center flex-justify-center gap-1">
-                      <Icon name="file_upload" size="4" className="text-primary" />
-                      <div className="text-bold text-sm">Add context</div>
-                    </div>
-                    <input className="usa-file-input display-none" id="context-file-mgr" type="file" multiple onChange={onUploadContext} />
-                    <label htmlFor="context-file-mgr" className="usa-button margin-top-1 padding-y-1 text-xs">Browse</label>
-                  </div>
-                  {contextDocs.length > 0 ? (
-                    <ul className="usa-list usa-list--unstyled file-list-compact">
-                      {contextDocs.map((d) => (
-                        <li key={d.id} className="file-list-item padding-y-05">
-                          <Icon name="description" size="3" className="margin-right-1 text-primary" />
-                          <span className="font-sans text-bold flex-fill text-xs">{d.filename}</span>
-                          <button className="usa-button usa-button--unstyled text-secondary margin-left-1" onClick={() => onDeleteContext(d.id)}>
-                            <Icon name="delete" size="3" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <p className="font-sans text-italic text-sm">No documents.</p>}
-                </div>
-              </div>
-
-              <div className="editorial-card flex-fill">
-                <div className="editorial-card__header padding-y-1">
-                  <h2 className="font-heading-md">Templates</h2>
-                </div>
-                <div className="editorial-card__body padding-2">
-                  <div
-                    className="dropzone-editorial padding-y-2 margin-bottom-2"
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      uploadManyTemplates(Array.from(e.dataTransfer.files || []));
-                    }}
-                  >
-                    <div className="display-flex flex-align-center flex-justify-center gap-1">
-                      <Icon name="file_upload" size="4" className="text-accent" />
-                      <div className="text-bold text-sm">Add .docx</div>
-                    </div>
-                    <input className="usa-file-input display-none" id="template-file-mgr" type="file" multiple accept=".docx" onChange={onUploadTemplate} />
-                    <label htmlFor="template-file-mgr" className="usa-button usa-button--accent-warm margin-top-1 padding-y-1 text-ink text-xs">Browse</label>
-                  </div>
-                  {templates.length > 0 ? (
-                    <ul className="usa-list usa-list--unstyled file-list-compact">
-                      {templates.map((t) => (
-                        <li key={t.id} className={`file-list-item padding-y-05 ${activeTemplateId === t.id ? 'bg-primary-lightest padding-x-1' : ''}`}>
-                          <div className="usa-radio">
-                            <input
-                              className="usa-radio__input"
-                              type="radio"
-                              name="active-template-manager"
-                              id={`tpl-mgr-${t.id}`}
-                              checked={activeTemplateId === t.id}
-                              onChange={() => onActivateTemplate(t.id)}
-                            />
-                            <label className="usa-radio__label font-sans text-bold text-ink margin-top-0 text-xs" htmlFor={`tpl-mgr-${t.id}`}>
-                              {t.filename}
-                            </label>
-                          </div>
-                          <button className="usa-button usa-button--unstyled text-secondary margin-left-auto" onClick={() => onDeleteTemplate(t.id)}>
-                            <Icon name="delete" size="3" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <p className="font-sans text-italic text-sm">No templates.</p>}
-                </div>
-              </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="padding-3 text-center text-base-dark">
-              <Icon name="folder" size="8" className="margin-bottom-2 opacity-50" />
-              <h2 className="text-editorial font-heading-lg text-ink margin-top-0">Awaiting Workspace Designation</h2>
-              <p className="font-sans text-sm">Select a workspace from the left rail or create a new one to begin operations.</p>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
+              <Activity size={48} style={{ opacity: 0.2, marginBottom: 24 }} />
+              <h2 style={{ fontFamily: "var(--font-mono)", fontSize: "16px", letterSpacing: "0.1em", margin: "0 0 8px 0" }}>SYSTEM STANDBY</h2>
+              <p style={{ margin: 0, fontSize: "14px" }}>Initialize a workspace to engage parameters.</p>
             </div>
           )}
         </section>
       </main>
-
-      {/* Official USWDS Footer - Compact */}
-      <footer className="usa-footer usa-footer--slim" role="contentinfo">
-        <div className="usa-footer__primary-section bg-federal-ink padding-y-1">
-          <div className="usa-footer__primary-container grid-row display-flex flex-align-center flex-justify">
-            <nav className="usa-footer__nav" aria-label="Footer navigation">
-              <ul className="display-flex gap-3 margin-0 padding-0 list-none">
-                <li><a className="text-white text-xs text-no-underline hover:text-underline" href="#">Privacy Policy</a></li>
-                <li><a className="text-white text-xs text-no-underline hover:text-underline" href="#">Accessibility</a></li>
-                <li><a className="text-white text-xs text-no-underline hover:text-underline" href="#">FOIA</a></li>
-              </ul>
-            </nav>
-            <div className="text-white text-xs text-right">
-              Generated drafting portal. Not for distribution.
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Federal Identifier - Hidden to save space on strict 100vh requirement, logic moved to footer/banner */}
-      {isCreatingSession && (
-        <div className="modal-overlay" onClick={() => setIsCreatingSession(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="display-flex flex-justify flex-align-center margin-bottom-3 border-bottom border-base-lighter padding-bottom-2">
-              <h2 className="margin-0 font-heading-lg text-ink">Select an Agent Persona</h2>
-              <button className="usa-button usa-button--unstyled text-secondary" onClick={() => setIsCreatingSession(false)}>
-                <Icon name="close" size="4" />
-              </button>
-            </div>
-            
-            <div className="grid-row grid-gap-2 margin-bottom-3">
-              {agents.map(a => (
-                <div key={a.id} className="tablet:grid-col-6 margin-bottom-2">
-                  <button 
-                    className="usa-button usa-button--unstyled width-full text-left bg-base-lightest padding-2 radius-md border border-base-lighter hover:border-primary transition-all"
-                    onClick={() => handleCreateSession(a.id)}
-                  >
-                    <div className="display-flex flex-align-center margin-bottom-1">
-                      <Icon name={a.id === "sow_writer" ? "description" : a.id === "cost_estimator" ? "payments" : a.id === "requirements_analyst" ? "rule" : "search"} size="4" className="text-primary margin-right-1" />
-                      <span className="font-heading-md text-bold text-ink">{a.name}</span>
-                    </div>
-                    <div className="text-sm text-base-dark">{a.description}</div>
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="text-right">
-              <button className="usa-button usa-button--outline" onClick={() => setIsCreatingSession(false)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
