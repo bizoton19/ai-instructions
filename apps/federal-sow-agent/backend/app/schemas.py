@@ -43,8 +43,6 @@ class WorkspaceOut(BaseModel):
 class WorkspaceAgentSettingsPatch(BaseModel):
     agent_temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     agent_workspace_instructions: str | None = Field(default=None, max_length=8000)
-    title: str | None = Field(default="New session", max_length=255)
-    agent_type: str | None = Field(default="sow_writer", max_length=64)
 
 
 class SessionCreate(BaseModel):
