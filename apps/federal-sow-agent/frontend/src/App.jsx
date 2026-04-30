@@ -11,8 +11,6 @@ import {
   FileUp,
   FolderOpen,
   LayoutTemplate,
-  LogIn,
-  LogOut,
   Plus,
   Settings,
   Terminal,
