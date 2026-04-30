@@ -1205,31 +1205,44 @@ function App() {
                                     </label>
                                   </div>
 
-                                  <div
-                                    role="status"
-                                    aria-live="polite"
-                                    style={{
-                                      padding: "12px 14px",
-                                      marginBottom: 14,
-                                      border: "1px solid var(--border-color)",
-                                      borderRadius: 4,
-                                      fontFamily: "var(--font-mono)",
-                                      fontSize: 12,
-                                      lineHeight: 1.5,
-                                    }}
-                                  >
-                                    <div>{pipelineUi.progressLine}</div>
-                                    {pipelineUi.statusLabel ? (
-                                      <div style={{ marginTop: 6, color: "var(--text-accent)" }}>{pipelineUi.statusLabel}</div>
-                                    ) : null}
-                                    {pipelineUi.nextName ? (
-                                      <div style={{ marginTop: 6 }}>Next specialist: {pipelineUi.nextName}</div>
-                                    ) : null}
+                                  <div className="pipeline-timeline" role="status" aria-live="polite">
+                                    {pipelinePlan.map((phase, i) => {
+                                      const isCompleted = activeSession.pipeline_completed || i < (activeSession.pipeline_step || 0);
+                                      const isCurrent = !activeSession.pipeline_completed && i === (activeSession.pipeline_step || 0);
+                                      
+                                      let statusClass = "waiting";
+                                      if (isCompleted) statusClass = "completed";
+                                      if (isCurrent) statusClass = "running";
+                                      
+                                      const showPulse = isCurrent && !pipelineUi.clarActive && !pipelineUi.manualPause && loading;
+                                      
+                                      let phaseStatus = "Waiting";
+                                      if (isCompleted) phaseStatus = "Done";
+                                      else if (isCurrent) {
+                                        if (pipelineUi.clarActive) phaseStatus = "Needs Clarification";
+                                        else if (pipelineUi.manualPause) phaseStatus = "Waiting Approval";
+                                        else if (loading) phaseStatus = "Running...";
+                                        else phaseStatus = "Ready";
+                                      }
+
+                                      return (
+                                        <div key={phase.agent_id} className={`pipeline-phase ${statusClass}`}>
+                                          <div className="phase-indicator">
+                                            <div className={`phase-dot ${showPulse ? "pulsing" : ""}`} />
+                                            <div className="phase-line" />
+                                          </div>
+                                          <div className="phase-details">
+                                            <div className="phase-name">{phase.name}</div>
+                                            <div className="phase-status">{phaseStatus}</div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
                                     {pipelineUi.manualPause ? (
-                                      <div style={{ marginTop: 8 }}>{content.wizard.step3.pipelineBlockedManual}</div>
+                                      <p className="action-hint" style={{ marginTop: 8, color: "var(--text-accent)" }}>{content.wizard.step3.pipelineBlockedManual}</p>
                                     ) : null}
                                     {pipelineUi.clarActive ? (
-                                      <div style={{ marginTop: 8 }}>{content.wizard.step3.pipelineClarificationHint}</div>
+                                      <p className="action-hint" style={{ marginTop: 8, color: "var(--text-accent)" }}>{content.wizard.step3.pipelineClarificationHint}</p>
                                     ) : null}
                                   </div>
 
