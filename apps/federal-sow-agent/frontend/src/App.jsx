@@ -15,10 +15,34 @@ import {
   Plus,
   Trash2,
   Workflow,
+  X,
   Zap,
 } from "lucide-react";
 import { api, ApiError } from "./api";
 import { content } from "./content";
+
+/** When the API leaves full_markdown empty but fills structured fields (e.g. IGCE lines in deliverables). */
+function sectionsToPreviewMarkdown(sections) {
+  if (!sections || typeof sections !== "object") return "";
+  const fm = String(sections.full_markdown || "").trim();
+  if (fm) return fm;
+  const order = [
+    ["Purpose", "purpose"],
+    ["Background", "background"],
+    ["Scope", "scope"],
+    ["Deliverables", "deliverables"],
+    ["Period of Performance", "period_of_performance"],
+    ["Roles and Responsibilities", "roles_and_responsibilities"],
+    ["Acceptance Criteria", "acceptance_criteria"],
+    ["Assumptions and Constraints", "assumptions_and_constraints"],
+  ];
+  const parts = [];
+  for (const [title, key] of order) {
+    const block = String(sections[key] || "").trim();
+    if (block) parts.push(`## ${title}\n\n${block}`);
+  }
+  return parts.join("\n\n");
+}
 
 function App() {
   const [workspaces, setWorkspaces] = useState([]);
@@ -37,7 +61,7 @@ function App() {
   const [agentsCatalog, setAgentsCatalog] = useState([]);
   const [pipelinePlan, setPipelinePlan] = useState([]);
   const [clarificationResolved, setClarificationResolved] = useState(false);
-  const [newSessionAgentType, setNewSessionAgentType] = useState("sow_writer");
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [viewMode, setViewMode] = useState("wizard"); // wizard | manager
 
@@ -117,6 +141,8 @@ function App() {
     return messages.some((m) => m.role === "assistant" && (m.content || "").trim());
   }, [generation, messages]);
 
+  const previewMarkdown = useMemo(() => sectionsToPreviewMarkdown(generation?.sections), [generation]);
+
   function specialistDisplayName(agentTypeId) {
     if (!agentTypeId) return "";
     const name = agentsCatalog.find((a) => a.id === agentTypeId)?.name;
@@ -152,6 +178,10 @@ function App() {
     setMessages([]);
     setGeneration(null);
   }, [workspaceId]);
+
+  useEffect(() => {
+    setClarificationResolved(false);
+  }, [sessionId]);
 
   async function loadWorkspaces() {
     const data = await api.listWorkspaces();
@@ -214,8 +244,9 @@ function App() {
 
   async function onCreateSession() {
     if (!workspaceId) return;
+    const agentType = activeSession?.agent_type ?? "sow_writer";
     try {
-      const s = await api.createSession(workspaceId, content.prompts.newSessionTitle, newSessionAgentType);
+      const s = await api.createSession(workspaceId, content.prompts.newSessionTitle, agentType);
       const next = await api.listSessions(workspaceId);
       setSessions(next);
       setSessionId(s.id);
@@ -540,23 +571,6 @@ function App() {
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                     >
-                      <div className="new-session-row">
-                        <label htmlFor={`new-session-agent-${ws.id}`} className="new-session-agent-label">
-                          {content.sidebar.specialistForNextSessionLabel}
-                        </label>
-                        <select
-                          id={`new-session-agent-${ws.id}`}
-                          className="session-agent-picker"
-                          value={newSessionAgentType}
-                          onChange={(e) => setNewSessionAgentType(e.target.value)}
-                        >
-                          {agentOptions.map((a) => (
-                            <option key={a.id} value={a.id} title={a.description}>
-                              {a.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
                       {sessions.length === 0 ? (
                         <div className="sessions-empty">
                           <p className="sessions-empty-text">{content.sidebar.noSessions}</p>
@@ -585,20 +599,6 @@ function App() {
                             >
                               <span className="session-title-ellipsis">{s.title}</span>
                             </button>
-                            <select
-                              className="session-agent-picker session-agent-picker-compact"
-                              aria-label={`${content.sidebar.changeSpecialistAria}: ${s.title}`}
-                              title={agentOptions.find((a) => a.id === s.agent_type)?.description ?? ""}
-                              value={s.agent_type}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => onUpdateSessionAgent(s.id, e.target.value)}
-                            >
-                              {agentOptions.map((a) => (
-                                <option key={a.id} value={a.id}>
-                                  {a.name}
-                                </option>
-                              ))}
-                            </select>
                           </div>
                         ))
                       )}
@@ -630,13 +630,27 @@ function App() {
                     <div className="stat-badge">{content.toolbar.statTemplates} <span>{templates.length}</span></div>
                     <div className="stat-badge">{content.toolbar.statSessions} <span>{sessions.length}</span></div>
                   </div>
-                  <div className="toolbar-specialist" aria-live="polite">
-                    <span className="toolbar-specialist-label">{content.toolbar.specialistBadge}</span>
-                    <span className="toolbar-specialist-value">
-                      {activeSession?.agent_type
-                        ? specialistDisplayName(activeSession.agent_type)
-                        : content.toolbar.specialistUnset}
-                    </span>
+                  <div className="toolbar-specialist-toolbar" aria-live="polite">
+                    <label className="toolbar-specialist-label" htmlFor="toolbar-specialist-select">
+                      {content.toolbar.specialistBadge}
+                    </label>
+                    {sessionId && activeSession ? (
+                      <select
+                        id="toolbar-specialist-select"
+                        className="toolbar-specialist-select"
+                        value={activeSession.agent_type}
+                        onChange={(e) => onUpdateSessionAgent(sessionId, e.target.value)}
+                        title={content.toolbar.specialistSelectTitle}
+                      >
+                        {agentOptions.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="toolbar-specialist-value">{content.toolbar.specialistUnset}</span>
+                    )}
                   </div>
                 </div>
 
@@ -824,53 +838,26 @@ function App() {
                     )}
 
                     {wizardStep === 3 && (
-                      <motion.div key="step3" variants={fadeUp} initial="hidden" animate="visible" exit="exit" style={{ display: "flex", gap: "24px", flex: 1, minHeight: 0 }}>
-                        
-                        <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                          <div className="card-header" style={{ padding: "16px 24px" }}>
-                            <h3 className="card-title" style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 12 }}>
-                              <Terminal size={16} color="var(--text-accent)" /> {content.wizard.step3.terminalTitle}
-                            </h3>
-                          </div>
-                          
-                          <div className="card-body" style={{ padding: 0, display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-                            {!sessionId ? (
-                              <div className="session-alert" role="status">
-                                {content.wizard.step3.sessionRequiredBanner}
-                              </div>
-                            ) : null}
-                            <div className="chat-container">
-                              <div className="chat-history" style={{ border: "none", borderRadius: 0, margin: 0, flex: 1 }}>
-                                {messages.length === 0 ? (
-                                  <div style={{ margin: "auto", textAlign: "center", color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: "12px" }}>
-                                    {content.wizard.step3.terminalEmpty}
-                                  </div>
-                                ) : null}
-                                {messages.map((m) => (
-                                  <div key={m.id} className={`chat-bubble ${m.role}`}>
-                                    <div className="bubble-role">{m.role === "assistant" ? content.wizard.step3.roleAssistant : content.wizard.step3.roleUser}</div>
-                                    <div className="chat-bubble__text">{m.content}</div>
-                                  </div>
-                                ))}
-                              </div>
-                              
-                              <form style={{ padding: "16px 24px", borderTop: "1px solid var(--border-color)", background: "var(--bg-panel)" }} onSubmit={onSendMessage}>
-                                <div className="input-group">
-                                  <textarea
-                                    className="text-input"
-                                    value={messageText}
-                                    onChange={(e) => setMessageText(e.target.value)}
-                                    rows="1"
-                                    placeholder={content.wizard.step3.messagePlaceholder}
-                                  />
-                                  <button className="btn" disabled={loading || !sessionId}>{content.wizard.step3.transmit}</button>
-                                </div>
-                              </form>
-                            </div>
-                          </div>
+                      <motion.div key="step3" variants={fadeUp} initial="hidden" animate="visible" exit="exit" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 12 }}>
+                        <div className="wizard-step3-chatbar" role="region" aria-label={content.wizard.step3.chatRegionLabel}>
+                          {sessionId ? (
+                            <button
+                              type="button"
+                              className="btn wizard-step3-chat-toggle"
+                              onClick={() => setChatDrawerOpen((open) => !open)}
+                              aria-expanded={chatDrawerOpen}
+                              aria-controls="session-chat-drawer-panel"
+                            >
+                              <Terminal size={16} aria-hidden="true" />
+                              {chatDrawerOpen ? content.wizard.step3.closeChatDrawerLabel : content.wizard.step3.openChatDrawerLabel}
+                            </button>
+                          ) : (
+                            <p className="action-hint" style={{ margin: 0 }}>{content.wizard.step3.sessionRequiredBanner}</p>
+                          )}
                         </div>
 
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "24px" }}>
+                        <div className="wizard-step3-split" style={{ display: "flex", flexDirection: "row", flex: 1, minHeight: 0, gap: 0 }}>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "24px", minWidth: 0, overflow: "auto" }}>
                           <div className="card" style={{ flexShrink: 0 }}>
                             <div className="card-body" style={{ padding: "24px" }}>
                               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -1015,6 +1002,9 @@ function App() {
                                   <p className="action-hint" style={{ marginTop: 0 }}>
                                     {content.wizard.step3.pipelineInstructionsNote}
                                   </p>
+                                  <p className="action-hint" style={{ marginTop: 0 }}>
+                                    {content.wizard.step3.pipelineFixedOrderNote}
+                                  </p>
                                   <div
                                     role="group"
                                     aria-labelledby="orch-mode-label"
@@ -1152,15 +1142,76 @@ function App() {
                               <h3 className="card-title" style={{ fontSize: 14 }}>{content.wizard.step3.outputBufferTitle}</h3>
                             </div>
                             <div className="card-body markdown-draft-body" style={{ padding: "0 24px 24px", overflow: "auto", flex: 1 }}>
-                              {generation?.sections?.full_markdown ? (
+                              {previewMarkdown ? (
                                 <div className="markdown-draft-view">
-                                  <ReactMarkdown>{generation.sections.full_markdown}</ReactMarkdown>
+                                  <ReactMarkdown>{previewMarkdown}</ReactMarkdown>
                                 </div>
                               ) : (
                                 <p className="preview-placeholder">{content.wizard.step3.outputEmpty}</p>
                               )}
                             </div>
                           </div>
+                        </div>
+
+                        <AnimatePresence>
+                          {chatDrawerOpen && sessionId ? (
+                            <motion.aside
+                              id="session-chat-drawer-panel"
+                              key="session-chat-drawer"
+                              className="chat-drawer-panel"
+                              initial={{ opacity: 0, x: 48 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 48 }}
+                              transition={{ duration: 0.22 }}
+                              aria-labelledby="chat-drawer-title"
+                            >
+                              <div className="chat-drawer-header">
+                                <h3 className="chat-drawer-title" id="chat-drawer-title">
+                                  <Terminal size={16} aria-hidden="true" /> {content.wizard.step3.terminalTitle}
+                                </h3>
+                                <button
+                                  type="button"
+                                  className="btn-icon chat-drawer-close"
+                                  onClick={() => setChatDrawerOpen(false)}
+                                  aria-label={content.wizard.step3.closeChatDrawerLabel}
+                                >
+                                  <X size={18} aria-hidden="true" />
+                                </button>
+                              </div>
+                              <div className="chat-drawer-body">
+                                <div className="chat-container chat-container--drawer">
+                                  <div className="chat-history chat-history--drawer">
+                                    {messages.length === 0 ? (
+                                      <div className="chat-empty-hint">{content.wizard.step3.terminalEmpty}</div>
+                                    ) : null}
+                                    {messages.map((m) => (
+                                      <div key={m.id} className={`chat-bubble ${m.role}`}>
+                                        <div className="bubble-role">{m.role === "assistant" ? content.wizard.step3.roleAssistant : content.wizard.step3.roleUser}</div>
+                                        <div className="chat-bubble__text">{m.content}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <form className="chat-drawer-form" onSubmit={onSendMessage}>
+                                    <label htmlFor="chat-drawer-message" className="sr-only-label">
+                                      {content.wizard.step3.chatMessageLabel}
+                                    </label>
+                                    <div className="input-group">
+                                      <textarea
+                                        id="chat-drawer-message"
+                                        className="text-input"
+                                        value={messageText}
+                                        onChange={(e) => setMessageText(e.target.value)}
+                                        rows={3}
+                                        placeholder={content.wizard.step3.messagePlaceholder}
+                                      />
+                                      <button className="btn" disabled={loading || !sessionId}>{content.wizard.step3.transmit}</button>
+                                    </div>
+                                  </form>
+                                </div>
+                              </div>
+                            </motion.aside>
+                          ) : null}
+                        </AnimatePresence>
                         </div>
 
                       </motion.div>

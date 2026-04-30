@@ -42,7 +42,10 @@ purpose, background, scope, deliverables, period_of_performance,
 roles_and_responsibilities, acceptance_criteria, assumptions_and_constraints,
 full_markdown
 
-Each field except full_markdown should be plain text (paragraphs allowed). full_markdown must be complete Markdown for the SOW."""
+Each field except full_markdown should be plain text (paragraphs allowed).
+The full_markdown field must contain the complete primary deliverable in Markdown form for the task described in the system message
+(for example an SOW, an IGCE cost narrative, requirements document, or market research summary—never substitute a generic SOW if the role is IGCE-only or analyst-only unless the instructions ask for overlap).
+Populate structured fields appropriately for that deliverable."""
 
 
 def _fallback_sections(text: str) -> SOWSectionsModel:

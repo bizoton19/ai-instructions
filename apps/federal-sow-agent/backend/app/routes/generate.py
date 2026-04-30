@@ -46,7 +46,10 @@ def generate_sow(
     assistant_message = Message(
         session_id=session.id,
         role="assistant",
-        content=sections.full_markdown or sections.scope or "Generated SOW sections.",
+        content=sections.full_markdown
+        or sections.scope
+        or sections.deliverables
+        or "Generated draft sections (see structured fields returned to the UI).",
     )
     db.add(assistant_message)
     db.commit()

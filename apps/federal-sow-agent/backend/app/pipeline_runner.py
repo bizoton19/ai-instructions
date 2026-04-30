@@ -70,7 +70,7 @@ def _run_one_pipeline_phase(
     body = (sections.full_markdown or sections.scope or "").strip()
     clar = _needs_clarification(body)
     if clar and CLARIFICATION_TAG.upper() not in body.upper():
-        body += f"\n\n{CLARIFICATION_TAG} Reply in chat, answer the question, then continue with clarification_resolved."
+        body += f"\n\n{CLARIFICATION_TAG} Reply in session chat with your answer, then continue with clarification_resolved."
 
     header = f"## Pipeline phase ({step_idx + 1}/{len(seq)}): {profile.name}\n\n"
     db.add(Message(session_id=session.id, role="assistant", content=header + body))
@@ -108,7 +108,7 @@ def advance_pipeline(db: Session, workspace_id: str, session_id: str, body: Pipe
             return (
                 {
                     "detail": {
-                        "message": "Awaiting clarification. Reply in terminal, then resend clarification_resolved.",
+                        "message": "Awaiting clarification. Reply in the session chat, then resend clarification_resolved.",
                         **pay,
                     },
                     "status_code": 428,

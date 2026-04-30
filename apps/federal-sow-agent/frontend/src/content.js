@@ -33,10 +33,8 @@ export const content = {
     newSessionTitle: "New Session",
     noSessions: "No sessions yet.",
     createSessionCta: "Create session",
-    specialistForNextSessionLabel: "Specialist role for new sessions",
-    changeSpecialistAria: "Change specialist for this session",
     handOffNote:
-      "Each session tracks one pipeline run. Manual review pauses between specialists until you approve. Automatic mode runs the specialist chain on the server and updates progress here until completion or clarification.",
+      "New sessions reuse the specialist on the selected session when you click plus. Adjust the specialist in the toolbar when a session is open. The pipeline uses its own ordered specialists (see synthesis step).",
   },
 
   toolbar: {
@@ -45,8 +43,9 @@ export const content = {
     statSessions: "SESSIONS",
     pipeline: "Pipeline",
     storage: "Storage",
-    specialistBadge: "Active specialist",
+    specialistBadge: "Session specialist",
     specialistUnset: "(select a session)",
+    specialistSelectTitle: "Change specialist for drafts and standalone Generate draft",
   },
 
   agents: {
@@ -142,7 +141,7 @@ export const content = {
       instructionsPlaceholder: "Global compilation directives...",
       generateLabel: "Generate draft",
       generateHint:
-        "Runs the drafting agent on this session using workspace context and the instructions below. Preview updates when complete.",
+        "One model pass using the session specialist chosen in the toolbar. For IGCE-only output without running the Requirements or SOW phases, leave the pipeline idle and rely on Generate with IGCE Cost Estimator selected.",
       downloadLabel: "Download Word (DOCX)",
       downloadHint:
         "Requires a workspace default template below. For template-free output, use Download Markdown.",
@@ -156,6 +155,10 @@ export const content = {
       goToTemplateStep: "Open Template step",
       outputBufferTitle: "Draft preview",
       outputEmpty: "Generate a draft to see formatted preview here.",
+      chatRegionLabel: "Session chat drawer",
+      openChatDrawerLabel: "Open session chat",
+      closeChatDrawerLabel: "Close session chat",
+      chatMessageLabel: "Message for the session",
 
       pipelineDefinitionLoading: "Pipeline definition is loading from the server.",
       pipelineHeading: "Specialist pipeline",
@@ -165,13 +168,15 @@ export const content = {
       pipelineModeAuto: "Automatic chain",
       pipelineModeAutoHint: "The server advances through specialists until the run finishes or clarification is needed.",
       pipelineInstructionsNote: "Optional notes for the next specialist run (applied to the first phase when advancing).",
+      pipelineFixedOrderNote:
+        "Specialist pipeline runs in a fixed order regardless of the toolbar: Requirements Analyst, Market Research, SOW Writer, then IGCE Cost Estimator.",
       pipelineRunNext: "Run next specialist",
       pipelineRunChain: "Run full automatic chain",
       pipelineApproveHint: "After a specialist finishes in manual mode, approving the continuation is bundled into Run next specialist.",
       pipelineBlockedManual: "At a manual checkpoint—approve below or switch to automatic mode to continue without per-step approval.",
       pipelineClarificationHint:
-        "The model asked for clarification. Reply in the terminal, enable the checkbox below, then continue the pipeline.",
-      pipelineClarificationResolvedLabel: "I have addressed the clarification in the terminal above",
+        "The model asked for clarification. Reply in the session chat (Open session chat), confirm with the checkbox below if shown, then continue the pipeline.",
+      pipelineClarificationResolvedLabel: "I have addressed the clarification in the session chat",
       pipelineResetLabel: "Reset pipeline progress",
       pipelineResetConfirm: "Reset pipeline step and checkpoints for this session? Chat history is unchanged.",
       pipelineStatusPaused: "Paused — manual review checkpoint",
