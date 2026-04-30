@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.merge.docx_merge import merge_docx, sow_model_to_flat, sow_sections_to_markdown
+from app.merge.docx_merge import merge_docx, sow_model_to_flat, sow_sections_to_markdown, standalone_docx_from_flat
 from app.models import AgentSession, Message, TemplateAsset
 from app.schemas import ExportIn, MergeIn, SOWSectionsModel
 from app.storage import resolve_storage_key
@@ -22,6 +22,20 @@ def _load_session(db: Session, workspace_id: str, session_id: str) -> AgentSessi
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return session
+
+
+def _word_export(template_path: Path, template_filename: str, flat: dict[str, str], out_path: Path) -> str:
+    """DOCX templates merge in place; PDF/Excel guides drafting but export is a standalone .docx."""
+    suffix = Path(template_filename).suffix.lower()
+    if suffix == ".docx":
+        _, note = merge_docx(template_path, flat, out_path)
+        return note
+    preamble = (
+        "Reference template file type: PDF or Excel. The system extracted headings, text, or table "
+        "previews for the drafting specialists. This Word file contains the generated Statement of Work "
+        "content in structured sections—it does not recreate the original file’s exact layout, forms, or print styling."
+    )
+    return standalone_docx_from_flat(flat, out_path, preamble=preamble)
 
 
 def _sections_have_exportable_body(s: SOWSectionsModel) -> bool:
@@ -49,7 +63,7 @@ def merge_sow_docx(
     payload: MergeIn,
     db: Session = Depends(get_db),
 ):
-    """Merge the latest (or provided) generation into a DOCX template."""
+    """Pack generated content into Word: merge with a .docx template, or standalone .docx if template is PDF/XLSX."""
 
     must_workspace_exist(db, workspace_id)
     session = _load_session(db, workspace_id, session_id)
@@ -67,9 +81,10 @@ def merge_sow_docx(
 
     sections = _resolve_sections(db, session, payload)
     flat = sow_model_to_flat(sections)
-    out_name = f"{uuid.uuid4().hex}_merged_{template.filename}"
+    suffix = Path(template.filename).suffix.lower()
+    out_name = f"{uuid.uuid4().hex}_export.docx" if suffix != ".docx" else f"{uuid.uuid4().hex}_merged_{template.filename}"
     out_path = Path(template_path.parent.parent / "outputs" / out_name)
-    _, note = merge_docx(template_path, flat, out_path)
+    note = _word_export(template_path, template.filename, flat, out_path)
 
     rel = f"/workspaces/{workspace_id}/sessions/{session_id}/downloads/{out_name}"
     return {"download_path": rel, "format": "docx", "note": note}
@@ -105,9 +120,10 @@ def export_document(
         if not template_path.exists():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template file missing")
         flat = sow_model_to_flat(sections)
-        out_name = f"{uuid.uuid4().hex}_merged_{template.filename}"
+        suffix = Path(template.filename).suffix.lower()
+        out_name = f"{uuid.uuid4().hex}_export.docx" if suffix != ".docx" else f"{uuid.uuid4().hex}_merged_{template.filename}"
         out_path = base_dir / out_name
-        _, note = merge_docx(template_path, flat, out_path)
+        note = _word_export(template_path, template.filename, flat, out_path)
         rel = f"/workspaces/{workspace_id}/sessions/{session_id}/downloads/{out_name}"
         return {"download_path": rel, "format": "docx", "note": note}
 

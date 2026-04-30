@@ -8,13 +8,15 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.config import settings
 from app.ingestion.dispatch import ingest_context_file, normalize_mime
-from app.ingestion.docx_extract import extract_docx_text_and_outline
-from app.models import ContextAsset, TemplateAsset, Workspace
+from app.models import ContextAsset, TemplateAsset
 from app.schemas import ContextAssetOut, TemplateAssetOut
 from app.storage import save_upload_bytes
+from app.template_outline import build_template_outline_json
 from app.workspace_access import must_workspace_exist
 
 router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["uploads"])
+
+_ALLOWED_TEMPLATE_SUFFIXES = (".docx", ".pdf", ".xlsx")
 
 
 @router.post("/templates/upload", response_model=TemplateAssetOut)
@@ -24,8 +26,13 @@ async def upload_template(
     db: Session = Depends(get_db),
 ):
     ws = must_workspace_exist(db, workspace_id)
-    if not file.filename.lower().endswith(".docx"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only .docx templates are supported")
+    lower = file.filename.lower()
+    if not lower.endswith(_ALLOWED_TEMPLATE_SUFFIXES):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Templates must be {_ALLOWED_TEMPLATE_SUFFIXES[0]}, {_ALLOWED_TEMPLATE_SUFFIXES[1]}, or {_ALLOWED_TEMPLATE_SUFFIXES[2]}. "
+            "PDF and Excel are used as drafting references; Word export still produces a new .docx from generated content.",
+        )
     data = await file.read()
     if not data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty upload")
@@ -33,10 +40,10 @@ async def upload_template(
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File exceeds max upload size")
     key, path = save_upload_bytes("templates", file.filename, data)
     mime = normalize_mime(file.filename, file.content_type)
-    outline_json = None
-    if file.filename.lower().endswith(".docx"):
-        _, outline = extract_docx_text_and_outline(path)
-        outline_json = json.dumps({"headings": outline})
+    try:
+        outline_json = build_template_outline_json(path, file.filename)
+    except Exception as exc:
+        outline_json = json.dumps({"kind": "error", "detail": str(exc)[:500]})
     item = TemplateAsset(
         workspace_id=workspace_id,
         storage_key=key,

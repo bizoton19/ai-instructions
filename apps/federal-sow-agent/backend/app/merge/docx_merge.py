@@ -82,6 +82,47 @@ def merge_docx(
     return used_tpl, " ".join(msg_parts)
 
 
+def standalone_docx_from_flat(
+    flat_context: dict[str, str],
+    output_path: Path,
+    *,
+    preamble: str | None = None,
+) -> str:
+    """
+    Word document from structured sections only (no template file).
+    PDF/Excel uploads can inform drafting via extracted hints but cannot merge with python-docx.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    doc = Document()
+    if preamble and preamble.strip():
+        doc.add_paragraph(preamble.strip())
+    doc.add_paragraph()
+    doc.add_heading("Generated Statement of Work Content", level=1)
+    order = [
+        ("Purpose", flat_context.get("purpose", "")),
+        ("Background", flat_context.get("background", "")),
+        ("Scope", flat_context.get("scope", "")),
+        ("Deliverables", flat_context.get("deliverables", "")),
+        ("Period of Performance", flat_context.get("period_of_performance", "")),
+        ("Roles and Responsibilities", flat_context.get("roles_and_responsibilities", "")),
+        ("Acceptance Criteria", flat_context.get("acceptance_criteria", "")),
+        ("Assumptions and Constraints", flat_context.get("assumptions_and_constraints", "")),
+    ]
+    body = flat_context.get("full_markdown") or ""
+    for title, block in order:
+        if block and str(block).strip():
+            doc.add_heading(title, level=2)
+            for line in str(block).splitlines():
+                doc.add_paragraph(line)
+    if body.strip():
+        doc.add_heading("Full narrative (Markdown pasted as text)", level=2)
+        for line in body.splitlines():
+            doc.add_paragraph(line)
+
+    doc.save(str(output_path))
+    return "Created new Word document from generated sections (no .docx template binary used as merge target)."
+
+
 def merge_docx_bytes(template_path: Path, flat_context: dict[str, str]) -> tuple[bytes, str]:
     import tempfile
 

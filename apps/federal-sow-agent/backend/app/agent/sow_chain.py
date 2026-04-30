@@ -29,7 +29,7 @@ HUMAN_PROMPT = """Context documents (may include excerpts from PDFs, Word, sprea
 
 {context_block}
 
-Template heading hints (from uploaded Word templates, if any):
+Template heading hints from the workspace reference file (DOCX headings, inferred PDF outline lines, or Excel column/table preview):
 
 {template_hints}
 

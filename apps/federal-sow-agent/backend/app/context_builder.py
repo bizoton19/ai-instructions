@@ -32,15 +32,76 @@ def build_generation_inputs(db: Session, workspace_id: str) -> tuple[str, str]:
     if ws and ws.active_template_asset_id:
         chosen_templates = [t for t in templates if t.id == ws.active_template_asset_id]
     for t in chosen_templates[:1]:
-        if t.extracted_outline_json:
-            try:
-                obj = json.loads(t.extracted_outline_json)
-                headings = obj.get("headings", [])
-                template_hints_parts.append(f"{t.filename}: {', '.join(headings[:15])}")
-            except Exception:
-                template_hints_parts.append(f"{t.filename}: [outline parse error]")
-        else:
+        if not t.extracted_outline_json:
             template_hints_parts.append(f"{t.filename}: [outline not extracted yet]")
+            continue
+        try:
+            obj = json.loads(t.extracted_outline_json)
+        except Exception:
+            template_hints_parts.append(f"{t.filename}: [outline parse error]")
+            continue
+
+        kind = obj.get("kind")
+        headings = obj.get("headings")
+        # Legacy stored payload: {"headings": [...]} without kind.
+        if kind is None and isinstance(headings, list):
+            kind = "docx"
+
+        if kind == "error":
+            detail = obj.get("detail", "extract failed")
+            template_hints_parts.append(f"{t.filename}: [template extract error — {detail}]")
+            continue
+
+        if kind in ("docx", None):
+            hdrs = headings if isinstance(headings, list) else []
+            if hdrs:
+                template_hints_parts.append(f"{t.filename} (.docx): headings — {', '.join(str(h) for h in hdrs[:15])}")
+            excerpt = (obj.get("text_excerpt") or "").strip()
+            if excerpt:
+                excerpt = excerpt[:7000]
+                template_hints_parts.append(f"{t.filename}: excerpt:\n{excerpt}")
+            continue
+
+        if kind == "pdf":
+            hdrs = headings if isinstance(headings, list) else []
+            if hdrs:
+                template_hints_parts.append(
+                    f"{t.filename} (PDF): inferred section lines — {', '.join(str(h) for h in hdrs[:15])}"
+                )
+            pages = obj.get("pages")
+            if pages:
+                template_hints_parts.append(f"{t.filename}: {pages} page(s)")
+            excerpt = (obj.get("text_excerpt") or "").strip()[:9000]
+            if excerpt:
+                template_hints_parts.append(f"{t.filename} (PDF) text excerpt:\n{excerpt}")
+            template_hints_parts.append(
+                "(PDF templates do not preserve exact typography in export; drafting should mirror section ideas in Word output.)"
+            )
+            continue
+
+        if kind == "xlsx":
+            sheet = obj.get("sheet") or ""
+            hdr_row = obj.get("headers") or []
+            if hdr_row:
+                template_hints_parts.append(
+                    f"{t.filename} (Excel, sheet «{sheet}»): columns — {', '.join(str(h) for h in hdr_row[:24])}"
+                )
+            rows = obj.get("sample_rows") or []
+            if isinstance(rows, list) and rows:
+                preview_lines: list[str] = []
+                for r in rows[:40]:
+                    if isinstance(r, list):
+                        preview_lines.append(" | ".join(str(c)[:120] for c in r[:12]))
+                    else:
+                        preview_lines.append(str(r))
+                trimmed = "\n".join(preview_lines)[:8000]
+                template_hints_parts.append(f"{t.filename}: table preview:\n{trimmed}")
+            template_hints_parts.append(
+                "(Excel templates supply tabular structure for the model; merge export is still Word format built from drafted sections.)"
+            )
+            continue
+
+        template_hints_parts.append(f"{t.filename}: [unknown template outline kind]")
     template_hints = "\n".join(template_hints_parts)
 
     return context_block, template_hints

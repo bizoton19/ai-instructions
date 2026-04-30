@@ -143,7 +143,7 @@ export const content = {
     step2: {
       title: "Structure Designation",
       dropTitle: "Drop Master Templates",
-      dropSubtitle: "DOCX Format Required",
+      dropSubtitle: ".docx, .pdf, or .xlsx (PDF/Excel drive drafting prompts; Word export is still generated as .docx)",
       browseTemplates: "Browse Templates",
       masterTag: "MASTER",
       back: "Back",
@@ -166,14 +166,16 @@ export const content = {
         "One model pass using the session specialist chosen in the toolbar. For IGCE-only output without running the Requirements or SOW phases, leave the pipeline idle and rely on Generate with IGCE Cost Estimator selected.",
       downloadLabel: "Download Word (DOCX)",
       downloadHint:
-        "Requires a workspace default template below. For template-free output, use Download Markdown.",
+        "Uses the workspace default template when set. Pure .docx templates can merge with Jinja placeholders; PDF/Excel references produce structured Word built from drafting output.",
       downloadMarkdownLabel: "Download Markdown",
       downloadMarkdownHint: "Structured sections or latest assistant output as a .md file (no Word template required).",
-      defaultTemplateLabel: "Workspace default template (Word export)",
-      defaultTemplateHint: "Pick which uploaded .docx is active for this workspace. Upload more in the Template wizard step or below.",
-      templateSelectPlaceholder: "Choose workspace default…",
-      noTemplatesForExport: "No Word template in this workspace yet. Upload a .docx to enable Word export, or export Markdown instead.",
-      uploadTemplateQuickBrowse: "Upload .docx template",
+      defaultTemplateLabel: "Workspace default template (export pairing)",
+      defaultTemplateHint:
+        "Active file guides template hints for agents. Prefer .docx for style-preserving placeholder merge when your file uses merge fields.",
+      templateSelectPlaceholder: "Choose workspace default reference…",
+      noTemplatesForExport:
+        "No template in this workspace yet. Upload DOCX, PDF, or XLSX from the Template step, choose a default here, or export Markdown only.",
+      uploadTemplateQuickBrowse: "Upload template (.docx, .pdf, .xlsx)",
       goToTemplateStep: "Open Template step",
       outputBufferTitle: "Draft preview",
       outputEmpty: "Generate a draft to see formatted preview here.",
@@ -216,7 +218,7 @@ export const content = {
     templatesTitle: "Storage: Templates",
     dropSourceMaterials: "Drop Source Materials",
     browse: "Browse",
-    dropDocxTemplates: "Drop DOCX Templates",
+    dropDocxTemplates: "Drop templates (DOCX, PDF, or XLSX)",
   },
 
   emptyState: {
