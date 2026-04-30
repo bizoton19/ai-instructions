@@ -55,12 +55,6 @@ function emailInitials(email) {
   return local.slice(0, 2).toUpperCase();
 }
 
-function displayEmailLocalPart(email, fallbackLabel) {
-  if (!email) return fallbackLabel;
-  const local = email.split("@")[0]?.trim();
-  return local || email;
-}
-
 function App() {
   const [workspaces, setWorkspaces] = useState([]);
   const [workspaceId, setWorkspaceId] = useState(null);
@@ -82,12 +76,8 @@ function App() {
   const [wizardStep, setWizardStep] = useState(0);
   const [viewMode, setViewMode] = useState("wizard"); // wizard | manager
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [loginEmailField, setLoginEmailField] = useState("");
-  const [loginPasswordField, setLoginPasswordField] = useState("");
   const [settingsTemp, setSettingsTemp] = useState(0.2);
   const [settingsGuidance, setSettingsGuidance] = useState("");
-  const [authSession, setAuthSession] = useState({ loading: true, authenticated: false, user: null });
 
   const agentOptions = agentsCatalog.length
     ? agentsCatalog
@@ -175,16 +165,6 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      try {
-        const r = await api.authMe();
-        if (r.authenticated && r.user) {
-          setAuthSession({ loading: false, authenticated: true, user: r.user });
-        } else {
-          setAuthSession({ loading: false, authenticated: false, user: null });
-        }
-      } catch {
-        setAuthSession({ loading: false, authenticated: false, user: null });
-      }
       try {
         const data = await api.listWorkspaces();
         setWorkspaces(data);
@@ -280,44 +260,6 @@ function App() {
   function showNotice(msg) {
     setNotice(msg);
     setTimeout(() => setNotice(""), 5000);
-  }
-
-  async function refreshAuth() {
-    try {
-      const r = await api.authMe();
-      if (r.authenticated && r.user) {
-        setAuthSession({ loading: false, authenticated: true, user: r.user });
-      } else {
-        setAuthSession({ loading: false, authenticated: false, user: null });
-      }
-    } catch {
-      setAuthSession({ loading: false, authenticated: false, user: null });
-    }
-  }
-
-  async function onLogout() {
-    try {
-      await api.logout();
-      await refreshAuth();
-      await loadWorkspaces().catch(() => {});
-      showNotice("Signed out.");
-    } catch (err) {
-      showNotice(err instanceof ApiError ? err.message : String(err));
-    }
-  }
-
-  async function onLoginSubmit(e) {
-    e.preventDefault();
-    try {
-      await api.login(loginEmailField.trim(), loginPasswordField);
-      setLoginPasswordField("");
-      setLoginModalOpen(false);
-      await refreshAuth();
-      await loadWorkspaces();
-      showNotice("Signed in.");
-    } catch (err) {
-      showNotice(err instanceof ApiError ? err.message : String(err));
-    }
   }
 
   async function onSaveWorkspaceAgentSettings(e) {
@@ -1355,7 +1297,9 @@ function App() {
                                     {messages.map((m) => (
                                       <div key={m.id} className={`chat-bubble ${m.role}`}>
                                         <div className="bubble-role">{m.role === "assistant" ? content.wizard.step3.roleAssistant : content.wizard.step3.roleUser}</div>
-                                        <div className="chat-bubble__text">{m.content}</div>
+                                        <div className="chat-bubble__text">
+                                          <ReactMarkdown>{m.content}</ReactMarkdown>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
