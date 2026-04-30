@@ -23,7 +23,11 @@ AGENTS = {
             "- Prefer active voice and short sentences.\n"
             "- Use consistent heading labels in the structured JSON fields.\n"
             "- Populate full_markdown with a complete SOW-style document in Markdown with ## headings for major sections.\n"
-            "- You depend heavily on the output from the Requirements Analyst to accurately define the tasks and deliverables. Ensure that the requirements from previous phases are faithfully represented and properly structured within the SOW.\n\n"
+            "- The workspace active template appears under server-side Template heading hints (often from PDF text, DOCX headings, or Excel preview). Treat that outline as authoritative for MAJOR section titles and ORDER: reuse those headings as ## lines where appropriate, weaving every substantive point from Requirements Discovery, Requirements Analyst, and Market Research into the matching sections.\n"
+            "- When Prior pipeline output is provided, integrate it faithfully; do not reset to a generic SOW unrelated to earlier phases.\n"
+            "- If Template heading hints omit a subsection you still need for clarity, insert it only as a labelled sub-heading (###); keep top-level numbering and flow aligned with the template.\n"
+            "- If a hinted section has no sourced facts, clearly state assumptions or data gaps rather than inventing specifics.\n"
+            "- Short structured JSON fields (purpose, background, scope, deliverables, and so on) must align with full_markdown; avoid contradictions.\n\n"
             "Return ONLY valid JSON matching the schema described in the human message. No markdown fences."
         )
     ),
@@ -62,7 +66,8 @@ AGENTS = {
             "- Confirm your understanding of the requirements alongside the customer (play them back)\n"
             "- Avoid talking technology or solutions until all requirements are fully understood\n"
             "- Get agreement from all stakeholders before the project starts\n"
-            "- Create a prototype, if necessary, to confirm or refine the customer's requirements which will then be incorporated into the PWS/SOO\n\n"
+            "- Create a prototype, if necessary, to confirm or refine the customer's requirements which will then be incorporated into the PWS/SOO\n"
+            "- When Template heading hints list section titles (from the uploaded SOW/PWS scaffold), organize your summaries and clarification questions around those headings so downstream specialists stay aligned.\n\n"
             "CRITICAL RULE:\n"
             "If the requirements uploaded in the context docs are not clear, cannot be fully deduced, or if clarifying requirements are needed to meet the SMART criteria, you MUST output the exact text 'CLARIFICATION_NEEDED:' followed by your questions to the user in the 'full_markdown' field.\n"
             "If the requirements are clear, summarize them in 'full_markdown' for the next agent.\n\n"
@@ -79,6 +84,7 @@ AGENTS = {
             "Rules:\n"
             "- Use 'shall' for binding requirements and 'will' or 'may' for non-binding statements.\n"
             "- Ensure each requirement is verifiable.\n"
+            "- When Template heading hints outline the eventual SOW, group or subtitle requirements under those headings (or cite the heading beside each grouping) so the SOW Writer can map them verbatim into the scaffold.\n"
             "- The full_markdown field should contain the structured requirements matrix/document.\n\n"
             "Return ONLY valid JSON matching the schema described. Do not use markdown fences."
         )
@@ -93,7 +99,8 @@ AGENTS = {
             "Rules:\n"
             "- Focus on commercial item availability, small business capabilities, and standard industry practices.\n"
             "- Do not show preference for a single vendor unless justified by the context provided.\n"
-            "- The full_markdown field should represent the Market Research summary and conclusions.\n\n"
+            "- The full_markdown field should represent the Market Research summary and conclusions.\n"
+            "- Use ## section headings mirroring Template heading hints when they help fold this research directly into the final SOW narrative.\n\n"
             "Return ONLY valid JSON matching the schema described. Do not use markdown fences."
         )
     )
@@ -111,6 +118,46 @@ DEFAULT_PIPELINE_SEQUENCE: tuple[str, ...] = (
     "sow_writer",
     "cost_estimator",
 )
+
+_PIPELINE_UNKNOWN_IDS = [a for a in DEFAULT_PIPELINE_SEQUENCE if a not in AGENTS]
+
+
+PIPELINE_PHASE_INSTRUCTIONS: dict[str, str] = {
+    "requirements_agent": (
+        "The workspace Template heading hints summarise the customer's uploaded SOW or PWS template. "
+        "Shape your summaries and clarification requests around those headings so later phases populate the same scaffold."
+    ),
+    "requirements_analyst": (
+        "Tag or group SHALL statements under the headings from Template heading hints whenever possible. "
+        "The goal is straightforward hand-off into the Markdown sections the SOW Writer will reuse."
+    ),
+    "market_research": (
+        "Align major findings with headings from Template heading hints (for example Background, Competition, Sustainability) "
+        "so the eventual SOW can cite commercial context without rewriting structure."
+    ),
+    "sow_writer": (
+        "Merge ALL substantive content from Prior pipeline output into full_markdown. "
+        "Match ## section titles and order primarily to Template heading hints; treat prior phases as authoritative on facts "
+        "and supplement only when bridging gaps."
+    ),
+    "cost_estimator": (
+        "Echo labour lines and assumptions referenced in upstream pipeline output; harmonise headings with Template heading hints "
+        "where IGCE annexes tie back to scoped tasks."
+    ),
+}
+
+
+def pipeline_sequence_warnings() -> list[str]:
+    """Non-fatal config issues (logged at startup). Unknown ids fall back to sow_writer at runtime."""
+    if not _PIPELINE_UNKNOWN_IDS:
+        return []
+    return [
+        (
+            f"Pipeline phase id {aid!r} is not defined in AGENTS — that step will silently use "
+            f"the sow_writer profile. Fix agents_config.DEFAULT_PIPELINE_SEQUENCE or add the missing profile."
+        )
+        for aid in _PIPELINE_UNKNOWN_IDS
+    ]
 
 
 CLARIFICATION_TAG = "CLARIFICATION_NEEDED:"

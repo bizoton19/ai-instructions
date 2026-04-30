@@ -10,7 +10,14 @@ from app.ingestion.docx_extract import extract_docx_text_and_outline
 from app.ingestion.pdf_extract import extract_pdf_text
 
 
-def _guess_section_lines_from_text(text: str, max_lines: int = 25) -> list[str]:
+_NUM_HEADING = re.compile(r"^(\d+(\.\d+)*\.?\s+|[A-Z]\.\s+|[IVXLCDM]+\.\s+)\S.+")
+_SECTION_PREFIX = re.compile(
+    r"^(SECTION|PART|ANNEX|APPENDIX|ATTACHMENT|EXHIBIT)\s+[A-Z0-9]+\b.*",
+    re.I,
+)
+
+
+def _guess_section_lines_from_text(text: str, max_lines: int = 35) -> list[str]:
     """Heuristic headings for non-Word sources (PDF plain text has no style metadata)."""
     seen: set[str] = set()
     out: list[str] = []
@@ -18,16 +25,23 @@ def _guess_section_lines_from_text(text: str, max_lines: int = 25) -> list[str]:
         s = raw.strip()
         if len(s) < 4 or len(s) > 120:
             continue
-        # Numbered outline: "1. Scope" / "SECTION 3: DELIVERABLES"
-        if re.match(r"^(\d+(\.\d+)*\.?|[A-Z]\.|[IVXLCDM]+\.)\s+\S+", s):
-            if s not in seen:
-                seen.add(s)
-                out.append(s)
+        low = s.lower()
+        if low.startswith(("page ", "copyright", "classified")):
             continue
-        if s.isupper() and " " in s and sum(c.isdigit() for c in s) < len(s) * 0.3:
-            if s not in seen:
-                seen.add(s)
-                out.append(s)
+        if re.match(r"^page\s+\d+(\s+of\s+\d+)?\b", low):
+            continue
+
+        matched = False
+        if _NUM_HEADING.match(s):
+            matched = True
+        elif _SECTION_PREFIX.match(s):
+            matched = True
+        elif s.isupper() and " " in s and sum(c.isdigit() for c in s) < len(s) * 0.25:
+            matched = True
+
+        if matched and s not in seen:
+            seen.add(s)
+            out.append(s)
     return out[:max_lines]
 
 

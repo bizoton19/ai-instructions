@@ -16,13 +16,16 @@ def list_agents():
 
 @router.get("/pipeline")
 def pipeline_definition():
-    return [
-        {
-            "phase_order": i,
-            "agent_id": aid,
-            "name": AGENTS[aid].name,
-            "description": AGENTS[aid].description,
-        }
-        for i, aid in enumerate(DEFAULT_PIPELINE_SEQUENCE)
-        if aid in AGENTS
-    ]
+    rows = []
+    for i, aid in enumerate(DEFAULT_PIPELINE_SEQUENCE):
+        profile = AGENTS.get(aid)
+        rows.append(
+            {
+                "phase_order": i,
+                "agent_id": aid,
+                "valid": profile is not None,
+                "name": profile.name if profile else "(unknown phase id)",
+                "description": profile.description if profile else "",
+            }
+        )
+    return rows

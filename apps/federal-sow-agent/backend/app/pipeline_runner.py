@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from app.agent.sow_chain import run_sow_chain
-from app.agents_config import CLARIFICATION_TAG, DEFAULT_PIPELINE_SEQUENCE, get_agent_profile
+from app.agents_config import CLARIFICATION_TAG, DEFAULT_PIPELINE_SEQUENCE, PIPELINE_PHASE_INSTRUCTIONS, get_agent_profile
 from app.context_builder import assemble_prior_pipeline_text, build_generation_inputs
 from app.models import AgentSession, Message, Workspace
 from app.schemas import PipelineAdvanceIn
@@ -63,6 +63,13 @@ def _run_one_pipeline_phase(
     if additional_instructions.strip():
         parts.append("Operator instructions for this phase:\n" + additional_instructions.strip())
     compiled = "\n\n".join(parts) if parts else ""
+    phase_boost = PIPELINE_PHASE_INSTRUCTIONS.get(agent_id)
+    if phase_boost:
+        compiled = (
+            (compiled + "\n\n--- Phase-specific scaffold guidance ---\n\n" + phase_boost).strip()
+            if compiled
+            else phase_boost.strip()
+        )
 
     sections, warnings = run_sow_chain(
         context_block=context_block,

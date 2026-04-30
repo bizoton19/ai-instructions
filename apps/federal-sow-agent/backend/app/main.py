@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -15,6 +17,8 @@ from app.storage import ensure_storage_dirs
 
 from app.routes.agents import router as agents_router
 from app.routes.pipelines import router as pipelines_router
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Federal Document Writer Agent API", version="0.1.0")
 
@@ -48,6 +52,11 @@ def startup() -> None:
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     ensure_storage_dirs()
     init_db()
+    # Pipeline config is code-only (not migrated from SQLite); unknown phase ids silently use sow_writer.
+    from app.agents_config import pipeline_sequence_warnings
+
+    for warn in pipeline_sequence_warnings():
+        logger.warning("%s", warn)
 
 
 @app.get("/health")

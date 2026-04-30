@@ -29,11 +29,11 @@ HUMAN_PROMPT = """Context documents (may include excerpts from PDFs, Word, sprea
 
 {context_block}
 
-Template heading hints from the workspace reference file (DOCX headings, inferred PDF outline lines, or Excel column/table preview):
+Template heading hints from the workspace ACTIVE reference file (DOCX headings, inferred PDF section lines, or Excel column/table preview). These define the expected SOW scaffold when present.
 
 {template_hints}
 
-User instructions for this draft:
+User instructions for this draft (may include prior pipeline specialist output under a separator—treat that text as authoritative factual input to merge into the template scaffold):
 
 {user_instructions}
 
@@ -43,6 +43,7 @@ roles_and_responsibilities, acceptance_criteria, assumptions_and_constraints,
 full_markdown
 
 Each field except full_markdown should be plain text (paragraphs allowed).
+When Template heading hints enumerate section titles, mirror them as ## headings in full_markdown in the same order unless a title is clearly unrelated; merge every substantive fact from Prior pipeline output (requirements, analyst, research) instead of omitting earlier work.
 The full_markdown field must contain the complete primary deliverable in Markdown form for the task described in the system message
 (for example an SOW, an IGCE cost narrative, requirements document, or market research summary—never substitute a generic SOW if the role is IGCE-only or analyst-only unless the instructions ask for overlap).
 Populate structured fields appropriately for that deliverable."""
