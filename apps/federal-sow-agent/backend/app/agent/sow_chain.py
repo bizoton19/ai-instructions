@@ -48,6 +48,21 @@ The full_markdown field must contain the complete primary deliverable in Markdow
 Populate structured fields appropriately for that deliverable."""
 
 
+def _merge_workspace_instructions(workspace_instructions: str | None, user_instructions: str) -> str:
+    wi = (workspace_instructions or "").strip()[:8000]
+    ui = user_instructions.strip()[:16000]
+    if not wi:
+        return ui
+    if not ui:
+        return "[Workspace-wide guidance — apply whenever this workspace runs]\n\n" + wi
+    return (
+        "[Workspace-wide guidance — apply whenever this workspace runs]\n\n"
+        + wi
+        + "\n\n---\n\nInstructions for this run:\n\n"
+        + ui
+    )
+
+
 def _fallback_sections(text: str) -> SOWSectionsModel:
     return SOWSectionsModel(
         purpose="",
@@ -75,11 +90,14 @@ def run_sow_chain(
     template_hints: str,
     user_instructions: str,
     system_prompt: str,
+    *,
+    temperature: float = 0.2,
+    workspace_instructions: str | None = None,
 ) -> tuple[SOWSectionsModel, list[str]]:
     warnings: list[str] = []
     context_block = context_block.strip()[:120000]
     template_hints = template_hints.strip()[:20000]
-    user_instructions = user_instructions.strip()[:16000]
+    user_instructions = _merge_workspace_instructions(workspace_instructions, user_instructions).strip()[:24000]
 
     if not settings.openai_api_key and not settings.azure_openai_api_key:
         warnings.append(
@@ -116,12 +134,12 @@ def run_sow_chain(
             api_key=settings.azure_openai_api_key,
             api_version="2024-08-01-preview",
             azure_deployment=settings.azure_openai_deployment,
-            temperature=0.2,
+            temperature=temperature,
         )
     else:
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(model=settings.llm_model, api_key=settings.openai_api_key, temperature=0.2)
+        llm = ChatOpenAI(model=settings.llm_model, api_key=settings.openai_api_key, temperature=temperature)
 
     chain = prompt | llm | parser
 

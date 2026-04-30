@@ -41,6 +41,21 @@ def init_db():
             ws_names = {c[1] for c in ws_cols}
             if "active_template_asset_id" not in ws_names:
                 conn.execute(text("ALTER TABLE workspaces ADD COLUMN active_template_asset_id VARCHAR(36)"))
+            if "agent_temperature" not in ws_names:
+                conn.execute(text("ALTER TABLE workspaces ADD COLUMN agent_temperature REAL NOT NULL DEFAULT 0.2"))
+            if "agent_workspace_instructions" not in ws_names:
+                conn.execute(text("ALTER TABLE workspaces ADD COLUMN agent_workspace_instructions TEXT"))
+
+            # Reassign workspaces whose owner id is not a valid user (e.g. legacy "local-user" string).
+            first_user = conn.execute(text("SELECT id FROM users ORDER BY created_at ASC LIMIT 1")).fetchone()
+            if first_user:
+                conn.execute(
+                    text(
+                        "UPDATE workspaces SET owner_user_id = :uid "
+                        "WHERE owner_user_id NOT IN (SELECT id FROM users)"
+                    ),
+                    {"uid": str(first_user[0])},
+                )
             
             # agent_sessions table
             def _session_col_names() -> set[str]:

@@ -44,6 +44,10 @@ def _run_one_pipeline_phase(
     if session is None or session.workspace_id != workspace_id:
         raise ValueError("session")
 
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if not ws:
+        raise ValueError("workspace")
+
     seq = DEFAULT_PIPELINE_SEQUENCE
     step_idx = session.pipeline_step or 0
 
@@ -65,6 +69,8 @@ def _run_one_pipeline_phase(
         template_hints=template_hints,
         user_instructions=compiled or "[Execute this pipeline phase.]",
         system_prompt=profile.system_prompt,
+        temperature=float(ws.agent_temperature),
+        workspace_instructions=ws.agent_workspace_instructions,
     )
 
     body = (sections.full_markdown or sections.scope or "").strip()

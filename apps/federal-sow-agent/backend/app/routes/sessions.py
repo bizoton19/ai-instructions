@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.agents_config import AGENTS
 from app.database import get_db
-from app.models import AgentSession, Message, Workspace
+from app.models import AgentSession, Message
+from app.workspace_access import must_workspace_owned, resolve_effective_owner_id
 from app.schemas import AgentSessionOut, MessageCreate, MessageOut, SessionCreate, SessionUpdate
 
 
@@ -17,22 +18,17 @@ def utcnow():
 router = APIRouter(prefix="/workspaces/{workspace_id}/sessions", tags=["sessions"])
 
 
-def _must_workspace(db: Session, workspace_id: str) -> Workspace:
-    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
-    if not ws:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
-    return ws
-
-
 @router.get("", response_model=list[AgentSessionOut])
-def list_sessions(workspace_id: str, db: Session = Depends(get_db)):
-    _must_workspace(db, workspace_id)
+def list_sessions(workspace_id: str, request: Request, db: Session = Depends(get_db)):
+    owner_id = resolve_effective_owner_id(db, request)
+    must_workspace_owned(db, workspace_id, owner_id)
     return db.query(AgentSession).filter(AgentSession.workspace_id == workspace_id).order_by(AgentSession.created_at.desc()).all()
 
 
 @router.post("", response_model=AgentSessionOut)
-def create_session(workspace_id: str, payload: SessionCreate, db: Session = Depends(get_db)):
-    _must_workspace(db, workspace_id)
+def create_session(workspace_id: str, payload: SessionCreate, request: Request, db: Session = Depends(get_db)):
+    owner_id = resolve_effective_owner_id(db, request)
+    must_workspace_owned(db, workspace_id, owner_id)
     agent_type = (payload.agent_type or "sow_writer").strip()
     if agent_type not in AGENTS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown agent_type")
@@ -48,8 +44,11 @@ def create_session(workspace_id: str, payload: SessionCreate, db: Session = Depe
 
 
 @router.patch("/{session_id}", response_model=AgentSessionOut)
-def update_session(workspace_id: str, session_id: str, payload: SessionUpdate, db: Session = Depends(get_db)):
-    _must_workspace(db, workspace_id)
+def update_session(
+    workspace_id: str, session_id: str, payload: SessionUpdate, request: Request, db: Session = Depends(get_db)
+):
+    owner_id = resolve_effective_owner_id(db, request)
+    must_workspace_owned(db, workspace_id, owner_id)
     session = (
         db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     )
@@ -79,8 +78,9 @@ def update_session(workspace_id: str, session_id: str, payload: SessionUpdate, d
 
 
 @router.get("/{session_id}/messages", response_model=list[MessageOut])
-def list_messages(workspace_id: str, session_id: str, db: Session = Depends(get_db)):
-    _must_workspace(db, workspace_id)
+def list_messages(workspace_id: str, session_id: str, request: Request, db: Session = Depends(get_db)):
+    owner_id = resolve_effective_owner_id(db, request)
+    must_workspace_owned(db, workspace_id, owner_id)
     session = db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
@@ -92,9 +92,11 @@ def add_message(
     workspace_id: str,
     session_id: str,
     payload: MessageCreate,
+    request: Request,
     db: Session = Depends(get_db),
 ):
-    _must_workspace(db, workspace_id)
+    owner_id = resolve_effective_owner_id(db, request)
+    must_workspace_owned(db, workspace_id, owner_id)
     session = db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")

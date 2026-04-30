@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -27,6 +27,8 @@ class Workspace(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     owner_user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     active_template_asset_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("template_assets.id"), nullable=True)
+    agent_temperature: Mapped[float] = mapped_column(Float, nullable=False, default=0.2, server_default="0.2")
+    agent_workspace_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 

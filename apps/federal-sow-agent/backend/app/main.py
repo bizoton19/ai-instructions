@@ -14,6 +14,7 @@ from app.routes.workspaces import router as workspaces_router
 from app.storage import ensure_storage_dirs
 
 from app.routes.agents import router as agents_router
+from app.routes.auth import router as auth_router
 from app.routes.pipelines import router as pipelines_router
 
 app = FastAPI(title="Federal Document Writer Agent API", version="0.1.0")
@@ -59,6 +60,7 @@ def ready():
     return {"status": "ready"}
 
 
+app.include_router(auth_router)
 app.include_router(agents_router)
 app.include_router(pipelines_router)
 app.include_router(workspaces_router)

@@ -120,5 +120,14 @@ export const api = {
       body: JSON.stringify(body),
     }),
   downloadUrl: (path) => `${API_BASE}${path}`,
+  authMe: () => request("/auth/me"),
+  login: (email, password) =>
+    request("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  logout: () => request("/auth/logout", { method: "POST", body: JSON.stringify({}) }),
+  patchWorkspaceAgentSettings: (workspaceId, body) =>
+    request(`/workspaces/${workspaceId}/agent-settings`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 };
 

@@ -9,6 +9,33 @@ export const content = {
   header: {
     appTitle: "SOW // Assembly Engine",
     userBadge: "System Active",
+    settingsButtonTitle: "Workspace agent settings",
+    signInTitle: "Open sign-in dialog",
+  },
+
+  settings: {
+    panelTitle: "Workspace agent settings",
+    temperatureLabel: "Model temperature",
+    temperatureHint:
+      "Lower (about 0.1 to 0.3) is steadier; higher (0.6 to 1.0) can yield more variety at the cost of precision. The deployed model name is set on the server.",
+    guidanceLabel: "Workspace-wide instructions",
+    guidanceHint: "These lines are added before every generate and pipeline step in this workspace.",
+    save: "Save workspace settings",
+    cancel: "Close",
+    smartsExplainer:
+      "Each specialist uses the server’s prompt and your workspace context. Stronger results usually come from richer source files, clearer synthesis notes, and picking the right specialist. This panel only adjusts sampling temperature and default instructions for this workspace.",
+  },
+
+  auth: {
+    signIn: "Sign in",
+    signOut: "Sign out",
+    modalTitle: "Sign in",
+    emailLabel: "Email address",
+    passwordLabel: "Password",
+    submit: "Sign in",
+    displayFallback: "Operator",
+    avatarLabel: "Signed-in user initials",
+    unauthenticatedHint: "Signed in as shared dev account until you sign in with your email.",
   },
 
   prompts: {

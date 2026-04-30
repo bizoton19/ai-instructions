@@ -11,8 +11,11 @@ import {
   FileUp,
   FolderOpen,
   LayoutTemplate,
-  Terminal,
+  LogIn,
+  LogOut,
   Plus,
+  Settings,
+  Terminal,
   Trash2,
   Workflow,
   X,
@@ -44,6 +47,22 @@ function sectionsToPreviewMarkdown(sections) {
   return parts.join("\n\n");
 }
 
+function emailInitials(email) {
+  if (!email) return "?";
+  const local = email.split("@")[0] || email;
+  const parts = local.split(/[._-]+/).filter(Boolean);
+  if (parts.length >= 2 && parts[0][0] && parts[1][0]) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return local.slice(0, 2).toUpperCase();
+}
+
+function displayEmailLocalPart(email, fallbackLabel) {
+  if (!email) return fallbackLabel;
+  const local = email.split("@")[0]?.trim();
+  return local || email;
+}
+
 function App() {
   const [workspaces, setWorkspaces] = useState([]);
   const [workspaceId, setWorkspaceId] = useState(null);
@@ -64,6 +83,13 @@ function App() {
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [viewMode, setViewMode] = useState("wizard"); // wizard | manager
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [loginEmailField, setLoginEmailField] = useState("");
+  const [loginPasswordField, setLoginPasswordField] = useState("");
+  const [settingsTemp, setSettingsTemp] = useState(0.2);
+  const [settingsGuidance, setSettingsGuidance] = useState("");
+  const [authSession, setAuthSession] = useState({ loading: true, authenticated: false, user: null });
 
   const agentOptions = agentsCatalog.length
     ? agentsCatalog
@@ -150,7 +176,28 @@ function App() {
   }
 
   useEffect(() => {
-    loadWorkspaces().catch(() => {});
+    (async () => {
+      try {
+        const r = await api.authMe();
+        if (r.authenticated && r.user) {
+          setAuthSession({ loading: false, authenticated: true, user: r.user });
+        } else {
+          setAuthSession({ loading: false, authenticated: false, user: null });
+        }
+      } catch {
+        setAuthSession({ loading: false, authenticated: false, user: null });
+      }
+      try {
+        const data = await api.listWorkspaces();
+        setWorkspaces(data);
+        setWorkspaceId((curr) => {
+          if (!curr && data.length > 0) return data[0].id;
+          return curr;
+        });
+      } catch {
+        /* ignore bootstrap list failure */
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -172,6 +219,13 @@ function App() {
       .then(() => refreshWorkspaceData(workspaceId))
       .catch(() => {});
   }, [workspaceId, templates, activeTemplateId]);
+
+  useEffect(() => {
+    if (settingsOpen && activeWorkspace) {
+      setSettingsTemp(Number(activeWorkspace.agent_temperature ?? 0.2));
+      setSettingsGuidance(String(activeWorkspace.agent_workspace_instructions ?? ""));
+    }
+  }, [settingsOpen, activeWorkspace]);
 
   useEffect(() => {
     setSessionId(null);
@@ -228,6 +282,60 @@ function App() {
   function showNotice(msg) {
     setNotice(msg);
     setTimeout(() => setNotice(""), 5000);
+  }
+
+  async function refreshAuth() {
+    try {
+      const r = await api.authMe();
+      if (r.authenticated && r.user) {
+        setAuthSession({ loading: false, authenticated: true, user: r.user });
+      } else {
+        setAuthSession({ loading: false, authenticated: false, user: null });
+      }
+    } catch {
+      setAuthSession({ loading: false, authenticated: false, user: null });
+    }
+  }
+
+  async function onLogout() {
+    try {
+      await api.logout();
+      await refreshAuth();
+      await loadWorkspaces().catch(() => {});
+      showNotice("Signed out.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
+  }
+
+  async function onLoginSubmit(e) {
+    e.preventDefault();
+    try {
+      await api.login(loginEmailField.trim(), loginPasswordField);
+      setLoginPasswordField("");
+      setLoginModalOpen(false);
+      await refreshAuth();
+      await loadWorkspaces();
+      showNotice("Signed in.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
+  }
+
+  async function onSaveWorkspaceAgentSettings(e) {
+    e.preventDefault();
+    if (!workspaceId || !activeWorkspace) return;
+    try {
+      await api.patchWorkspaceAgentSettings(workspaceId, {
+        agent_temperature: settingsTemp,
+        agent_workspace_instructions: settingsGuidance.trim() === "" ? null : settingsGuidance.trim(),
+      });
+      await loadWorkspaces();
+      setSettingsOpen(false);
+      showNotice("Workspace agent settings saved.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
   }
 
   async function onCreateWorkspace() {
@@ -511,12 +619,61 @@ function App() {
 
       <header className="top-nav">
         <div className="logo-section">
-          <div className="logo-mark" />
+          <div className="logo-mark" aria-hidden />
           <h1 className="app-title">{content.header.appTitle}</h1>
         </div>
-        <div className="user-badge">
-          <Activity size={14} color="var(--text-accent)" />
-          <span>{content.header.userBadge}</span>
+        <div className="top-nav-actions">
+          {activeWorkspace ? (
+            <button
+              type="button"
+              className="btn-icon btn-icon-settings"
+              onClick={() => setSettingsOpen(true)}
+              title={content.header.settingsButtonTitle}
+              aria-label={content.header.settingsButtonTitle}
+            >
+              <Settings size={18} strokeWidth={2} aria-hidden="true" />
+            </button>
+          ) : null}
+          {!authSession.loading ? (
+            authSession.authenticated && authSession.user ? (
+              <>
+                <div className="top-nav-user" title={authSession.user.email}>
+                  <span className="user-avatar" aria-label={content.auth.avatarLabel}>
+                    {emailInitials(authSession.user.email)}
+                  </span>
+                  <span className="user-email-text">
+                    {displayEmailLocalPart(authSession.user.email, content.auth.displayFallback)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-outline-nav"
+                  onClick={onLogout}
+                  title={content.auth.signOut}
+                >
+                  <LogOut size={16} aria-hidden="true" />
+                  <span className="btn-nav-text">{content.auth.signOut}</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="top-nav-hint">{content.auth.unauthenticatedHint}</span>
+                <button
+                  type="button"
+                  className="btn btn-outline-nav"
+                  onClick={() => setLoginModalOpen(true)}
+                  title={content.header.signInTitle}
+                >
+                  <LogIn size={16} aria-hidden="true" />
+                  <span className="btn-nav-text">{content.auth.signIn}</span>
+                </button>
+              </>
+            )
+          ) : (
+            <span className="top-nav-hint" aria-live="polite">
+              {content.header.userBadge}
+            </span>
+          )}
         </div>
       </header>
 
@@ -1313,6 +1470,149 @@ function App() {
           )}
         </section>
       </main>
+
+      {loginModalOpen ? (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onClick={() => setLoginModalOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setLoginModalOpen(false);
+          }}
+        >
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-card-header">
+              <h2 id="login-modal-title" className="modal-title">
+                <LogIn size={20} aria-hidden="true" style={{ marginRight: 8, verticalAlign: "middle" }} />
+                {content.auth.modalTitle}
+              </h2>
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={() => setLoginModalOpen(false)}
+                aria-label={content.settings.cancel}
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <form className="modal-form" onSubmit={onLoginSubmit}>
+              <p className="action-hint" style={{ marginTop: 0 }}>
+                {content.auth.unauthenticatedHint}
+              </p>
+              <label htmlFor="login-email-input" className="modal-label">
+                {content.auth.emailLabel}
+              </label>
+              <input
+                id="login-email-input"
+                className="text-input"
+                type="email"
+                autoComplete="username"
+                value={loginEmailField}
+                onChange={(e) => setLoginEmailField(e.target.value)}
+                required
+              />
+              <label htmlFor="login-password-input" className="modal-label">
+                {content.auth.passwordLabel}
+              </label>
+              <input
+                id="login-password-input"
+                className="text-input"
+                type="password"
+                autoComplete="current-password"
+                value={loginPasswordField}
+                onChange={(e) => setLoginPasswordField(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn btn-primary modal-submit">
+                {content.auth.submit}
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {settingsOpen && activeWorkspace ? (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onClick={() => setSettingsOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setSettingsOpen(false);
+          }}
+        >
+          <div
+            className="modal-card modal-card-wide"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-card-header">
+              <h2 id="settings-modal-title" className="modal-title">
+                <Settings size={20} aria-hidden="true" style={{ marginRight: 8, verticalAlign: "middle" }} />
+                {content.settings.panelTitle}
+              </h2>
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={() => setSettingsOpen(false)}
+                aria-label={content.settings.cancel}
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <p className="modal-explainer">{content.settings.smartsExplainer}</p>
+            <form className="modal-form" onSubmit={onSaveWorkspaceAgentSettings}>
+              <label htmlFor="agent-temp-input" className="modal-label">
+                {content.settings.temperatureLabel}
+              </label>
+              <input
+                id="agent-temp-input"
+                className="text-input"
+                type="number"
+                min={0}
+                max={2}
+                step={0.1}
+                value={settingsTemp}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setSettingsTemp(Number.isFinite(v) ? v : 0.2);
+                }}
+              />
+              <p className="action-hint" style={{ marginTop: 4 }}>
+                {content.settings.temperatureHint}
+              </p>
+              <label htmlFor="agent-guidance-input" className="modal-label">
+                {content.settings.guidanceLabel}
+              </label>
+              <textarea
+                id="agent-guidance-input"
+                className="text-input"
+                rows={6}
+                value={settingsGuidance}
+                onChange={(e) => setSettingsGuidance(e.target.value)}
+              />
+              <p className="action-hint" style={{ marginTop: 4 }}>
+                {content.settings.guidanceHint}
+              </p>
+              <div className="modal-actions">
+                <button type="button" className="btn" onClick={() => setSettingsOpen(false)}>
+                  {content.settings.cancel}
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  {content.settings.save}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
