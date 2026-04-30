@@ -177,3 +177,7 @@ class ExportIn(BaseModel):
     )
     sections: SOWSectionsModel | None = None
     use_latest_generation: bool = True
+    use_all_pipeline_phases: bool = Field(
+        default=False,
+        description="Markdown only: concatenate every pipeline-phase assistant message in order.",
+    )

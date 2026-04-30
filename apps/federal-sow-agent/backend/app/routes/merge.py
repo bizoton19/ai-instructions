@@ -45,6 +45,23 @@ def _sections_have_exportable_body(s: SOWSectionsModel) -> bool:
     return any(str(v).strip() for v in data.values())
 
 
+def _pipeline_phase_assistant_bodies(db: Session, session_id: str) -> list[str]:
+    """Ordered assistant messages produced by the multi-phase pipeline (each starts with a phase header)."""
+    marker = "## Pipeline phase"
+    msgs = (
+        db.query(Message)
+        .filter(Message.session_id == session_id, Message.role == "assistant")
+        .order_by(Message.created_at.asc())
+        .all()
+    )
+    out: list[str] = []
+    for m in msgs:
+        body = (m.content or "").strip()
+        if body and marker in body:
+            out.append(body)
+    return out
+
+
 def _resolve_sections(db: Session, session: AgentSession, payload: MergeIn | ExportIn) -> SOWSectionsModel:
     if payload.sections is not None:
         return payload.sections
@@ -98,18 +115,19 @@ def export_document(
     db: Session = Depends(get_db),
 ):
     """
-    If ``template_asset_id`` is set, merges into Word like ``POST /merge``.
-    If omitted, writes Markdown built from structured sections or latest assistant output.
+    If ``template_asset_id`` is set, merges into Word using the latest structured or assistant draft.
+    If omitted, writes Markdown—optionally concatenating every ``## Pipeline phase`` assistant message when
+    ``use_all_pipeline_phases`` is true.
     """
 
     must_workspace_exist(db, workspace_id)
     session = _load_session(db, workspace_id, session_id)
-    sections = _resolve_sections(db, session, payload)
 
     base_dir = Path(__file__).resolve().parent.parent.parent / "uploads" / "outputs"
     base_dir.mkdir(parents=True, exist_ok=True)
 
     if payload.template_asset_id:
+        sections = _resolve_sections(db, session, payload)
         template = db.query(TemplateAsset).filter(
             TemplateAsset.id == payload.template_asset_id,
             TemplateAsset.workspace_id == workspace_id,
@@ -127,16 +145,38 @@ def export_document(
         rel = f"/workspaces/{workspace_id}/sessions/{session_id}/downloads/{out_name}"
         return {"download_path": rel, "format": "docx", "note": note}
 
-    if not _sections_have_exportable_body(sections):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No generated narrative to export")
+    used_pipeline_concat = False
+    md_body: str
+    if payload.use_all_pipeline_phases:
+        bodies = _pipeline_phase_assistant_bodies(db, session.id)
+        if bodies:
+            md_body = "\n\n---\n\n".join(bodies)
+            used_pipeline_concat = True
+        else:
+            sections = _resolve_sections(db, session, payload)
+            if not _sections_have_exportable_body(sections):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No generated narrative to export")
+            md_body = sow_sections_to_markdown(sections)
+    else:
+        sections = _resolve_sections(db, session, payload)
+        if not _sections_have_exportable_body(sections):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No generated narrative to export")
+        md_body = sow_sections_to_markdown(sections)
 
-    md_body = sow_sections_to_markdown(sections)
-
-    out_name = f"{uuid.uuid4().hex}_export_{session_id[:8]}.md"
+    out_name = (
+        f"{uuid.uuid4().hex}_pipeline_artifacts_{session_id[:8]}.md"
+        if used_pipeline_concat
+        else f"{uuid.uuid4().hex}_export_{session_id[:8]}.md"
+    )
     out_path = base_dir / out_name
     out_path.write_text(md_body, encoding="utf-8")
     rel = f"/workspaces/{workspace_id}/sessions/{session_id}/downloads/{out_name}"
-    return {"download_path": rel, "format": "markdown", "note": "Markdown export generated from structured sections."}
+    note = (
+        "Markdown export includes every completed pipeline phase in this session."
+        if used_pipeline_concat
+        else "Markdown export generated from structured sections."
+    )
+    return {"download_path": rel, "format": "markdown", "note": note}
 
 
 @router.get("/downloads/{filename}")

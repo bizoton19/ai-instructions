@@ -137,6 +137,7 @@ function App() {
   }, [activeSession, pipelinePlan]);
 
   const hasDraftContent = useMemo(() => {
+    if ((activeSession?.pipeline_artifact_count ?? 0) > 0) return true;
     const s = generation?.sections;
     if ((s?.full_markdown || "").trim()) return true;
     if (s) {
@@ -153,7 +154,7 @@ function App() {
       if (keys.some((k) => (s[k] || "").trim())) return true;
     }
     return messages.some((m) => m.role === "assistant" && (m.content || "").trim());
-  }, [generation, messages]);
+  }, [generation, messages, activeSession?.pipeline_artifact_count]);
 
   const previewMarkdown = useMemo(() => sectionsToPreviewMarkdown(generation?.sections), [generation]);
 
@@ -515,14 +516,17 @@ function App() {
     }
   }
 
-  async function onExportMarkdownDownload() {
+  async function onDownloadAllArtifacts() {
     if (!workspaceId || !sessionId) return;
-    setBusyHint(content.agents.markdownExportStatus);
+    setBusyHint(content.agents.artifactsExportStatus);
     setLoading(true);
     try {
-      const out = await api.exportDocument(workspaceId, sessionId, { use_latest_generation: true });
+      const out = await api.exportDocument(workspaceId, sessionId, {
+        use_latest_generation: true,
+        use_all_pipeline_phases: true,
+      });
       await downloadFileByPath(out.download_path);
-      showNotice(content.notices.markdownExportReady);
+      showNotice(content.notices.artifactsExportReady);
     } catch (err) {
       showNotice(err.message);
     } finally {
@@ -994,13 +998,13 @@ function App() {
                                     <button
                                       className="btn"
                                       style={{ width: "100%", justifyContent: "center" }}
-                                      onClick={onExportMarkdownDownload}
+                                      onClick={onDownloadAllArtifacts}
                                       disabled={loading || !sessionId || !hasDraftContent}
                                       type="button"
                                     >
-                                      <FileText size={14} aria-hidden="true" /> {content.wizard.step3.downloadMarkdownLabel}
+                                      <FileText size={14} aria-hidden="true" /> {content.wizard.step3.downloadAllArtifactsLabel}
                                     </button>
-                                    <p className="action-hint">{content.wizard.step3.downloadMarkdownHint}</p>
+                                    <p className="action-hint">{content.wizard.step3.downloadAllArtifactsHint}</p>
                                   </div>
                                   <div className="synthesis-action">
                                     <button

@@ -46,6 +46,7 @@ export const content = {
     draftGenerationSuccessful: "Draft Generation Successful.",
     exportReady: "Export ready.",
     markdownExportReady: "Markdown file ready to download.",
+    artifactsExportReady: "All pipeline artifacts bundled in one Markdown download.",
   },
 
   sidebar: {
@@ -56,7 +57,7 @@ export const content = {
     noSessions: "No sessions yet.",
     createSessionCta: "Create session",
     handOffNote:
-      "New sessions reuse the specialist on the selected session when you click plus. Adjust the specialist in the toolbar when a session is open. The pipeline uses its own ordered specialists (see synthesis step).",
+      "New sessions reuse the specialist on the selected session when you click plus. The dropdown specialist controls single-step Generate only. The specialist pipeline chooses its own sequence on the synthesis step, so you can leave the toolbar specialist unchanged when you rely on the pipeline.",
   },
 
   toolbar: {
@@ -76,6 +77,7 @@ export const content = {
     pipelineRunning: "Pipeline specialists are drafting (server-side orchestration).",
     exportingStatus: "Merging draft into Word template.",
     markdownExportStatus: "Generating Markdown export.",
+    artifactsExportStatus: "Bundling all pipeline phase drafts into one Markdown file.",
     ingestStatus: "Uploading workspace files.",
   },
 
@@ -163,12 +165,13 @@ export const content = {
       instructionsPlaceholder: "Global compilation directives...",
       generateLabel: "Generate draft",
       generateHint:
-        "One model pass using the session specialist chosen in the toolbar. For IGCE-only output without running the Requirements or SOW phases, leave the pipeline idle and rely on Generate with IGCE Cost Estimator selected.",
-      downloadLabel: "Download Word (DOCX)",
+        "One toolbar Generate pass uses only the specialist selected above. The ordered specialist pipeline ignores that selection and runs its own phases; use Download all artifacts to save every phase in one Markdown file.",
+      downloadAllArtifactsLabel: "Download all artifacts",
+      downloadAllArtifactsHint:
+        "One Markdown file listing each completed pipeline phase (and the same content you see in chat), separated by horizontal rules. For a final Word package merged from the latest draft, use Download Word below.",
+      downloadLabel: "Download Word (final draft)",
       downloadHint:
-        "Uses the workspace default template when set. Pure .docx templates can merge with Jinja placeholders; PDF/Excel references produce structured Word built from drafting output.",
-      downloadMarkdownLabel: "Download Markdown",
-      downloadMarkdownHint: "Structured sections or latest assistant output as a .md file (no Word template required).",
+        "Merges the most recent assistant draft into the workspace template. Use this for the finished package after the pipeline; it does not archive each earlier phase separately. Uses the workspace default template when set. Pure .docx templates can merge with Jinja placeholders; PDF or Excel references produce structured Word built from drafting output.",
       defaultTemplateLabel: "Workspace default template (export pairing)",
       defaultTemplateHint:
         "Active file guides template hints for agents. Prefer .docx for style-preserving placeholder merge when your file uses merge fields.",
@@ -193,7 +196,7 @@ export const content = {
       pipelineModeAutoHint: "The server advances through specialists until the run finishes or clarification is needed.",
       pipelineInstructionsNote: "Optional notes for the next specialist run (applied to the first phase when advancing).",
       pipelineFixedOrderNote:
-        "Specialist pipeline runs in a fixed order regardless of the toolbar: Requirements Analyst, Market Research, SOW Writer, then IGCE Cost Estimator.",
+        "Specialist pipeline runs in a fixed order regardless of the toolbar: Requirements Discovery, Requirements Analyst, Market Research, SOW writer, then IGCE Cost Estimator.",
       pipelineRunNext: "Run next specialist",
       pipelineRunChain: "Run full automatic chain",
       pipelineApproveHint: "After a specialist finishes in manual mode, approving the continuation is bundled into Run next specialist.",
