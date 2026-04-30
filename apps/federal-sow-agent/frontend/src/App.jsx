@@ -259,7 +259,7 @@ function App() {
 
   function showNotice(msg) {
     setNotice(msg);
-    setTimeout(() => setNotice(""), 5000);
+    setTimeout(() => setNotice(""), 6000);
   }
 
   async function onSaveWorkspaceAgentSettings(e) {
@@ -1170,13 +1170,22 @@ function App() {
                                       type="button"
                                       className="btn"
                                       style={{ width: "100%", justifyContent: "center" }}
-                                      onClick={() => onPipelineAdvance("single_phase")}
-                                      disabled={
-                                        loading ||
-                                        !sessionId ||
-                                        pipelineUi.pipelineDone ||
-                                        (pipelineUi.clarActive && !clarificationResolved)
-                                      }
+                                      onClick={() => {
+                                        if (!sessionId) {
+                                          showNotice("Please select or create a session first.");
+                                          return;
+                                        }
+                                        if (pipelineUi.pipelineDone) {
+                                          showNotice("The pipeline has already finished. Reset progress to run again.");
+                                          return;
+                                        }
+                                        if (pipelineUi.clarActive && !clarificationResolved) {
+                                          showNotice("Please resolve the clarification in the chat and check the box before continuing.");
+                                          return;
+                                        }
+                                        onPipelineAdvance("single_phase");
+                                      }}
+                                      disabled={loading}
                                     >
                                       {content.wizard.step3.pipelineRunNext}
                                     </button>
@@ -1185,13 +1194,22 @@ function App() {
                                         type="button"
                                         className="btn btn-primary"
                                         style={{ width: "100%", justifyContent: "center" }}
-                                        onClick={() => onPipelineAdvance("auto_chain")}
-                                        disabled={
-                                          loading ||
-                                          !sessionId ||
-                                          pipelineUi.pipelineDone ||
-                                          (pipelineUi.clarActive && !clarificationResolved)
-                                        }
+                                        onClick={() => {
+                                          if (!sessionId) {
+                                            showNotice("Please select or create a session first.");
+                                            return;
+                                          }
+                                          if (pipelineUi.pipelineDone) {
+                                            showNotice("The pipeline has already finished. Reset progress to run again.");
+                                            return;
+                                          }
+                                          if (pipelineUi.clarActive && !clarificationResolved) {
+                                            showNotice("Please resolve the clarification in the chat and check the box before continuing.");
+                                            return;
+                                          }
+                                          onPipelineAdvance("auto_chain");
+                                        }}
+                                        disabled={loading}
                                       >
                                         {content.wizard.step3.pipelineRunChain}
                                       </button>
