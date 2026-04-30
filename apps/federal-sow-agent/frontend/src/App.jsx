@@ -19,7 +19,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { api, ApiError } from "./api";
+import { api, ApiError, downloadFileByPath } from "./api";
 import { content } from "./content";
 
 /** When the API leaves full_markdown empty but fills structured fields (e.g. IGCE lines in deliverables). */
@@ -505,7 +505,7 @@ function App() {
         template_asset_id: activeTemplateId,
         use_latest_generation: true,
       });
-      window.open(api.downloadUrl(merged.download_path), "_blank", "noopener");
+      await downloadFileByPath(merged.download_path);
       showNotice(content.notices.exportReady);
     } catch (err) {
       showNotice(err.message);
@@ -521,7 +521,7 @@ function App() {
     setLoading(true);
     try {
       const out = await api.exportDocument(workspaceId, sessionId, { use_latest_generation: true });
-      window.open(api.downloadUrl(out.download_path), "_blank", "noopener");
+      await downloadFileByPath(out.download_path);
       showNotice(content.notices.markdownExportReady);
     } catch (err) {
       showNotice(err.message);

@@ -42,6 +42,57 @@ async function request(path, opts = {}) {
   return res.text();
 }
 
+function parseFilenameFromContentDisposition(header) {
+  if (!header) return null;
+  const star = header.match(/filename\*=UTF-8''([^;\n]+)/i);
+  if (star) {
+    try {
+      return decodeURIComponent(star[1].trim());
+    } catch {
+      return star[1].trim();
+    }
+  }
+  const quoted = header.match(/filename="([^"]+)"/i);
+  if (quoted) return quoted[1];
+  const loose = header.match(/filename=([^;\n]+)/i);
+  if (loose) return loose[1].trim().replace(/^"|"$/g, "");
+  return null;
+}
+
+/** Fetches binary from API and triggers a save-as. Use after export (avoid window.open popup block after await). */
+export async function downloadFileByPath(downloadPath) {
+  if (!downloadPath || typeof downloadPath !== "string") {
+    throw new Error("Missing download path");
+  }
+  const url = downloadPath.startsWith("http") ? downloadPath : `${API_BASE}${downloadPath}`;
+  const res = await fetch(url, { credentials: "include", method: "GET" });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new ApiError(t.slice(0, 400) || `Download failed (${res.status})`, res.status);
+  }
+  const blob = await res.blob();
+  const fromHeader = parseFilenameFromContentDisposition(res.headers.get("Content-Disposition"));
+  let fallback = downloadPath.split("/").pop() || "download";
+  try {
+    fallback = decodeURIComponent(fallback);
+  } catch {
+    /* keep raw */
+  }
+  const filename = fromHeader || fallback;
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export const api = {
   listAgents: () => request("/agents"),
   listPipeline: () => request("/agents/pipeline"),
