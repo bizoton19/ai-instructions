@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -12,7 +12,7 @@ from app.ingestion.docx_extract import extract_docx_text_and_outline
 from app.models import ContextAsset, TemplateAsset, Workspace
 from app.schemas import ContextAssetOut, TemplateAssetOut
 from app.storage import save_upload_bytes
-from app.workspace_access import must_workspace_owned, resolve_effective_owner_id
+from app.workspace_access import must_workspace_exist
 
 router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["uploads"])
 
@@ -20,12 +20,10 @@ router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["uploads"])
 @router.post("/templates/upload", response_model=TemplateAssetOut)
 async def upload_template(
     workspace_id: str,
-    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    owner_id = resolve_effective_owner_id(db, request)
-    ws = must_workspace_owned(db, workspace_id, owner_id)
+    ws = must_workspace_exist(db, workspace_id)
     if not file.filename.lower().endswith(".docx"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only .docx templates are supported")
     data = await file.read()
@@ -57,21 +55,18 @@ async def upload_template(
 
 
 @router.get("/templates", response_model=list[TemplateAssetOut])
-def list_templates(workspace_id: str, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+def list_templates(workspace_id: str, db: Session = Depends(get_db)):
+    must_workspace_exist(db, workspace_id)
     return db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id).order_by(TemplateAsset.created_at.desc()).all()
 
 
 @router.post("/context/upload", response_model=ContextAssetOut)
 async def upload_context(
     workspace_id: str,
-    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+    must_workspace_exist(db, workspace_id)
     
     valid_extensions = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".md", ".markdown", ".txt")
     lower_filename = file.filename.lower()
@@ -106,16 +101,14 @@ async def upload_context(
 
 
 @router.get("/context", response_model=list[ContextAssetOut])
-def list_context(workspace_id: str, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+def list_context(workspace_id: str, db: Session = Depends(get_db)):
+    must_workspace_exist(db, workspace_id)
     return db.query(ContextAsset).filter(ContextAsset.workspace_id == workspace_id).order_by(ContextAsset.created_at.desc()).all()
 
 
 @router.delete("/context/{asset_id}")
-def delete_context_asset(workspace_id: str, asset_id: str, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+def delete_context_asset(workspace_id: str, asset_id: str, db: Session = Depends(get_db)):
+    must_workspace_exist(db, workspace_id)
     item = db.query(ContextAsset).filter(ContextAsset.workspace_id == workspace_id, ContextAsset.id == asset_id).first()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Context asset not found")
@@ -125,9 +118,8 @@ def delete_context_asset(workspace_id: str, asset_id: str, request: Request, db:
 
 
 @router.delete("/templates/{asset_id}")
-def delete_template_asset(workspace_id: str, asset_id: str, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    ws = must_workspace_owned(db, workspace_id, owner_id)
+def delete_template_asset(workspace_id: str, asset_id: str, db: Session = Depends(get_db)):
+    ws = must_workspace_exist(db, workspace_id)
     item = db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id, TemplateAsset.id == asset_id).first()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template asset not found")
@@ -146,9 +138,8 @@ def delete_template_asset(workspace_id: str, asset_id: str, request: Request, db
 
 
 @router.post("/templates/{asset_id}/activate")
-def activate_template(workspace_id: str, asset_id: str, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    ws = must_workspace_owned(db, workspace_id, owner_id)
+def activate_template(workspace_id: str, asset_id: str, db: Session = Depends(get_db)):
+    ws = must_workspace_exist(db, workspace_id)
     item = db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id, TemplateAsset.id == asset_id).first()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template asset not found")

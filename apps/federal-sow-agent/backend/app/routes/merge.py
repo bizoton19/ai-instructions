@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -12,7 +12,7 @@ from app.merge.docx_merge import merge_docx, sow_model_to_flat, sow_sections_to_
 from app.models import AgentSession, Message, TemplateAsset
 from app.schemas import ExportIn, MergeIn, SOWSectionsModel
 from app.storage import resolve_storage_key
-from app.workspace_access import must_workspace_owned, resolve_effective_owner_id
+from app.workspace_access import must_workspace_exist
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/sessions/{session_id}", tags=["merge"])
 
@@ -47,13 +47,11 @@ def merge_sow_docx(
     workspace_id: str,
     session_id: str,
     payload: MergeIn,
-    request: Request,
     db: Session = Depends(get_db),
 ):
     """Merge the latest (or provided) generation into a DOCX template."""
 
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+    must_workspace_exist(db, workspace_id)
     session = _load_session(db, workspace_id, session_id)
 
     template = db.query(TemplateAsset).filter(
@@ -82,7 +80,6 @@ def export_document(
     workspace_id: str,
     session_id: str,
     payload: ExportIn,
-    request: Request,
     db: Session = Depends(get_db),
 ):
     """
@@ -90,8 +87,7 @@ def export_document(
     If omitted, writes Markdown built from structured sections or latest assistant output.
     """
 
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+    must_workspace_exist(db, workspace_id)
     session = _load_session(db, workspace_id, session_id)
     sections = _resolve_sections(db, session, payload)
 

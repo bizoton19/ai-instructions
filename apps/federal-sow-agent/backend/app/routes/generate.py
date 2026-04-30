@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.agent.sow_chain import run_sow_chain
@@ -9,7 +9,7 @@ from app.context_builder import build_generation_inputs
 from app.database import get_db
 from app.models import AgentSession, Message
 from app.schemas import GenerateIn, GenerateOut
-from app.workspace_access import must_workspace_owned, resolve_effective_owner_id
+from app.workspace_access import must_workspace_exist
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/sessions/{session_id}", tags=["generate"])
 
@@ -19,11 +19,9 @@ def generate_sow(
     workspace_id: str,
     session_id: str,
     payload: GenerateIn,
-    request: Request,
     db: Session = Depends(get_db),
 ):
-    owner_id = resolve_effective_owner_id(db, request)
-    ws = must_workspace_owned(db, workspace_id, owner_id)
+    ws = must_workspace_exist(db, workspace_id)
     session = db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")

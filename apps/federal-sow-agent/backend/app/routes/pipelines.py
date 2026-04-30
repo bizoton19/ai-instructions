@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -8,7 +8,7 @@ from app.models import AgentSession
 from app.pipeline_runner import advance_pipeline, reset_pipeline
 from app.pipeline_runner import snapshot as pipeline_snapshot
 from app.schemas import PipelineAdvanceIn, PipelineAdvanceOut
-from app.workspace_access import must_workspace_owned, resolve_effective_owner_id
+from app.workspace_access import must_workspace_exist
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/sessions/{session_id}/pipeline",
@@ -21,11 +21,9 @@ def pipeline_advance(
     workspace_id: str,
     session_id: str,
     body: PipelineAdvanceIn,
-    request: Request,
     db: Session = Depends(get_db),
 ):
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+    must_workspace_exist(db, workspace_id)
     bad, payload = advance_pipeline(db, workspace_id, session_id, body)
     if bad:
         raise HTTPException(status_code=bad["status_code"], detail=bad["detail"])
@@ -33,9 +31,8 @@ def pipeline_advance(
 
 
 @router.post("/reset", response_model=PipelineAdvanceOut)
-def pipeline_reset(workspace_id: str, session_id: str, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    must_workspace_owned(db, workspace_id, owner_id)
+def pipeline_reset(workspace_id: str, session_id: str, db: Session = Depends(get_db)):
+    must_workspace_exist(db, workspace_id)
     session = (
         db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
     )

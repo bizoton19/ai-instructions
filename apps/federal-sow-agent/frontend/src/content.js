@@ -10,7 +10,6 @@ export const content = {
     appTitle: "SOW // Assembly Engine",
     userBadge: "System Active",
     settingsButtonTitle: "Workspace agent settings",
-    signInTitle: "Open sign-in dialog",
   },
 
   settings: {
@@ -27,15 +26,11 @@ export const content = {
   },
 
   auth: {
-    signIn: "Sign in",
-    signOut: "Sign out",
-    modalTitle: "Sign in",
-    emailLabel: "Email address",
-    passwordLabel: "Password",
-    submit: "Sign in",
-    displayFallback: "Operator",
-    avatarLabel: "Signed-in user initials",
-    unauthenticatedHint: "Signed in as shared dev account until you sign in with your email.",
+    /** Shell-only preview; replace when real identity is wired in. */
+    displayName: "J. Rivera",
+    displayEmail: "j.rivera@agency.gov",
+    initialsHint: "User avatar (initials)",
+    placeholderNote: "Sign-in preview only",
   },
 
   prompts: {

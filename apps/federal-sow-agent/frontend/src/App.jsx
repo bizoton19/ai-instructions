@@ -574,46 +574,13 @@ function App() {
               <Settings size={18} strokeWidth={2} aria-hidden="true" />
             </button>
           ) : null}
-          {!authSession.loading ? (
-            authSession.authenticated && authSession.user ? (
-              <>
-                <div className="top-nav-user" title={authSession.user.email}>
-                  <span className="user-avatar" aria-label={content.auth.avatarLabel}>
-                    {emailInitials(authSession.user.email)}
-                  </span>
-                  <span className="user-email-text">
-                    {displayEmailLocalPart(authSession.user.email, content.auth.displayFallback)}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-outline-nav"
-                  onClick={onLogout}
-                  title={content.auth.signOut}
-                >
-                  <LogOut size={16} aria-hidden="true" />
-                  <span className="btn-nav-text">{content.auth.signOut}</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="top-nav-hint">{content.auth.unauthenticatedHint}</span>
-                <button
-                  type="button"
-                  className="btn btn-outline-nav"
-                  onClick={() => setLoginModalOpen(true)}
-                  title={content.header.signInTitle}
-                >
-                  <LogIn size={16} aria-hidden="true" />
-                  <span className="btn-nav-text">{content.auth.signIn}</span>
-                </button>
-              </>
-            )
-          ) : (
-            <span className="top-nav-hint" aria-live="polite">
-              {content.header.userBadge}
+          <div className="top-nav-user" title={content.auth.displayEmail}>
+            <span className="user-avatar" aria-label={content.auth.initialsHint}>
+              {emailInitials(content.auth.displayEmail)}
             </span>
-          )}
+            <span className="user-email-text">{content.auth.displayName}</span>
+          </div>
+          <span className="top-nav-hint">{content.auth.placeholderNote}</span>
         </div>
       </header>
 
@@ -1425,72 +1392,6 @@ function App() {
           )}
         </section>
       </main>
-
-      {loginModalOpen ? (
-        <div
-          className="modal-overlay"
-          role="presentation"
-          onClick={() => setLoginModalOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setLoginModalOpen(false);
-          }}
-        >
-          <div
-            className="modal-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="login-modal-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-card-header">
-              <h2 id="login-modal-title" className="modal-title">
-                <LogIn size={20} aria-hidden="true" style={{ marginRight: 8, verticalAlign: "middle" }} />
-                {content.auth.modalTitle}
-              </h2>
-              <button
-                type="button"
-                className="btn-icon"
-                onClick={() => setLoginModalOpen(false)}
-                aria-label={content.settings.cancel}
-              >
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-            <form className="modal-form" onSubmit={onLoginSubmit}>
-              <p className="action-hint" style={{ marginTop: 0 }}>
-                {content.auth.unauthenticatedHint}
-              </p>
-              <label htmlFor="login-email-input" className="modal-label">
-                {content.auth.emailLabel}
-              </label>
-              <input
-                id="login-email-input"
-                className="text-input"
-                type="email"
-                autoComplete="username"
-                value={loginEmailField}
-                onChange={(e) => setLoginEmailField(e.target.value)}
-                required
-              />
-              <label htmlFor="login-password-input" className="modal-label">
-                {content.auth.passwordLabel}
-              </label>
-              <input
-                id="login-password-input"
-                className="text-input"
-                type="password"
-                autoComplete="current-password"
-                value={loginPasswordField}
-                onChange={(e) => setLoginPasswordField(e.target.value)}
-                required
-              />
-              <button type="submit" className="btn btn-primary modal-submit">
-                {content.auth.submit}
-              </button>
-            </form>
-          </div>
-        </div>
-      ) : null}
 
       {settingsOpen && activeWorkspace ? (
         <div

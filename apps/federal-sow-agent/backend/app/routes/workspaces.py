@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Workspace
 from app.schemas import WorkspaceAgentSettingsPatch, WorkspaceCreate, WorkspaceOut
-from app.workspace_access import must_workspace_owned, resolve_effective_owner_id
+from app.user_bootstrap import ensure_bootstrap_user
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
@@ -18,20 +18,14 @@ def utcnow():
 
 
 @router.get("", response_model=list[WorkspaceOut])
-def list_workspaces(request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    return (
-        db.query(Workspace)
-        .filter(Workspace.owner_user_id == owner_id)
-        .order_by(Workspace.created_at.desc())
-        .all()
-    )
+def list_workspaces(db: Session = Depends(get_db)):
+    return db.query(Workspace).order_by(Workspace.created_at.desc()).all()
 
 
 @router.post("", response_model=WorkspaceOut)
-def create_workspace(payload: WorkspaceCreate, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    item = Workspace(name=payload.name.strip(), owner_user_id=owner_id)
+def create_workspace(payload: WorkspaceCreate, db: Session = Depends(get_db)):
+    owner = ensure_bootstrap_user(db)
+    item = Workspace(name=payload.name.strip(), owner_user_id=owner.id)
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -39,20 +33,22 @@ def create_workspace(payload: WorkspaceCreate, request: Request, db: Session = D
 
 
 @router.get("/{workspace_id}", response_model=WorkspaceOut)
-def get_workspace(workspace_id: str, request: Request, db: Session = Depends(get_db)):
-    owner_id = resolve_effective_owner_id(db, request)
-    return must_workspace_owned(db, workspace_id, owner_id)
+def get_workspace(workspace_id: str, db: Session = Depends(get_db)):
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
+    return ws
 
 
 @router.patch("/{workspace_id}/agent-settings", response_model=WorkspaceOut)
 def patch_workspace_agent_settings(
     workspace_id: str,
     body: WorkspaceAgentSettingsPatch,
-    request: Request,
     db: Session = Depends(get_db),
 ):
-    owner_id = resolve_effective_owner_id(db, request)
-    ws = must_workspace_owned(db, workspace_id, owner_id)
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
     data = body.model_dump(exclude_unset=True)
     if "agent_temperature" in data:
         ws.agent_temperature = float(data["agent_temperature"])
