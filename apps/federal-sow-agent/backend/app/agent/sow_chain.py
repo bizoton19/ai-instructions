@@ -100,9 +100,10 @@ def run_sow_chain(
     template_hints = template_hints.strip()[:20000]
     user_instructions = _merge_workspace_instructions(workspace_instructions, user_instructions).strip()[:24000]
 
-    if not settings.openai_api_key and not settings.azure_openai_api_key:
+    has_azure_openai_config = bool(settings.azure_openai_endpoint and settings.azure_openai_deployment)
+    if not settings.openai_api_key and not settings.azure_openai_api_key and not has_azure_openai_config:
         warnings.append(
-            "LLM not configured (set OPENAI_API_KEY or Azure OpenAI env vars). Returning structured placeholder."
+            "LLM not configured (set OPENAI_API_KEY or Azure OpenAI env vars/managed identity). Returning structured placeholder."
         )
         stub = (
             "## Purpose\n\n(Configured LLM required for generation.)\n\n"
@@ -112,7 +113,7 @@ def run_sow_chain(
         return (
             SOWSectionsModel(
                 purpose="LLM not configured.",
-                scope="Provide OPENAI_API_KEY (or Azure OpenAI settings) on the server.",
+                scope="Provide OPENAI_API_KEY (or Azure OpenAI endpoint/deployment with managed identity) on the server.",
                 full_markdown=stub,
             ),
             warnings,
@@ -127,15 +128,26 @@ def run_sow_chain(
         ]
     )
 
-    if settings.azure_openai_endpoint and settings.azure_openai_api_key and settings.azure_openai_deployment:
+    if has_azure_openai_config:
         from langchain_openai import AzureChatOpenAI
+
+        azure_kwargs: dict[str, Any] = {}
+        if settings.azure_openai_api_key:
+            azure_kwargs["api_key"] = settings.azure_openai_api_key
+        else:
+            from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
+            azure_kwargs["azure_ad_token_provider"] = get_bearer_token_provider(
+                DefaultAzureCredential(),
+                "https://cognitiveservices.azure.com/.default",
+            )
 
         llm = AzureChatOpenAI(
             azure_endpoint=settings.azure_openai_endpoint,
-            api_key=settings.azure_openai_api_key,
-            api_version="2024-08-01-preview",
+            api_version=settings.azure_openai_api_version,
             azure_deployment=settings.azure_openai_deployment,
             temperature=temperature,
+            **azure_kwargs,
         )
     else:
         from langchain_openai import ChatOpenAI

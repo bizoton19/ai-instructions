@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     azure_openai_endpoint: str | None = None
     azure_openai_api_key: str | None = None
     azure_openai_deployment: str | None = None
+    azure_openai_api_version: str = "2024-08-01-preview"
     llm_model: str = "gpt-4o-mini"
 
     session_cookie_name: str = "sow_session"
@@ -23,6 +24,7 @@ class Settings(BaseSettings):
 
     dev_login_email: str = "dev@example.gov"
     dev_login_password: str = "devpassword-change-me"
+    cors_allow_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
 
 settings = Settings()

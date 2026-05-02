@@ -17,3 +17,4 @@ langchain-core==0.3.28
 langchain-openai==0.2.14
 itsdangerous==2.2.0
 httpx==0.28.1
+azure-identity==1.19.0

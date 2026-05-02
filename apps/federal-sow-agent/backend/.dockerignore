@@ -1,0 +1,11 @@
+.venv
+.venv311
+__pycache__
+*.pyc
+.env
+data
+uploads
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache
