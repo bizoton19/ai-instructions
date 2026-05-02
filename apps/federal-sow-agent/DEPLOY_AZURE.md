@@ -56,7 +56,7 @@ This plan deploys the app to Azure Container Apps with Azure Database for Postgr
 
 ## 1) Resource Groups
 
-**Dev (example in use):** `agents-dev-rg` in **westus2**. Create it if it does not exist. App resources deploy in `westus2`; PostgreSQL deploys in `eastus` because this subscription is currently restricted from provisioning PostgreSQL Flexible Server in some western regions.
+**Dev (example in use):** `agents-dev-rg` in **westus2**. Create it if it does not exist. App resources deploy in `westus2`; PostgreSQL deploys in `centralus` because this subscription is currently restricted from provisioning PostgreSQL Flexible Server in some other tested regions.
 
 ```bash
 az group create -n agents-dev-rg -l westus2
@@ -240,14 +240,35 @@ docker push agentsdevdevacr.azurecr.io/sow-frontend:dev
 
 ## 5) Deploy Infrastructure
 
+When using **system-assigned managed identity** with private ACR images, use a two-pass Container Apps deployment:
+
+1. First pass with `bootstrapContainerImages=true` uses a public bootstrap image. This creates the Container Apps and their system-assigned identities.
+2. The same deployment grants those identities `AcrPull` on ACR.
+3. Second pass with `bootstrapContainerImages=false` switches the apps to the real private ACR images.
+
+This avoids using ACR admin credentials or a user-assigned identity just to break the first-deploy dependency cycle.
+
 ```bash
 cd infra/azure
 
-# Dev (resource group agents-dev-rg, westus2)
+# Dev first pass: create identities and RBAC using public bootstrap images
 az deployment group create \
   --resource-group agents-dev-rg \
   --template-file main.bicep \
   --parameters parameters/dev.bicepparam \
+  --parameters bootstrapContainerImages=true \
+  --parameters \
+    postgresAdminPassword="$(az keyvault secret show --vault-name agentsdev-dev-kv --name postgres-admin-password --query value -o tsv)" \
+    appSecretKey="$(az keyvault secret show --vault-name agentsdev-dev-kv --name app-secret-key --query value -o tsv)" \
+    azureOpenAiApiKey="$(az keyvault secret show --vault-name agentsdev-dev-kv --name azure-openai-api-key --query value -o tsv)" \
+    devLoginPassword="$(az keyvault secret show --vault-name agentsdev-dev-kv --name dev-login-password --query value -o tsv)"
+
+# Dev second pass: switch to private ACR images
+az deployment group create \
+  --resource-group agents-dev-rg \
+  --template-file main.bicep \
+  --parameters parameters/dev.bicepparam \
+  --parameters bootstrapContainerImages=false \
   --parameters \
     postgresAdminPassword="$(az keyvault secret show --vault-name agentsdev-dev-kv --name postgres-admin-password --query value -o tsv)" \
     appSecretKey="$(az keyvault secret show --vault-name agentsdev-dev-kv --name app-secret-key --query value -o tsv)" \
@@ -258,7 +279,7 @@ az deployment group create \
 If using inline params instead of `.bicepparam`, include:
 
 ```bash
-postgresLocation=eastus frontendCpu=1 frontendMemory=2Gi
+postgresLocation=centralus frontendCpu=1 frontendMemory=2Gi
 ```
 
 ```bash

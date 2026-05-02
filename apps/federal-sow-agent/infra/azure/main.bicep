@@ -22,6 +22,9 @@ param backendImage string
 @description('Frontend container image in ACR format, for example: myacr.azurecr.io/sow-frontend:1.0.0')
 param frontendImage string
 
+@description('Use public bootstrap images first so system-assigned identities can be created before private ACR pulls are required.')
+param bootstrapContainerImages bool = false
+
 @description('Azure OpenAI endpoint URL.')
 param azureOpenAiEndpoint string
 
@@ -86,6 +89,11 @@ var backendAppName = '${namePrefix}-${suffix}-api'
 var frontendAppName = '${namePrefix}-${suffix}-web'
 var postgresServerName = '${take(replace(lowerPrefix, '-', ''), 30)}-${suffix}-pg-${take(uniqueString(postgresLocation), 4)}'
 var fileShareName = 'appdata'
+var bootstrapImage = 'mcr.microsoft.com/k8se/quickstart:latest'
+var backendRuntimeImage = bootstrapContainerImages ? bootstrapImage : backendImage
+var frontendRuntimeImage = bootstrapContainerImages ? bootstrapImage : frontendImage
+var backendTargetPort = bootstrapContainerImages ? 80 : 8000
+var frontendTargetPort = 80
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsName
@@ -255,10 +263,10 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       ingress: {
         external: true
-        targetPort: 8000
+        targetPort: backendTargetPort
         transport: 'auto'
       }
-      registries: [
+      registries: bootstrapContainerImages ? [] : [
         {
           server: containerRegistry.properties.loginServer
           identity: 'system'
@@ -283,7 +291,7 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'backend'
-          image: backendImage
+          image: backendRuntimeImage
           resources: {
             cpu: backendCpu
             memory: backendMemory
@@ -371,10 +379,10 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       ingress: {
         external: true
-        targetPort: 80
+        targetPort: frontendTargetPort
         transport: 'auto'
       }
-      registries: [
+      registries: bootstrapContainerImages ? [] : [
         {
           server: containerRegistry.properties.loginServer
           identity: 'system'
@@ -385,7 +393,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'frontend'
-          image: frontendImage
+          image: frontendRuntimeImage
           resources: {
             cpu: frontendCpu
             memory: frontendMemory

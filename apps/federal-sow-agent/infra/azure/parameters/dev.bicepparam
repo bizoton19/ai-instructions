@@ -5,7 +5,7 @@ using '../main.bicep'
 
 param environment = 'dev'
 param location = 'westus2'
-param postgresLocation = 'eastus'
+param postgresLocation = 'centralus'
 // Short alphanumeric prefix; Bicep creates ACR named {namePrefix}{environment}acr → agentsdevdevacr
 param namePrefix = 'agentsdev'
 
@@ -31,4 +31,4 @@ param backendMemory = '2Gi'
 param frontendCpu = 1
 param frontendMemory = '2Gi'
 
-param viteApiBase = 'https://<dev-backend-fqdn>'
+param viteApiBase = 'https://agentsdev-dev-api.mangobay-9fefd7e8.westus2.azurecontainerapps.io'
