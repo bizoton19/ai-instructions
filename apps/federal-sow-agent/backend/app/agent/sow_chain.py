@@ -8,45 +8,16 @@ from typing import Any
 
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.config import settings
-from app.schemas import SOWSectionsModel
-
-SYSTEM_PROMPT = """You are an expert writer of U.S. federal Statements of Work (SOWs).
-Write in clear plain language suitable for an informed federal audience (approximately eighth-grade reading level where practical).
-Use professional contracting tone consistent with common federal practice (FAR-aware style only — you are not providing legal advice).
-
-Rules:
-- Produce factual, neutral language; flag uncertainties rather than inventing facts not supported by context.
-- Prefer active voice and short sentences.
-- Use consistent heading labels in the structured JSON fields.
-- Populate full_markdown with a complete SOW-style document in Markdown with ## headings for major sections.
-
-Return ONLY valid JSON matching the schema described in the human message. No markdown fences."""
-
-HUMAN_PROMPT = """Context documents (may include excerpts from PDFs, Word, spreadsheets, or OCR):
-
-{context_block}
-
-Template heading hints from the workspace ACTIVE reference file (DOCX headings, inferred PDF section lines, or Excel column/table preview). These define the expected SOW scaffold when present.
-
-{template_hints}
-
-User instructions for this draft (may include prior pipeline specialist output under a separator—treat that text as authoritative factual input to merge into the template scaffold):
-
-{user_instructions}
-
-Return JSON with keys:
-purpose, background, scope, deliverables, period_of_performance,
-roles_and_responsibilities, acceptance_criteria, assumptions_and_constraints,
-full_markdown
-
-Each field except full_markdown should be plain text (paragraphs allowed).
-When Template heading hints enumerate section titles, mirror them as ## headings in full_markdown in the same order unless a title is clearly unrelated; merge every substantive fact from Prior pipeline output (requirements, analyst, research) instead of omitting earlier work.
-The full_markdown field must contain the complete primary deliverable in Markdown form for the task described in the system message
-(for example an SOW, an IGCE cost narrative, requirements document, or market research summary—never substitute a generic SOW if the role is IGCE-only or analyst-only unless the instructions ask for overlap).
-Populate structured fields appropriately for that deliverable."""
+from app.schemas import (
+    IGCECostModel,
+    MarketResearchModel,
+    RequirementsAnalystModel,
+    RequirementsDiscoveryModel,
+    SOWSectionsModel,
+)
 
 
 def _merge_workspace_instructions(workspace_instructions: str | None, user_instructions: str) -> str:
@@ -64,20 +35,6 @@ def _merge_workspace_instructions(workspace_instructions: str | None, user_instr
     )
 
 
-def _fallback_sections(text: str) -> SOWSectionsModel:
-    return SOWSectionsModel(
-        purpose="",
-        background="",
-        scope=text[:8000] if text else "",
-        deliverables="",
-        period_of_performance="",
-        roles_and_responsibilities="",
-        acceptance_criteria="",
-        assumptions_and_constraints="",
-        full_markdown=text or "[No content generated]",
-    )
-
-
 def _strip_json_fence(raw: str) -> str:
     raw = raw.strip()
     m = re.match(r"^```(?:json)?\s*([\s\S]*?)\s*```$", raw)
@@ -86,15 +43,41 @@ def _strip_json_fence(raw: str) -> str:
     return raw
 
 
-def run_sow_chain(
+def _fallback_sections(output_schema: type[BaseModel], text: str) -> BaseModel:
+    """Create a fallback instance of the appropriate schema with the raw text."""
+    # Create instance with full_markdown containing the raw text
+    data = {"full_markdown": text or "[No content generated]"}
+    try:
+        return output_schema(**data)
+    except Exception:
+        # If that fails, try with minimal fields
+        return output_schema()
+
+
+def run_specialist_chain(
     context_block: str,
     template_hints: str,
     user_instructions: str,
     system_prompt: str,
+    output_schema: type[BaseModel],
     *,
     temperature: float = 0.2,
     workspace_instructions: str | None = None,
-) -> tuple[SOWSectionsModel, list[str]]:
+) -> tuple[BaseModel, list[str]]:
+    """Run a pipeline specialist with a specific output schema.
+    
+    Args:
+        context_block: Context documents text
+        template_hints: Template heading hints
+        user_instructions: User-provided instructions (includes prior pipeline output)
+        system_prompt: Agent-specific system prompt
+        output_schema: Pydantic model class for this specialist's output
+        temperature: LLM temperature
+        workspace_instructions: Global workspace instructions
+        
+    Returns:
+        Tuple of (parsed model instance, warnings list)
+    """
     warnings: list[str] = []
     context_block = context_block.strip()[:120000]
     template_hints = template_hints.strip()[:20000]
@@ -105,26 +88,31 @@ def run_sow_chain(
         warnings.append(
             "LLM not configured (set OPENAI_API_KEY or Azure OpenAI env vars/managed identity). Returning structured placeholder."
         )
-        stub = (
-            "## Purpose\n\n(Configured LLM required for generation.)\n\n"
-            "## Scope\n\nBased on provided context length: "
-            f"{len(context_block)} characters.\n"
-        )
-        return (
-            SOWSectionsModel(
-                purpose="LLM not configured.",
-                scope="Provide OPENAI_API_KEY (or Azure OpenAI endpoint/deployment with managed identity) on the server.",
-                full_markdown=stub,
-            ),
-            warnings,
-        )
+        return _fallback_sections(output_schema, "[LLM not configured]"), warnings
 
-    parser = PydanticOutputParser(pydantic_object=SOWSectionsModel)
+    parser = PydanticOutputParser(pydantic_object=output_schema)
+
+    # Human prompt template - format instructions are added dynamically
+    HUMAN_PROMPT_TEMPLATE = """Context documents (may include excerpts from PDFs, Word, spreadsheets, or OCR):
+
+{context_block}
+
+Template heading hints from the workspace ACTIVE reference file (DOCX headings, inferred PDF section lines, or Excel column/table preview). These define the expected document scaffold when present:
+
+{template_hints}
+
+User instructions for this phase (may include prior pipeline specialist output under a separator—treat that text as authoritative factual input):
+
+{user_instructions}
+
+Return JSON matching the schema described in the format instructions. The full_markdown field must contain the complete document in Markdown form for this specialist's specific deliverable.
+
+{format_instructions}"""
 
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
-            ("human", HUMAN_PROMPT + "\n\n{format_instructions}"),
+            ("human", HUMAN_PROMPT_TEMPLATE),
         ]
     )
 
@@ -161,17 +149,15 @@ def run_sow_chain(
             {
                 "context_block": context_block or "[No context documents]",
                 "template_hints": template_hints or "[No template hints]",
-                "user_instructions": user_instructions or "[No additional instructions]",
+                "user_instructions": user_instructions or "[Execute this pipeline phase.]",
                 "format_instructions": parser.get_format_instructions(),
             }
         )
-        if isinstance(raw, SOWSectionsModel):
+        if isinstance(raw, BaseModel):
             return raw, warnings
         if isinstance(raw, dict):
-            sections = SOWSectionsModel(**raw)
-            return sections, warnings
-        sections = SOWSectionsModel.model_validate(raw)
-        return sections, warnings
+            return output_schema(**raw), warnings
+        return output_schema.model_validate(raw), warnings
     except ValidationError as e:
         warnings.append(f"Structured parse fallback: {e}")
         try:
@@ -188,13 +174,35 @@ def run_sow_chain(
             content = getattr(msg, "content", str(msg))
             content = _strip_json_fence(content)
             data = json.loads(content)
-            return SOWSectionsModel(**data), warnings
+            return output_schema(**data), warnings
         except Exception as e2:
             warnings.append(f"Parse error: {e2}")
-            return _fallback_sections(context_block[:5000]), warnings
+            return _fallback_sections(output_schema, context_block[:5000]), warnings
     except Exception as e:
         warnings.append(str(e))
-        return _fallback_sections(context_block[:5000]), warnings
+        return _fallback_sections(output_schema, context_block[:5000]), warnings
+
+
+# Backward compatibility: keep the old function name for existing code
+def run_sow_chain(
+    context_block: str,
+    template_hints: str,
+    user_instructions: str,
+    system_prompt: str,
+    *,
+    temperature: float = 0.2,
+    workspace_instructions: str | None = None,
+) -> tuple[SOWSectionsModel, list[str]]:
+    """Legacy entry point for SOW generation (used by non-pipeline routes)."""
+    return run_specialist_chain(
+        context_block=context_block,
+        template_hints=template_hints,
+        user_instructions=user_instructions,
+        system_prompt=system_prompt,
+        output_schema=SOWSectionsModel,
+        temperature=temperature,
+        workspace_instructions=workspace_instructions,
+    )
 
 
 def sections_to_flat_dict(sections: SOWSectionsModel) -> dict[str, Any]:

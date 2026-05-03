@@ -76,3 +76,31 @@ def init_db():
                 sess_names = _session_col_names()
                 if col_name not in sess_names:
                     conn.execute(text(sql))
+
+            # pipeline_artifacts table (new table for phase-specific artifacts)
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS pipeline_artifacts (
+                    id VARCHAR(36) PRIMARY KEY,
+                    session_id VARCHAR(36) NOT NULL,
+                    workspace_id VARCHAR(36) NOT NULL,
+                    phase_order INTEGER NOT NULL,
+                    agent_id VARCHAR(64) NOT NULL,
+                    agent_name VARCHAR(255) NOT NULL,
+                    artifact_type VARCHAR(64) NOT NULL,
+                    artifact_filename VARCHAR(255) NOT NULL,
+                    artifact_description VARCHAR(512) NOT NULL,
+                    structured_data_json TEXT NOT NULL,
+                    full_markdown TEXT NOT NULL,
+                    content_summary TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (session_id) REFERENCES agent_sessions(id),
+                    FOREIGN KEY (workspace_id) REFERENCES workspaces(id)
+                )
+            """))
+            # Create indexes for pipeline_artifacts
+            conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS idx_artifacts_session ON pipeline_artifacts(session_id)
+            """))
+            conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS idx_artifacts_workspace ON pipeline_artifacts(workspace_id)
+            """))

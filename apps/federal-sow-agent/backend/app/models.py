@@ -59,6 +59,7 @@ class AgentSession(Base):
 
     workspace: Mapped["Workspace"] = relationship(back_populates="sessions")
     messages: Mapped[list["Message"]] = relationship(back_populates="session")
+    artifacts: Mapped[list["PipelineArtifact"]] = relationship(back_populates="session")
 
 
 class Message(Base):
@@ -116,3 +117,43 @@ class ProcessingPipelineVersion(Base):
     label: Mapped[str] = mapped_column(String(128), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PipelineArtifact(Base):
+    """Stores distinct artifacts produced by each pipeline phase.
+    
+    Each phase of the pipeline produces a specific document type:
+    - requirements_agent: Requirements Clarification Document
+    - requirements_analyst: System Requirements Document (SRD)
+    - market_research: Market Research Report
+    - sow_writer: Statement of Work (SOW)
+    - cost_estimator: Independent Government Cost Estimate (IGCE)
+    """
+
+    __tablename__ = "pipeline_artifacts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id: Mapped[str] = mapped_column(String(36), ForeignKey("agent_sessions.id"), nullable=False, index=True)
+    workspace_id: Mapped[str] = mapped_column(String(36), ForeignKey("workspaces.id"), nullable=False, index=True)
+    
+    # Phase identification
+    phase_order: Mapped[int] = mapped_column(Integer, nullable=False)  # 0-4 for the 5 phases
+    agent_id: Mapped[str] = mapped_column(String(64), nullable=False)  # e.g., "requirements_agent"
+    agent_name: Mapped[str] = mapped_column(String(255), nullable=False)  # Human-readable name
+    
+    # Artifact metadata
+    artifact_type: Mapped[str] = mapped_column(String(64), nullable=False)  # e.g., "requirements_discovery"
+    artifact_filename: Mapped[str] = mapped_column(String(255), nullable=False)  # e.g., "01_requirements_clarification.md"
+    artifact_description: Mapped[str] = mapped_column(String(512), nullable=False)  # Human description
+    
+    # Content storage (JSON for structured data, plus rendered Markdown)
+    structured_data_json: Mapped[str] = mapped_column(Text, nullable=False)  # Pydantic model JSON
+    full_markdown: Mapped[str] = mapped_column(Text, nullable=False)  # Rendered Markdown document
+    
+    # Summary for quick display
+    content_summary: Mapped[str] = mapped_column(Text, nullable=True)  # Brief preview/summary
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    
+    # Relationships
+    session: Mapped["AgentSession"] = relationship(back_populates="artifacts")

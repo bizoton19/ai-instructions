@@ -74,6 +74,15 @@ param frontendCpu int = 1
 @description('Memory for frontend container app.')
 param frontendMemory string = '1Gi'
 
+@description('Minimum replicas for Container Apps. Set to 0 for dev/test to enable scale-to-zero and reduce costs. Set to 1 for prod to avoid cold starts.')
+param containerAppsMinReplicas int = 1
+
+@description('PostgreSQL SKU name for flexible server. Default B2s for dev. Use B1ms for cost-optimized dev.')
+param postgresSkuName string = 'Standard_B2s'
+
+@description('PostgreSQL storage size in GB. Default 64 for dev. Use 32 for cost-optimized dev.')
+param postgresStorageGb int = 64
+
 @description('Vite API base URL used at frontend image build time. Keep this aligned with backend URL for each environment.')
 param viteApiBase string
 
@@ -184,7 +193,7 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-pr
   name: postgresServerName
   location: postgresLocation
   sku: {
-    name: environment == 'prod' ? 'Standard_D4s_v3' : 'Standard_B2s'
+    name: environment == 'prod' ? 'Standard_D4s_v3' : postgresSkuName
     tier: environment == 'prod' ? 'GeneralPurpose' : 'Burstable'
   }
   properties: {
@@ -192,7 +201,7 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-pr
     administratorLogin: postgresAdminUser
     administratorLoginPassword: postgresAdminPassword
     storage: {
-      storageSizeGB: environment == 'prod' ? 128 : 64
+      storageSizeGB: environment == 'prod' ? 128 : postgresStorageGb
     }
     backup: {
       backupRetentionDays: environment == 'prod' ? 14 : 7
@@ -354,7 +363,7 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
         }
       ]
       scale: {
-        minReplicas: 1
+        minReplicas: containerAppsMinReplicas
         maxReplicas: environment == 'prod' ? 6 : 2
       }
     }
@@ -407,7 +416,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
         }
       ]
       scale: {
-        minReplicas: 1
+        minReplicas: containerAppsMinReplicas
         maxReplicas: environment == 'prod' ? 4 : 2
       }
     }

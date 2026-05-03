@@ -7,7 +7,7 @@ export const content = {
   toastPrefix: "//",
 
   header: {
-    appTitle: "SOW // Assembly Engine",
+    appTitle: "Contextual Document Writer",
     userBadge: "System Active",
     settingsButtonTitle: "Workspace agent settings",
   },
