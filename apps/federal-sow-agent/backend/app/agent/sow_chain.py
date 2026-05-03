@@ -141,6 +141,8 @@ User instructions for this phase (may include prior pipeline specialist output u
 
 When template heading hints list section titles from the workspace reference file, mirror that outline in full_markdown using ## headings in a sensible order. Do not paste raw source documents verbatim as the deliverable; synthesize and draft new contract-ready text.
 
+Prior pipeline output (if any) under User instructions repeats some of the same facts as the context documents. Treat both only as evidence: extract facts, decisions, and IDs you need, then write a **fresh** narrative for this specialist's role. In full_markdown, do not copy multi-paragraph stretches from prior phases or from context files as filler—rephrase, reorganize, and add tables or lists appropriate to **this** deliverable so each phase reads as distinct work product, not a duplicate of an earlier phase.
+
 Return JSON matching the schema described in the format instructions. The full_markdown field must contain the complete document in Markdown form for this specialist's specific deliverable.
 
 {format_instructions}"""
