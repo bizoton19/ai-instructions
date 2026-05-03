@@ -88,7 +88,7 @@ def run_specialist_chain(
     """
     warnings: list[str] = []
     context_block = context_block.strip()[:120000]
-    template_hints = template_hints.strip()[:20000]
+    template_hints = template_hints.strip()[:24000]
     user_instructions = _merge_workspace_instructions(workspace_instructions, user_instructions).strip()[:24000]
 
     provider = (settings.llm_provider or "").strip().lower()

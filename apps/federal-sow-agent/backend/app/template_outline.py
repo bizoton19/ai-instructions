@@ -91,11 +91,26 @@ def build_template_outline_json(path: Path, filename: str) -> str:
     if lower.endswith(".pdf"):
         text, meta = extract_pdf_text(path)
         guessed = _guess_section_lines_from_text(text or "")
+        raw = (text or "").strip()
+        # Long PDFs: keep start + end so annexes / later sections appear in hints (not only page 1).
+        max_excerpt = 22000
+        if len(raw) <= max_excerpt:
+            excerpt = raw
+        else:
+            head = raw[:14000]
+            tail = raw[-7000:]
+            excerpt = (
+                head
+                + "\n\n--- [Omitted middle of PDF text in this excerpt; headings above summarize structure.] ---\n\n"
+                + tail
+            )
+            if len(excerpt) > max_excerpt:
+                excerpt = excerpt[:max_excerpt]
         return json.dumps(
             {
                 "kind": "pdf",
                 "headings": guessed,
-                "text_excerpt": (text or "")[:12000],
+                "text_excerpt": excerpt,
                 "pages": meta.get("pages"),
             }
         )

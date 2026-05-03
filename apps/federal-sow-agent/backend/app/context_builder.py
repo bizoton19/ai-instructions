@@ -30,7 +30,7 @@ def build_generation_inputs(
     workspace_id: str,
     preferred_agent_id: str | None = None,
 ) -> tuple[str, str]:
-    """Return (context_block, template_hints) capped for the SOW chain."""
+    """Return (context_block, template_hints) sized for the SOW chain (see sow_chain template_hints cap)."""
     ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
 
     contexts = (
@@ -82,10 +82,10 @@ def build_generation_inputs(
         if kind in ("docx", None):
             hdrs = headings if isinstance(headings, list) else []
             if hdrs:
-                template_hints_parts.append(f"{t.filename} (.docx): headings — {', '.join(str(h) for h in hdrs[:15])}")
+                template_hints_parts.append(f"{t.filename} (.docx): headings — {', '.join(str(h) for h in hdrs[:24])}")
             excerpt = (obj.get("text_excerpt") or "").strip()
             if excerpt:
-                excerpt = excerpt[:7000]
+                excerpt = excerpt[:10000]
                 template_hints_parts.append(f"{t.filename}: excerpt:\n{excerpt}")
             continue
 
@@ -93,12 +93,13 @@ def build_generation_inputs(
             hdrs = headings if isinstance(headings, list) else []
             if hdrs:
                 template_hints_parts.append(
-                    f"{t.filename} (PDF): inferred section lines — {', '.join(str(h) for h in hdrs[:15])}"
+                    f"{t.filename} (PDF): inferred section lines — {', '.join(str(h) for h in hdrs[:32])}"
                 )
             pages = obj.get("pages")
             if pages:
                 template_hints_parts.append(f"{t.filename}: {pages} page(s)")
-            excerpt = (obj.get("text_excerpt") or "").strip()[:9000]
+            # Use most of the template_hints budget (see sow_chain cap on template_hints).
+            excerpt = (obj.get("text_excerpt") or "").strip()[:18000]
             if excerpt:
                 template_hints_parts.append(f"{t.filename} (PDF) text excerpt:\n{excerpt}")
             template_hints_parts.append(
