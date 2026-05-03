@@ -81,9 +81,10 @@ def list_pipeline_artifacts(
             phase_name=a.agent_name,
             agent_id=a.agent_id,
             artifact_type=a.artifact_type,
+            artifact_filename=a.artifact_filename,
             created_at=a.created_at,
             summary=a.content_summary or "Artifact generated",
-            download_url=f"/api/workspaces/{workspace_id}/sessions/{session_id}/pipeline/artifacts/{a.phase_order}",
+            download_url=f"/workspaces/{workspace_id}/sessions/{session_id}/pipeline/artifacts/{a.phase_order}/download",
         )
         for a in artifacts
     ]

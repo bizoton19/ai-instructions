@@ -806,6 +806,23 @@ body::before {
   color: var(--text-muted);
 }
 
+.pipeline-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.artifact-pill--progress {
+  border-color: var(--border-color);
+}
+
+.artifact-pill--ready {
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
 .artifact-pill {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -1379,6 +1396,60 @@ body::before {
 .phase-status {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.phase-status-primary {
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.phase-status-detail {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.pipeline-phase.completed .phase-status-primary {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.manager-artifacts-card {
+  margin-top: 24px;
+}
+
+.pipeline-artifact-download-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pipeline-artifact-download-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pipeline-artifact-download-item:last-child {
+  border-bottom: none;
+}
+
+.pipeline-artifact-download-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.pipeline-artifact-download-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  max-width: 520px;
 }
 
 /* Status Variations */

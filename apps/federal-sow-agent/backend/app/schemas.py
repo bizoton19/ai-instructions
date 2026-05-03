@@ -242,6 +242,7 @@ class PipelineArtifactOut(BaseModel):
     phase_name: str
     agent_id: str
     artifact_type: str  # requirements_discovery | requirements_analyst | market_research | sow_writer | cost_estimator
+    artifact_filename: str
     created_at: datetime
     summary: str  # Brief preview of content
     download_url: str | None = None

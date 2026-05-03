@@ -160,6 +160,8 @@ export const api = {
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/reset`, {
       method: "POST",
     }),
+  listPipelineArtifacts: (workspaceId, sessionId) =>
+    request(`/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts`),
   merge: (workspaceId, sessionId, templateAssetId) =>
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/merge`, {
       method: "POST",

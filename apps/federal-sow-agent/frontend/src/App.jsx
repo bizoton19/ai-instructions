@@ -55,6 +55,61 @@ function emailInitials(email) {
   return local.slice(0, 2).toUpperCase();
 }
 
+/** Per-row pipeline timeline labels (VS-style step status). */
+function pipelinePhaseRowModel({
+  phaseIndex,
+  pipelinePlan,
+  activeSession,
+  loading,
+  clarActive,
+  manualPause,
+  pipelineDone,
+  p3,
+}) {
+  const total = pipelinePlan.length;
+  const step = activeSession?.pipeline_step ?? 0;
+  const isCompleted = pipelineDone || phaseIndex < step;
+  const isCurrent = !pipelineDone && phaseIndex === step;
+
+  let statusClass = "waiting";
+  if (isCompleted) statusClass = "completed";
+  else if (isCurrent) statusClass = "running";
+
+  const showPulse = Boolean(isCurrent && !clarActive && !manualPause && loading);
+
+  let primary = "";
+  /** @type {string[]} */
+  let detail = [];
+
+  if (isCompleted) {
+    primary = p3.pipelinePhaseStatusComplete;
+    detail = [p3.pipelinePhaseArtifactReady];
+    if (!pipelineDone && phaseIndex < total - 1 && step > phaseIndex) {
+      const nextName = pipelinePlan[phaseIndex + 1]?.name;
+      if (nextName) detail.push(p3.pipelinePhaseHandoff(nextName));
+    }
+  } else if (isCurrent) {
+    if (clarActive) {
+      primary = p3.pipelinePhaseNeedsClarification;
+      detail = [p3.pipelinePhaseNeedsClarificationDetail];
+    } else if (manualPause) {
+      primary = p3.pipelinePhaseAwaitingApproval;
+      detail = [p3.pipelinePhaseAwaitingApprovalDetail];
+    } else if (loading) {
+      primary = p3.pipelinePhaseRunning;
+      detail = [p3.pipelinePhaseRunningDetail];
+    } else {
+      primary = p3.pipelinePhaseNextUp;
+      detail = [p3.pipelinePhaseNextUpDetail(pipelinePlan[phaseIndex]?.name || "")];
+    }
+  } else {
+    primary = p3.pipelinePhaseWaiting;
+    detail = [p3.pipelinePhaseWaitingDetail];
+  }
+
+  return { statusClass, showPulse, primary, detail };
+}
+
 function App() {
   const [workspaces, setWorkspaces] = useState([]);
   const [workspaceId, setWorkspaceId] = useState(null);
@@ -78,6 +133,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTemp, setSettingsTemp] = useState(0.2);
   const [settingsGuidance, setSettingsGuidance] = useState("");
+  const [pipelineArtifacts, setPipelineArtifacts] = useState([]);
 
   const agentOptions = agentsCatalog.length
     ? agentsCatalog
@@ -134,6 +190,15 @@ function App() {
       progressLine,
       orch,
     };
+  }, [activeSession, pipelinePlan]);
+
+  const pipelineProgressCounts = useMemo(() => {
+    const total = pipelinePlan.length;
+    if (!activeSession || total === 0) return { completed: 0, total: 0 };
+    const step = activeSession.pipeline_step ?? 0;
+    const allDone = !!(activeSession.pipeline_completed || step >= total);
+    const completed = allDone ? total : Math.min(step, total);
+    return { completed, total };
   }, [activeSession, pipelinePlan]);
 
   const hasDraftContent = useMemo(() => {
@@ -256,6 +321,17 @@ function App() {
       .listMessages(workspaceId, sessionId)
       .then(setMessages)
       .catch((e) => showNotice(e.message));
+  }, [workspaceId, sessionId]);
+
+  useEffect(() => {
+    if (!workspaceId || !sessionId) {
+      setPipelineArtifacts([]);
+      return;
+    }
+    api
+      .listPipelineArtifacts(workspaceId, sessionId)
+      .then(setPipelineArtifacts)
+      .catch(() => setPipelineArtifacts([]));
   }, [workspaceId, sessionId]);
 
   function showNotice(msg) {
@@ -451,6 +527,12 @@ function App() {
       setClarificationResolved(false);
       setMessages(await api.listMessages(workspaceId, sessionId));
       await refreshWorkspaceData(workspaceId);
+      try {
+        const arts = await api.listPipelineArtifacts(workspaceId, sessionId);
+        setPipelineArtifacts(arts);
+      } catch {
+        setPipelineArtifacts([]);
+      }
       showNotice(
         execution === "auto_chain" && result.phases_run && result.phases_run > 1
           ? `Pipeline ran ${result.phases_run} specialist phases. Preview updated.`
@@ -488,6 +570,7 @@ function App() {
       setClarificationResolved(false);
       await refreshWorkspaceData(workspaceId);
       setMessages(await api.listMessages(workspaceId, sessionId));
+      setPipelineArtifacts([]);
       showNotice("Pipeline progress reset.");
     } catch (err) {
       showNotice(err.message);
@@ -1051,10 +1134,28 @@ function App() {
                                     {content.wizard.step3.pipelineHeading}
                                   </h4>
                                 </div>
-                                {(activeSession?.pipeline_artifact_count ?? 0) > 0 ? (
-                                  <span className="artifact-pill" title={content.wizard.step3.artifactPillTitle}>
-                                    {content.wizard.step3.artifactPill(activeSession.pipeline_artifact_count)}
-                                  </span>
+                                {sessionId && pipelinePlan.length > 0 ? (
+                                  <div
+                                    className="pipeline-pills"
+                                    role="group"
+                                    aria-label="Pipeline phase progress and stored artifacts"
+                                  >
+                                    <span
+                                      className="artifact-pill artifact-pill--progress"
+                                      title={content.wizard.step3.progressPillTitle}
+                                    >
+                                      {content.wizard.step3.progressPill(
+                                        pipelineProgressCounts.completed,
+                                        pipelineProgressCounts.total,
+                                      )}
+                                    </span>
+                                    <span
+                                      className="artifact-pill artifact-pill--ready"
+                                      title={content.wizard.step3.artifactsReadyPillTitle}
+                                    >
+                                      {content.wizard.step3.artifactsReadyPill(pipelineArtifacts.length)}
+                                    </span>
+                                  </div>
                                 ) : null}
                               </div>
                               {!sessionId ? (
@@ -1118,33 +1219,32 @@ function App() {
 
                                   <div className="pipeline-timeline" role="status" aria-live="polite">
                                     {pipelinePlan.map((phase, i) => {
-                                      const isCompleted = activeSession.pipeline_completed || i < (activeSession.pipeline_step || 0);
-                                      const isCurrent = !activeSession.pipeline_completed && i === (activeSession.pipeline_step || 0);
-                                      
-                                      let statusClass = "waiting";
-                                      if (isCompleted) statusClass = "completed";
-                                      if (isCurrent) statusClass = "running";
-                                      
-                                      const showPulse = isCurrent && !pipelineUi.clarActive && !pipelineUi.manualPause && loading;
-                                      
-                                      let phaseStatus = "Waiting";
-                                      if (isCompleted) phaseStatus = "Done";
-                                      else if (isCurrent) {
-                                        if (pipelineUi.clarActive) phaseStatus = "Needs Clarification";
-                                        else if (pipelineUi.manualPause) phaseStatus = "Waiting Approval";
-                                        else if (loading) phaseStatus = "Running...";
-                                        else phaseStatus = "Ready";
-                                      }
-
+                                      const row = pipelinePhaseRowModel({
+                                        phaseIndex: i,
+                                        pipelinePlan,
+                                        activeSession,
+                                        loading,
+                                        clarActive: pipelineUi.clarActive,
+                                        manualPause: pipelineUi.manualPause,
+                                        pipelineDone: pipelineUi.pipelineDone,
+                                        p3: content.wizard.step3,
+                                      });
                                       return (
-                                        <div key={phase.agent_id} className={`pipeline-phase ${statusClass}`}>
+                                        <div key={phase.agent_id} className={`pipeline-phase ${row.statusClass}`}>
                                           <div className="phase-indicator">
-                                            <div className={`phase-dot ${showPulse ? "pulsing" : ""}`} />
+                                            <div className={`phase-dot ${row.showPulse ? "pulsing" : ""}`} />
                                             <div className="phase-line" />
                                           </div>
                                           <div className="phase-details">
                                             <div className="phase-name">{phase.name}</div>
-                                            <div className="phase-status">{phaseStatus}</div>
+                                            <div className="phase-status" aria-label={`${phase.name}: ${row.primary}`}>
+                                              <div className="phase-status-primary">{row.primary}</div>
+                                              {row.detail.map((line, j) => (
+                                                <div key={j} className="phase-status-detail">
+                                                  {line}
+                                                </div>
+                                              ))}
+                                            </div>
                                           </div>
                                         </div>
                                       );
@@ -1320,6 +1420,7 @@ function App() {
                   </AnimatePresence>
                 </div>
               ) : (
+                <>
                 <div className="grid-2">
                   <div className="card">
                     <div className="card-header">
@@ -1403,6 +1504,82 @@ function App() {
                     </div>
                   </div>
                 </div>
+
+                <div className="card manager-artifacts-card">
+                  <div className="card-header">
+                    <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <Workflow color="var(--text-accent)" aria-hidden="true" /> {content.manager.pipelineArtifactsTitle}
+                    </h3>
+                  </div>
+                  <div className="card-body">
+                    <p className="action-hint" style={{ marginTop: 0 }}>
+                      {content.manager.pipelineArtifactsIntro}
+                    </p>
+                    {!sessionId ? (
+                      <p className="action-hint">{content.manager.pipelineArtifactsNoSession}</p>
+                    ) : (
+                      <>
+                        <p className="action-hint" style={{ marginBottom: 12 }}>
+                          <strong>{content.manager.pipelineArtifactsSessionLabel}:</strong>{" "}
+                          {sessions.find((s) => s.id === sessionId)?.title || sessionId}
+                        </p>
+                        {pipelineArtifacts.length === 0 ? (
+                          <p className="action-hint">{content.manager.pipelineArtifactsEmpty}</p>
+                        ) : (
+                          <ul className="pipeline-artifact-download-list">
+                            {pipelineArtifacts.map((a) => (
+                              <li key={`${a.phase_order}-${a.agent_id}`} className="pipeline-artifact-download-item">
+                                <div>
+                                  <div className="pipeline-artifact-download-name">{a.phase_name}</div>
+                                  <div className="pipeline-artifact-download-meta">
+                                    {a.artifact_filename}
+                                    {a.summary ? ` — ${a.summary}` : ""}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn"
+                                  style={{ flexShrink: 0 }}
+                                  onClick={async () => {
+                                    if (!a.download_url) return;
+                                    try {
+                                      await downloadFileByPath(a.download_url);
+                                    } catch (e) {
+                                      showNotice(e.message);
+                                    }
+                                  }}
+                                >
+                                  <FileDown size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadOne}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {pipelineArtifacts.length > 0 ? (
+                          <button
+                            type="button"
+                            className="btn"
+                            style={{ marginTop: 16 }}
+                            onClick={async () => {
+                              if (!workspaceId || !sessionId) return;
+                              try {
+                                await downloadFileByPath(
+                                  `/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts/all/download`,
+                                );
+                                showNotice(content.notices.artifactsExportReady);
+                              } catch (e) {
+                                showNotice(e.message);
+                              }
+                            }}
+                          >
+                            <FileText size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadAll}
+                          </button>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                </div>
+                </>
               )}
             </motion.div>
           ) : (
