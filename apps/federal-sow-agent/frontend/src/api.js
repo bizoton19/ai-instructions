@@ -163,6 +163,8 @@ export const api = {
     }),
   listPipelineArtifacts: (workspaceId, sessionId) =>
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts`),
+  downloadAllPipelineArtifactsPath: (workspaceId, sessionId) =>
+    `/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts/all/download`,
   merge: (workspaceId, sessionId, templateAssetId) =>
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/merge`, {
       method: "POST",

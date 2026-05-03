@@ -369,7 +369,10 @@ function App() {
     api
       .listPipelineArtifacts(workspaceId, sessionId)
       .then(setPipelineArtifacts)
-      .catch(() => setPipelineArtifacts([]));
+      .catch((e) => {
+        setPipelineArtifacts([]);
+        showNotice(e instanceof ApiError ? `Could not load pipeline artifacts: ${e.message}` : "Could not load pipeline artifacts.");
+      });
   }, [workspaceId, sessionId]);
 
   function showNotice(msg) {
@@ -642,11 +645,7 @@ function App() {
     setBusyHint(content.agents.artifactsExportStatus);
     setLoading(true);
     try {
-      const out = await api.exportDocument(workspaceId, sessionId, {
-        use_latest_generation: true,
-        use_all_pipeline_phases: true,
-      });
-      await downloadFileByPath(out.download_path);
+      await downloadFileByPath(api.downloadAllPipelineArtifactsPath(workspaceId, sessionId));
       showNotice(content.notices.artifactsExportReady);
     } catch (err) {
       showNotice(err.message);
