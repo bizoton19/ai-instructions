@@ -18,6 +18,47 @@ router = APIRouter(prefix="/workspaces/{workspace_id}", tags=["uploads"])
 
 _ALLOWED_TEMPLATE_SUFFIXES = (".docx", ".pdf", ".xlsx")
 
+_SPECIALIST_TEMPLATE_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "requirements_agent": ("requirements", "discovery", "intake", "clarification"),
+    "requirements_analyst": ("srd", "requirements-analyst", "requirements_analyst"),
+    "market_research": ("market", "research", "rfp", "sources-sought", "sources_sought"),
+    "sow_writer": ("sow", "pws", "soo", "statement-of-work", "statement_of_work"),
+    "cost_estimator": ("igce", "cost", "estimate", "pricing"),
+}
+
+
+def _parse_map(raw: str | None) -> dict[str, str]:
+    if not raw:
+        return {}
+    try:
+        obj = json.loads(raw)
+    except Exception:
+        return {}
+    if not isinstance(obj, dict):
+        return {}
+    out: dict[str, str] = {}
+    for k, v in obj.items():
+        if isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip():
+            out[k.strip()] = v.strip()
+    return out
+
+
+def _save_map(ws, mapping: dict[str, str]) -> None:
+    ws.specialist_template_map_json = json.dumps(mapping) if mapping else None
+
+
+def _auto_assign_specialist_template(ws, filename: str, template_id: str) -> None:
+    """Best-effort assignment: if filename suggests one specialist, set mapping for that specialist."""
+    lowered = (filename or "").lower()
+    mapping = _parse_map(ws.specialist_template_map_json)
+    matched: list[str] = []
+    for specialist_id, keys in _SPECIALIST_TEMPLATE_KEYWORDS.items():
+        if any(k in lowered for k in keys):
+            matched.append(specialist_id)
+    if len(matched) == 1 and matched[0] not in mapping:
+        mapping[matched[0]] = template_id
+        _save_map(ws, mapping)
+
 
 @router.post("/templates/upload", response_model=TemplateAssetOut)
 async def upload_template(
@@ -56,6 +97,7 @@ async def upload_template(
     db.flush()
     if not ws.active_template_asset_id:
         ws.active_template_asset_id = item.id
+    _auto_assign_specialist_template(ws, file.filename, item.id)
     db.commit()
     db.refresh(item)
     return item
@@ -132,6 +174,11 @@ def delete_template_asset(workspace_id: str, asset_id: str, db: Session = Depend
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template asset not found")
     db.delete(item)
     db.flush()
+    mapping = _parse_map(ws.specialist_template_map_json)
+    removed = [k for k, v in mapping.items() if v == asset_id]
+    for k in removed:
+        del mapping[k]
+    _save_map(ws, mapping)
     if ws.active_template_asset_id == asset_id:
         replacement = (
             db.query(TemplateAsset)

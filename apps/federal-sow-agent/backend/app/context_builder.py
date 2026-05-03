@@ -9,7 +9,27 @@ from sqlalchemy.orm import Session
 from app.models import ContextAsset, TemplateAsset, Workspace
 
 
-def build_generation_inputs(db: Session, workspace_id: str) -> tuple[str, str]:
+def _parse_specialist_template_map(raw: str | None) -> dict[str, str]:
+    if not raw:
+        return {}
+    try:
+        obj = json.loads(raw)
+    except Exception:
+        return {}
+    if not isinstance(obj, dict):
+        return {}
+    out: dict[str, str] = {}
+    for k, v in obj.items():
+        if isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip():
+            out[k.strip()] = v.strip()
+    return out
+
+
+def build_generation_inputs(
+    db: Session,
+    workspace_id: str,
+    preferred_agent_id: str | None = None,
+) -> tuple[str, str]:
     """Return (context_block, template_hints) capped for the SOW chain."""
     ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
 
@@ -29,8 +49,15 @@ def build_generation_inputs(db: Session, workspace_id: str) -> tuple[str, str]:
 
     template_hints_parts: list[str] = []
     chosen_templates = templates
-    if ws and ws.active_template_asset_id:
-        chosen_templates = [t for t in templates if t.id == ws.active_template_asset_id]
+    if ws:
+        selected_template_id = ws.active_template_asset_id
+        specialist_map = _parse_specialist_template_map(ws.specialist_template_map_json)
+        if preferred_agent_id and specialist_map.get(preferred_agent_id):
+            selected_template_id = specialist_map[preferred_agent_id]
+        if selected_template_id:
+            selected = [t for t in templates if t.id == selected_template_id]
+            if selected:
+                chosen_templates = selected
     for t in chosen_templates[:1]:
         if not t.extracted_outline_json:
             template_hints_parts.append(f"{t.filename}: [outline not extracted yet]")

@@ -32,6 +32,7 @@ class WorkspaceOut(BaseModel):
     name: str
     owner_user_id: str
     active_template_asset_id: str | None = None
+    specialist_template_map: dict[str, str] = Field(default_factory=dict)
     agent_temperature: float = 0.2
     agent_workspace_instructions: str | None = None
     created_at: datetime
@@ -43,6 +44,7 @@ class WorkspaceOut(BaseModel):
 class WorkspaceAgentSettingsPatch(BaseModel):
     agent_temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     agent_workspace_instructions: str | None = Field(default=None, max_length=8000)
+    specialist_template_map: dict[str, str] | None = None
 
 
 class SessionCreate(BaseModel):

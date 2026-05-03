@@ -109,7 +109,11 @@ def _run_one_pipeline_phase(
     profile = get_agent_profile(agent_id)
     session.agent_type = agent_id
 
-    context_block, template_hints = build_generation_inputs(db, workspace_id)
+    context_block, template_hints = build_generation_inputs(
+        db,
+        workspace_id,
+        preferred_agent_id=agent_id,
+    )
     prior = assemble_prior_pipeline_text(db, session.id)
     parts: list[str] = []
     if prior.strip():

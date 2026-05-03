@@ -152,6 +152,10 @@ export const content = {
       masterTag: "MASTER",
       back: "Back",
       nextPhase: "Next Phase",
+      specialistRoutingTitle: "Specialist template routing",
+      specialistRoutingHint:
+        "Optional: map specialists to a specific template. If unset, specialists use the workspace default template.",
+      specialistRoutingUseDefault: "Use workspace default template",
     },
 
     step3: {
@@ -177,6 +181,9 @@ export const content = {
       defaultTemplateLabel: "Workspace default template (export pairing)",
       defaultTemplateHint:
         "Active file guides template hints for agents. Prefer .docx for style-preserving placeholder merge when your file uses merge fields.",
+      specialistTemplateRoutingLabel: "Specialist-specific template override",
+      specialistTemplateRoutingHint:
+        "Choose template per specialist, or leave on workspace default. This helps each specialist follow the right structure automatically.",
       templateSelectPlaceholder: "Choose workspace default reference…",
       noTemplatesForExport:
         "No template in this workspace yet. Upload DOCX, PDF, or XLSX from the Template step, choose a default here, or export Markdown only.",

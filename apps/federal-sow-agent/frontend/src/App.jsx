@@ -174,6 +174,7 @@ function App() {
     [workspaces, workspaceId],
   );
   const activeTemplateId = activeWorkspace?.active_template_asset_id || null;
+  const specialistTemplateMap = activeWorkspace?.specialist_template_map || {};
   const stepNav = content.wizard.stepNav;
 
   const activeSession = useMemo(
@@ -497,6 +498,22 @@ function App() {
     await api.activateTemplate(workspaceId, assetId);
     await loadWorkspaces();
     showNotice(content.notices.activeTemplateUpdated);
+  }
+
+  async function onAssignSpecialistTemplate(agentId, templateAssetId) {
+    if (!workspaceId || !activeWorkspace || !agentId) return;
+    const nextMap = { ...(activeWorkspace.specialist_template_map || {}) };
+    if (templateAssetId) nextMap[agentId] = templateAssetId;
+    else delete nextMap[agentId];
+    try {
+      await api.patchWorkspaceAgentSettings(workspaceId, {
+        specialist_template_map: nextMap,
+      });
+      await loadWorkspaces();
+      showNotice("Specialist template routing updated.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
   }
 
   async function onSendMessage(e) {
@@ -1028,6 +1045,33 @@ function App() {
                               ))}
                             </div>
                           )}
+                          {templates.length > 0 && agentOptions.length > 0 && (
+                            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                              <h4 style={{ margin: 0, fontSize: 13, color: "var(--text-main)" }}>
+                                {content.wizard.step2.specialistRoutingTitle}
+                              </h4>
+                              <p className="action-hint" style={{ margin: 0 }}>
+                                {content.wizard.step2.specialistRoutingHint}
+                              </p>
+                              {agentOptions.map((a) => (
+                                <div key={`route-${a.id}`} style={{ display: "grid", gridTemplateColumns: "220px minmax(0,1fr)", gap: 10, alignItems: "center" }}>
+                                  <label style={{ fontSize: 12, color: "var(--text-muted)" }}>{a.name}</label>
+                                  <select
+                                    className="text-input"
+                                    value={specialistTemplateMap[a.id] || ""}
+                                    onChange={(e) => onAssignSpecialistTemplate(a.id, e.target.value)}
+                                  >
+                                    <option value="">{content.wizard.step2.specialistRoutingUseDefault}</option>
+                                    {templates.map((t) => (
+                                      <option key={`${a.id}-${t.id}`} value={t.id}>
+                                        {t.filename}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="card-footer">
                           <button className="btn" onClick={() => setWizardStep(1)}>{content.wizard.step2.back}</button>
@@ -1097,6 +1141,27 @@ function App() {
                                         ))}
                                       </select>
                                       <p className="action-hint">{content.wizard.step3.defaultTemplateHint}</p>
+                                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)", marginTop: 6 }}>
+                                        {content.wizard.step3.specialistTemplateRoutingLabel}
+                                      </label>
+                                      <p className="action-hint">{content.wizard.step3.specialistTemplateRoutingHint}</p>
+                                      {agentOptions.map((a) => (
+                                        <div key={`synth-route-${a.id}`} style={{ display: "grid", gridTemplateColumns: "220px minmax(0,1fr)", gap: 10, alignItems: "center" }}>
+                                          <label style={{ fontSize: 12, color: "var(--text-muted)" }}>{a.name}</label>
+                                          <select
+                                            className="text-input"
+                                            value={specialistTemplateMap[a.id] || ""}
+                                            onChange={(e) => onAssignSpecialistTemplate(a.id, e.target.value)}
+                                          >
+                                            <option value="">{content.wizard.step2.specialistRoutingUseDefault}</option>
+                                            {templates.map((t) => (
+                                              <option key={`synth-${a.id}-${t.id}`} value={t.id}>
+                                                {t.filename}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      ))}
                                     </>
                                   ) : (
                                     <>

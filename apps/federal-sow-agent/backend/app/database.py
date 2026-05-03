@@ -45,6 +45,8 @@ def init_db():
                 conn.execute(text("ALTER TABLE workspaces ADD COLUMN agent_temperature REAL NOT NULL DEFAULT 0.2"))
             if "agent_workspace_instructions" not in ws_names:
                 conn.execute(text("ALTER TABLE workspaces ADD COLUMN agent_workspace_instructions TEXT"))
+            if "specialist_template_map_json" not in ws_names:
+                conn.execute(text("ALTER TABLE workspaces ADD COLUMN specialist_template_map_json TEXT"))
 
             # Reassign workspaces whose owner id is not a valid user (e.g. legacy "local-user" string).
             first_user = conn.execute(text("SELECT id FROM users ORDER BY created_at ASC LIMIT 1")).fetchone()

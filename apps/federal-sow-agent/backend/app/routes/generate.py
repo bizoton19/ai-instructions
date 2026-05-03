@@ -26,7 +26,11 @@ def generate_sow(
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    context_block, template_hints = build_generation_inputs(db, workspace_id)
+    context_block, template_hints = build_generation_inputs(
+        db,
+        workspace_id,
+        preferred_agent_id=session.agent_type,
+    )
 
     agent_profile = get_agent_profile(session.agent_type)
 

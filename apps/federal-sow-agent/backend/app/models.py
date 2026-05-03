@@ -27,6 +27,7 @@ class Workspace(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     owner_user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     active_template_asset_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("template_assets.id"), nullable=True)
+    specialist_template_map_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     agent_temperature: Mapped[float] = mapped_column(Float, nullable=False, default=0.2, server_default="0.2")
     agent_workspace_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
