@@ -37,6 +37,9 @@ export const content = {
     workspaceName: "Workspace name",
     defaultWorkspaceName: "Default Workspace",
     newSessionTitle: "New Session",
+    renameWorkspace: "Rename workspace",
+    renameSession: "Rename session",
+    renameFile: "Rename file",
   },
 
   notices: {
@@ -54,6 +57,11 @@ export const content = {
     sessionsSubtitle: "Agent sessions for this workspace",
     newWorkspaceTitle: "Initialize Workspace",
     newSessionTitle: "New Session",
+    newSessionNamePrompt: "Enter a name for this session:",
+    contextMenuRename: "Rename",
+    contextMenuDeleteWorkspace: "Delete workspace",
+    deleteWorkspaceConfirm: (name) =>
+      `Delete workspace “${name}” and all sessions, context files, templates, and stored artifacts? This cannot be undone.`,
     noSessions: "No sessions yet.",
     createSessionCta: "Create session",
     handOffNote:

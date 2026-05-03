@@ -47,6 +47,18 @@ class WorkspaceAgentSettingsPatch(BaseModel):
     specialist_template_map: dict[str, str] | None = None
 
 
+class WorkspacePatch(BaseModel):
+    """Rename workspace (display name)."""
+
+    name: str = Field(min_length=1, max_length=255)
+
+
+class AssetRenameIn(BaseModel):
+    """Rename uploaded file display name (storage path unchanged)."""
+
+    filename: str = Field(min_length=1, max_length=512)
+
+
 class SessionCreate(BaseModel):
     title: str | None = Field(default="New session", max_length=255)
     agent_type: str | None = Field(default="sow_writer", max_length=64)

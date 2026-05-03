@@ -99,6 +99,9 @@ export const api = {
   listPipeline: () => request("/agents/pipeline"),
   listWorkspaces: () => request("/workspaces"),
   createWorkspace: (name) => request("/workspaces", { method: "POST", body: JSON.stringify({ name }) }),
+  patchWorkspace: (workspaceId, body) =>
+    request(`/workspaces/${workspaceId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteWorkspace: (workspaceId) => request(`/workspaces/${workspaceId}`, { method: "DELETE" }),
   listSessions: (workspaceId) => request(`/workspaces/${workspaceId}/sessions`),
   createSession: (workspaceId, title, agentType) =>
     request(`/workspaces/${workspaceId}/sessions`, {
@@ -127,6 +130,11 @@ export const api = {
       body: fd,
     });
   },
+  renameContext: (workspaceId, assetId, filename) =>
+    request(`/workspaces/${workspaceId}/context/${assetId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ filename }),
+    }),
   deleteContext: (workspaceId, assetId) =>
     request(`/workspaces/${workspaceId}/context/${assetId}`, {
       method: "DELETE",
@@ -139,6 +147,11 @@ export const api = {
       body: fd,
     });
   },
+  renameTemplate: (workspaceId, assetId, filename) =>
+    request(`/workspaces/${workspaceId}/templates/${assetId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ filename }),
+    }),
   deleteTemplate: (workspaceId, assetId) =>
     request(`/workspaces/${workspaceId}/templates/${assetId}`, {
       method: "DELETE",

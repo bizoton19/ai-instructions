@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
@@ -9,7 +10,7 @@ from app.database import get_db
 from app.config import settings
 from app.ingestion.dispatch import ingest_context_file, normalize_mime
 from app.models import ContextAsset, TemplateAsset
-from app.schemas import ContextAssetOut, TemplateAssetOut
+from app.schemas import AssetRenameIn, ContextAssetOut, TemplateAssetOut
 from app.storage import save_upload_bytes
 from app.template_outline import build_template_outline_json
 from app.workspace_access import must_workspace_exist
@@ -153,6 +154,55 @@ async def upload_context(
 def list_context(workspace_id: str, db: Session = Depends(get_db)):
     must_workspace_exist(db, workspace_id)
     return db.query(ContextAsset).filter(ContextAsset.workspace_id == workspace_id).order_by(ContextAsset.created_at.desc()).all()
+
+
+def _normalize_rename_filename(current_filename: str, proposed: str) -> str:
+    proposed = (proposed or "").strip()
+    if not proposed:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="filename required")
+    old_suffix = Path(current_filename).suffix.lower()
+    new_suffix = Path(proposed).suffix.lower()
+    if old_suffix and new_suffix != old_suffix:
+        proposed = f"{Path(proposed).stem}{old_suffix}"
+    elif old_suffix and not new_suffix:
+        proposed = f"{proposed}{old_suffix}"
+    if len(proposed) > 512:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="filename too long")
+    return proposed
+
+
+@router.patch("/context/{asset_id}", response_model=ContextAssetOut)
+def rename_context_asset(
+    workspace_id: str,
+    asset_id: str,
+    body: AssetRenameIn,
+    db: Session = Depends(get_db),
+):
+    must_workspace_exist(db, workspace_id)
+    item = db.query(ContextAsset).filter(ContextAsset.workspace_id == workspace_id, ContextAsset.id == asset_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Context asset not found")
+    item.filename = _normalize_rename_filename(item.filename, body.filename)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.patch("/templates/{asset_id}", response_model=TemplateAssetOut)
+def rename_template_asset(
+    workspace_id: str,
+    asset_id: str,
+    body: AssetRenameIn,
+    db: Session = Depends(get_db),
+):
+    must_workspace_exist(db, workspace_id)
+    item = db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id, TemplateAsset.id == asset_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template asset not found")
+    item.filename = _normalize_rename_filename(item.filename, body.filename)
+    db.commit()
+    db.refresh(item)
+    return item
 
 
 @router.delete("/context/{asset_id}")

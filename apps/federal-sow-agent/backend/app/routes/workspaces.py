@@ -6,9 +6,11 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
-from app.models import Workspace
-from app.schemas import WorkspaceAgentSettingsPatch, WorkspaceCreate, WorkspaceOut
+from app.models import AgentSession, ContextAsset, Message, PipelineArtifact, TemplateAsset, Workspace
+from app.schemas import WorkspaceAgentSettingsPatch, WorkspaceCreate, WorkspaceOut, WorkspacePatch
+from app.storage import resolve_storage_key
 from app.user_bootstrap import ensure_bootstrap_user
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
@@ -70,6 +72,59 @@ def get_workspace(workspace_id: str, db: Session = Depends(get_db)):
     if not ws:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
     return _workspace_out(ws)
+
+
+@router.patch("/{workspace_id}", response_model=WorkspaceOut)
+def patch_workspace(workspace_id: str, body: WorkspacePatch, db: Session = Depends(get_db)):
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
+    ws.name = body.name.strip()
+    ws.updated_at = utcnow()
+    db.commit()
+    db.refresh(ws)
+    return _workspace_out(ws)
+
+
+@router.delete("/{workspace_id}")
+def delete_workspace(workspace_id: str, db: Session = Depends(get_db)):
+    """Remove workspace and all sessions, messages, pipeline artifacts, uploads, and related export files."""
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
+
+    sessions = db.query(AgentSession).filter(AgentSession.workspace_id == workspace_id).all()
+    session_ids = [s.id for s in sessions]
+    id_prefixes = {sid[:8] for sid in session_ids}
+
+    db.query(PipelineArtifact).filter(PipelineArtifact.workspace_id == workspace_id).delete(synchronize_session=False)
+    for sid in session_ids:
+        db.query(Message).filter(Message.session_id == sid).delete(synchronize_session=False)
+    db.query(AgentSession).filter(AgentSession.workspace_id == workspace_id).delete(synchronize_session=False)
+
+    for c in db.query(ContextAsset).filter(ContextAsset.workspace_id == workspace_id).all():
+        path = resolve_storage_key(c.storage_key)
+        if path.is_file():
+            path.unlink(missing_ok=True)
+        db.delete(c)
+
+    for t in db.query(TemplateAsset).filter(TemplateAsset.workspace_id == workspace_id).all():
+        path = resolve_storage_key(t.storage_key)
+        if path.is_file():
+            path.unlink(missing_ok=True)
+        db.delete(t)
+
+    out_dir = settings.upload_dir / "outputs"
+    if out_dir.is_dir():
+        for f in out_dir.iterdir():
+            if not f.is_file():
+                continue
+            if any(pref in f.name for pref in id_prefixes):
+                f.unlink(missing_ok=True)
+
+    db.delete(ws)
+    db.commit()
+    return {"ok": True}
 
 
 @router.patch("/{workspace_id}/agent-settings", response_model=WorkspaceOut)

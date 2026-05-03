@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import {
@@ -164,6 +164,8 @@ function App() {
   const [settingsTemp, setSettingsTemp] = useState(0.2);
   const [settingsGuidance, setSettingsGuidance] = useState("");
   const [pipelineArtifacts, setPipelineArtifacts] = useState([]);
+  const contextMenuRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState(null);
 
   const agentOptions = agentsCatalog.length
     ? agentsCatalog
@@ -376,9 +378,28 @@ function App() {
       });
   }, [workspaceId, sessionId]);
 
+  useEffect(() => {
+    if (!contextMenu) return;
+    const onPointerDown = (e) => {
+      if (contextMenuRef.current && contextMenuRef.current.contains(e.target)) return;
+      setContextMenu(null);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [contextMenu]);
+
   function showNotice(msg) {
     setNotice(msg);
     setTimeout(() => setNotice(""), 6000);
+  }
+
+  function openContextMenu(e, items) {
+    e.preventDefault();
+    e.stopPropagation();
+    const pad = 8;
+    const x = Math.min(e.clientX, window.innerWidth - 200);
+    const y = Math.min(e.clientY, window.innerHeight - 160);
+    setContextMenu({ x: Math.max(pad, x), y: Math.max(pad, y), items });
   }
 
   async function onSaveWorkspaceAgentSettings(e) {
@@ -412,13 +433,96 @@ function App() {
   async function onCreateSession() {
     if (!workspaceId) return;
     const agentType = activeSession?.agent_type ?? "sow_writer";
+    const entered = window.prompt(content.sidebar.newSessionNamePrompt, content.prompts.newSessionTitle);
+    if (entered === null) return;
+    const title = entered.trim() || content.prompts.newSessionTitle;
     try {
-      const s = await api.createSession(workspaceId, content.prompts.newSessionTitle, agentType);
+      const s = await api.createSession(workspaceId, title, agentType);
       const next = await api.listSessions(workspaceId);
       setSessions(next);
       setSessionId(s.id);
     } catch (e) {
       showNotice(e.message);
+    }
+  }
+
+  async function onRenameWorkspace(ws) {
+    if (!ws) return;
+    const next = window.prompt(content.prompts.renameWorkspace, ws.name);
+    if (next === null) return;
+    const t = next.trim();
+    if (!t) return;
+    try {
+      await api.patchWorkspace(ws.id, { name: t });
+      await loadWorkspaces();
+      showNotice("Workspace renamed.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
+  }
+
+  async function onDeleteWorkspace(ws) {
+    if (!ws) return;
+    if (!window.confirm(content.sidebar.deleteWorkspaceConfirm(ws.name))) return;
+    try {
+      await api.deleteWorkspace(ws.id);
+      const nextList = await api.listWorkspaces();
+      setWorkspaces(nextList);
+      if (workspaceId === ws.id) {
+        setWorkspaceId(nextList[0]?.id ?? null);
+        setSessionId(null);
+        setSessions([]);
+        setMessages([]);
+        setPipelineArtifacts([]);
+      }
+      showNotice("Workspace deleted.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
+  }
+
+  async function onRenameSession(s) {
+    if (!workspaceId || !s) return;
+    const next = window.prompt(content.prompts.renameSession, s.title);
+    if (next === null) return;
+    const t = next.trim();
+    if (!t) return;
+    try {
+      await api.updateSession(workspaceId, s.id, { title: t });
+      await refreshWorkspaceData(workspaceId);
+      showNotice("Session renamed.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
+  }
+
+  async function onRenameContextDoc(d) {
+    if (!workspaceId || !d) return;
+    const next = window.prompt(content.prompts.renameFile, d.filename);
+    if (next === null) return;
+    const t = next.trim();
+    if (!t) return;
+    try {
+      await api.renameContext(workspaceId, d.id, t);
+      await refreshWorkspaceData(workspaceId);
+      showNotice("File renamed.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
+    }
+  }
+
+  async function onRenameTemplateDoc(tpl) {
+    if (!workspaceId || !tpl) return;
+    const next = window.prompt(content.prompts.renameFile, tpl.filename);
+    if (next === null) return;
+    const t = next.trim();
+    if (!t) return;
+    try {
+      await api.renameTemplate(workspaceId, tpl.id, t);
+      await refreshWorkspaceData(workspaceId);
+      showNotice("Template renamed.");
+    } catch (err) {
+      showNotice(err instanceof ApiError ? err.message : String(err));
     }
   }
 
@@ -749,9 +853,29 @@ function App() {
           <div className="sidebar-scroll">
             {workspaces.map((ws) => (
               <div key={ws.id}>
-                <button 
+                <button
+                  type="button"
                   className={`ws-item ${workspaceId === ws.id ? "active" : ""}`}
                   onClick={() => setWorkspaceId(ws.id)}
+                  onContextMenu={(e) =>
+                    openContextMenu(e, [
+                      {
+                        id: "rename-ws",
+                        label: content.sidebar.contextMenuRename,
+                        onSelect: () => {
+                          void onRenameWorkspace(ws);
+                        },
+                      },
+                      {
+                        id: "delete-ws",
+                        label: content.sidebar.contextMenuDeleteWorkspace,
+                        danger: true,
+                        onSelect: () => {
+                          void onDeleteWorkspace(ws);
+                        },
+                      },
+                    ])
+                  }
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <FolderOpen size={16} color={workspaceId === ws.id ? "var(--text-accent)" : "currentColor"} />
@@ -796,6 +920,17 @@ function App() {
                           <div
                             key={s.id}
                             className={`session-row ${sessionId === s.id ? "session-row-selected" : ""}`}
+                            onContextMenu={(e) =>
+                              openContextMenu(e, [
+                                {
+                                  id: "rename-session",
+                                  label: content.sidebar.contextMenuRename,
+                                  onSelect: () => {
+                                    void onRenameSession(s);
+                                  },
+                                },
+                              ])
+                            }
                           >
                             <button
                               type="button"
@@ -979,7 +1114,21 @@ function App() {
                           {contextDocs.length > 0 && (
                             <div className="item-list">
                               {contextDocs.map((d) => (
-                                <div key={d.id} className="file-item">
+                                <div
+                                  key={d.id}
+                                  className="file-item"
+                                  onContextMenu={(e) =>
+                                    openContextMenu(e, [
+                                      {
+                                        id: "rename-ctx",
+                                        label: content.sidebar.contextMenuRename,
+                                        onSelect: () => {
+                                          void onRenameContextDoc(d);
+                                        },
+                                      },
+                                    ])
+                                  }
+                                >
                                   <FileText size={16} color="var(--text-muted)" />
                                   <span className="file-name">{d.filename}</span>
                                   <span className="file-tag">{d.kind}</span>
@@ -1026,7 +1175,22 @@ function App() {
                           {templates.length > 0 && (
                             <div className="item-list">
                               {templates.map((t) => (
-                                <div key={t.id} className="file-item" style={{ borderColor: activeTemplateId === t.id ? "var(--text-accent)" : "var(--border-color)" }}>
+                                <div
+                                  key={t.id}
+                                  className="file-item"
+                                  style={{ borderColor: activeTemplateId === t.id ? "var(--text-accent)" : "var(--border-color)" }}
+                                  onContextMenu={(e) =>
+                                    openContextMenu(e, [
+                                      {
+                                        id: "rename-tpl",
+                                        label: content.sidebar.contextMenuRename,
+                                        onSelect: () => {
+                                          void onRenameTemplateDoc(t);
+                                        },
+                                      },
+                                    ])
+                                  }
+                                >
                                   <label className="radio-label">
                                     <input
                                       className="radio-input"
@@ -1564,7 +1728,21 @@ function App() {
                       {contextDocs.length > 0 && (
                         <div className="item-list">
                           {contextDocs.map((d) => (
-                            <div key={d.id} className="file-item">
+                            <div
+                              key={d.id}
+                              className="file-item"
+                              onContextMenu={(e) =>
+                                openContextMenu(e, [
+                                  {
+                                    id: "rename-ctx-mgr",
+                                    label: content.sidebar.contextMenuRename,
+                                    onSelect: () => {
+                                      void onRenameContextDoc(d);
+                                    },
+                                  },
+                                ])
+                              }
+                            >
                               <FileText size={16} color="var(--text-muted)" />
                               <span className="file-name">{d.filename}</span>
                               <button className="btn-icon" style={{ width: 24, height: 24, border: "none" }} onClick={() => onDeleteContext(d.id)}>
@@ -1601,7 +1779,22 @@ function App() {
                       {templates.length > 0 && (
                         <div className="item-list">
                           {templates.map((t) => (
-                            <div key={t.id} className="file-item" style={{ borderColor: activeTemplateId === t.id ? "var(--text-accent)" : "var(--border-color)" }}>
+                            <div
+                              key={t.id}
+                              className="file-item"
+                              style={{ borderColor: activeTemplateId === t.id ? "var(--text-accent)" : "var(--border-color)" }}
+                              onContextMenu={(e) =>
+                                openContextMenu(e, [
+                                  {
+                                    id: "rename-tpl-mgr",
+                                    label: content.sidebar.contextMenuRename,
+                                    onSelect: () => {
+                                      void onRenameTemplateDoc(t);
+                                    },
+                                  },
+                                ])
+                              }
+                            >
                               <label className="radio-label">
                                 <input
                                   className="radio-input"
@@ -1850,6 +2043,31 @@ function App() {
               </div>
             </form>
           </div>
+        </div>
+      ) : null}
+      {contextMenu ? (
+        <div
+          ref={contextMenuRef}
+          className="context-menu"
+          role="menu"
+          style={{ position: "fixed", left: contextMenu.x, top: contextMenu.y, zIndex: 10000 }}
+        >
+          {contextMenu.items.map((it) => (
+            <button
+              key={it.id}
+              type="button"
+              role="menuitem"
+              className={`context-menu__item${it.danger ? " context-menu__item--danger" : ""}`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                it.onSelect();
+                setContextMenu(null);
+              }}
+            >
+              {it.label}
+            </button>
+          ))}
         </div>
       ) : null}
     </div>
