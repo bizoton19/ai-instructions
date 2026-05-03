@@ -82,6 +82,29 @@ def merge_docx(
     return used_tpl, " ".join(msg_parts)
 
 
+def merge_or_standalone_docx(
+    template_path: Path,
+    template_filename: str,
+    flat_context: dict[str, str],
+    output_path: Path,
+) -> str:
+    """
+    If the workspace template is .docx, merge/render into that file; otherwise build a new .docx
+    guided by PDF/XLSX template (same rules as HTTP merge/export).
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    suffix = Path(template_filename).suffix.lower()
+    if suffix == ".docx":
+        _, note = merge_docx(template_path, flat_context, output_path)
+        return note
+    preamble = (
+        "Reference template file type: PDF or Excel. The system extracted headings, text, or table "
+        "previews for the drafting specialists. This Word file contains the generated Statement of Work "
+        "content in structured sections—it does not recreate the original file’s exact layout, forms, or print styling."
+    )
+    return standalone_docx_from_flat(flat_context, output_path, preamble=preamble)
+
+
 def standalone_docx_from_flat(
     flat_context: dict[str, str],
     output_path: Path,

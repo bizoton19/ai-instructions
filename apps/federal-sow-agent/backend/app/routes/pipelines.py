@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -19,6 +19,7 @@ from app.schemas import (
     PipelineArtifactOut,
     PipelineArtifactDownloadOut,
 )
+from app.storage import resolve_storage_key
 from app.workspace_access import must_workspace_exist
 
 router = APIRouter(
@@ -85,6 +86,11 @@ def list_pipeline_artifacts(
             created_at=a.created_at,
             summary=a.content_summary or "Artifact generated",
             download_url=f"/workspaces/{workspace_id}/sessions/{session_id}/pipeline/artifacts/{a.phase_order}/download",
+            merged_docx_download_url=(
+                f"/workspaces/{workspace_id}/sessions/{session_id}/pipeline/artifacts/{a.phase_order}/merged-docx"
+                if a.exported_docx_key
+                else None
+            ),
         )
         for a in artifacts
     ]
@@ -142,6 +148,42 @@ def download_artifact_file(
         content=artifact.full_markdown,
         media_type="text/markdown",
         headers={"Content-Disposition": f'attachment; filename="{artifact.artifact_filename}"'},
+    )
+
+
+@router.get("/artifacts/{phase_order}/merged-docx")
+def download_phase_merged_docx(
+    workspace_id: str,
+    session_id: str,
+    phase_order: int,
+    db: Session = Depends(get_db),
+):
+    """Download the Word file produced by merging this phase output with the workspace template (if generated)."""
+    must_workspace_exist(db, workspace_id)
+    session = (
+        db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    artifact = get_artifact_by_phase(db, session_id, phase_order)
+    if not artifact:
+        raise HTTPException(status_code=404, detail=f"Artifact for phase {phase_order} not found")
+    if not artifact.exported_docx_key:
+        raise HTTPException(
+            status_code=404,
+            detail="No merged Word file for this phase. Set a workspace template and re-run the phase, or use Download Word from Synthesis.",
+        )
+
+    path = resolve_storage_key(artifact.exported_docx_key)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Merged Word file missing on server")
+
+    download_name = f"phase_{phase_order}_{artifact.agent_id}.docx"
+    return FileResponse(
+        path,
+        filename=download_name,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
 
 

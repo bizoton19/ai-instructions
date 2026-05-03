@@ -14,6 +14,7 @@ from app.agents_config import (
     get_phase_artifact_info,
 )
 from app.context_builder import assemble_prior_pipeline_text, build_generation_inputs
+from app.merge.pipeline_phase_export import delete_merged_docx_file, try_write_merged_docx_for_phase
 from app.models import AgentSession, Message, PipelineArtifact, Workspace
 from app.schemas import PipelineAdvanceIn, SOWSectionsModel
 
@@ -188,7 +189,13 @@ def _run_one_pipeline_phase(
     db.commit()
     db.refresh(session)
     db.refresh(artifact)
-    
+
+    export_key, _export_note = try_write_merged_docx_for_phase(db, workspace_id, session_id, artifact.id)
+    if export_key:
+        artifact.exported_docx_key = export_key
+        db.commit()
+        db.refresh(artifact)
+
     return result_model, warnings, profile.name, artifact
 
 
@@ -320,8 +327,9 @@ def advance_pipeline(db: Session, workspace_id: str, session_id: str, body: Pipe
 
 def reset_pipeline(session: AgentSession, db: Session) -> None:
     """Reset pipeline state and delete all artifacts for this session."""
-    # Delete associated artifacts
-    db.query(PipelineArtifact).filter(PipelineArtifact.session_id == session.id).delete()
+    for art in db.query(PipelineArtifact).filter(PipelineArtifact.session_id == session.id).all():
+        delete_merged_docx_file(art.exported_docx_key)
+    db.query(PipelineArtifact).filter(PipelineArtifact.session_id == session.id).delete(synchronize_session=False)
     
     session.pipeline_step = 0
     session.pipeline_completed = False

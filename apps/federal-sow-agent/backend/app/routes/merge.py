@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.merge.docx_merge import merge_docx, sow_model_to_flat, sow_sections_to_markdown, standalone_docx_from_flat
+from app.merge.docx_merge import merge_or_standalone_docx, sow_model_to_flat, sow_sections_to_markdown
 from app.models import AgentSession, Message, TemplateAsset
 from app.schemas import ExportIn, MergeIn, SOWSectionsModel
 from app.storage import resolve_storage_key
@@ -26,16 +26,7 @@ def _load_session(db: Session, workspace_id: str, session_id: str) -> AgentSessi
 
 def _word_export(template_path: Path, template_filename: str, flat: dict[str, str], out_path: Path) -> str:
     """DOCX templates merge in place; PDF/Excel guides drafting but export is a standalone .docx."""
-    suffix = Path(template_filename).suffix.lower()
-    if suffix == ".docx":
-        _, note = merge_docx(template_path, flat, out_path)
-        return note
-    preamble = (
-        "Reference template file type: PDF or Excel. The system extracted headings, text, or table "
-        "previews for the drafting specialists. This Word file contains the generated Statement of Work "
-        "content in structured sections—it does not recreate the original file’s exact layout, forms, or print styling."
-    )
-    return standalone_docx_from_flat(flat, out_path, preamble=preamble)
+    return merge_or_standalone_docx(template_path, template_filename, flat, out_path)
 
 
 def _sections_have_exportable_body(s: SOWSectionsModel) -> bool:

@@ -276,6 +276,7 @@ class PipelineArtifactOut(BaseModel):
     created_at: datetime
     summary: str  # Brief preview of content
     download_url: str | None = None
+    merged_docx_download_url: str | None = None
 
 
 class PipelineAdvanceOut(BaseModel):

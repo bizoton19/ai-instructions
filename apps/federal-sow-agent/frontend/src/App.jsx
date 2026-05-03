@@ -376,7 +376,7 @@ function App() {
         setPipelineArtifacts([]);
         showNotice(e instanceof ApiError ? `Could not load pipeline artifacts: ${e.message}` : "Could not load pipeline artifacts.");
       });
-  }, [workspaceId, sessionId]);
+  }, [workspaceId, sessionId, viewMode]);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -1847,21 +1847,37 @@ function App() {
                                     {a.summary ? ` — ${a.summary}` : ""}
                                   </div>
                                 </div>
-                                <button
-                                  type="button"
-                                  className="btn"
-                                  style={{ flexShrink: 0 }}
-                                  onClick={async () => {
-                                    if (!a.download_url) return;
-                                    try {
-                                      await downloadFileByPath(a.download_url);
-                                    } catch (e) {
-                                      showNotice(e.message);
-                                    }
-                                  }}
-                                >
-                                  <FileDown size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadOne}
-                                </button>
+                                <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+                                  <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={async () => {
+                                      if (!a.download_url) return;
+                                      try {
+                                        await downloadFileByPath(a.download_url);
+                                      } catch (e) {
+                                        showNotice(e.message);
+                                      }
+                                    }}
+                                  >
+                                    <FileDown size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadOne}
+                                  </button>
+                                  {a.merged_docx_download_url ? (
+                                    <button
+                                      type="button"
+                                      className="btn btn-primary"
+                                      onClick={async () => {
+                                        try {
+                                          await downloadFileByPath(a.merged_docx_download_url);
+                                        } catch (e) {
+                                          showNotice(e.message);
+                                        }
+                                      }}
+                                    >
+                                      <FileText size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadMerged}
+                                    </button>
+                                  ) : null}
+                                </div>
                               </li>
                             ))}
                           </ul>

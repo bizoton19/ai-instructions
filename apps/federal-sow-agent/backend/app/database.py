@@ -106,3 +106,7 @@ def init_db():
             conn.execute(text("""
                 CREATE INDEX IF NOT EXISTS idx_artifacts_workspace ON pipeline_artifacts(workspace_id)
             """))
+            pa_cols = conn.execute(text("PRAGMA table_info(pipeline_artifacts)")).fetchall()
+            pa_names = {c[1] for c in pa_cols}
+            if "exported_docx_key" not in pa_names:
+                conn.execute(text("ALTER TABLE pipeline_artifacts ADD COLUMN exported_docx_key VARCHAR(512)"))

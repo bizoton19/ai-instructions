@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
+from app.merge.pipeline_phase_export import delete_merged_docx_file
 from app.models import AgentSession, ContextAsset, Message, PipelineArtifact, TemplateAsset, Workspace
 from app.schemas import WorkspaceAgentSettingsPatch, WorkspaceCreate, WorkspaceOut, WorkspacePatch
 from app.storage import resolve_storage_key
@@ -97,6 +98,8 @@ def delete_workspace(workspace_id: str, db: Session = Depends(get_db)):
     session_ids = [s.id for s in sessions]
     id_prefixes = {sid[:8] for sid in session_ids}
 
+    for art in db.query(PipelineArtifact).filter(PipelineArtifact.workspace_id == workspace_id).all():
+        delete_merged_docx_file(art.exported_docx_key)
     db.query(PipelineArtifact).filter(PipelineArtifact.workspace_id == workspace_id).delete(synchronize_session=False)
     for sid in session_ids:
         db.query(Message).filter(Message.session_id == sid).delete(synchronize_session=False)
