@@ -23,9 +23,11 @@ Prototype full-stack application for generating U.S. federal-style Statements of
 
 ## Run Backend
 
+Use **Python 3.11** locally so your venv matches `backend/Dockerfile` (`python:3.11-slim`). With [pyenv](https://github.com/pyenv/pyenv), `cd backend` picks up `backend/.python-version`.
+
 ```bash
 cd backend
-python3 -m venv .venv
+python3.11 -m venv .venv   # or: pyenv install 3.11 && pyenv local 3.11 && python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env

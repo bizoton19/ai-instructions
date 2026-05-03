@@ -1,5 +1,4 @@
 backend/.venv/
-backend/.venv311/
 backend/.pytest_cache/
 infra/azure/main.json
 backend/uploads/
