@@ -64,6 +64,7 @@ export const content = {
     statContext: "CONTEXT",
     statTemplates: "TEMPLATES",
     statSessions: "SESSIONS",
+    statArtifacts: "ARTIFACTS",
     pipeline: "Pipeline",
     storage: "Storage",
     observability: "Observability",

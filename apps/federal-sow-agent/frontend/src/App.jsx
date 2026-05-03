@@ -817,6 +817,9 @@ function App() {
                     <div className="stat-badge">{content.toolbar.statContext} <span>{contextDocs.length}</span></div>
                     <div className="stat-badge">{content.toolbar.statTemplates} <span>{templates.length}</span></div>
                     <div className="stat-badge">{content.toolbar.statSessions} <span>{sessions.length}</span></div>
+                    <div className="stat-badge">
+                      {content.toolbar.statArtifacts} <span>{activeSession?.pipeline_artifact_count ?? pipelineArtifacts.length}</span>
+                    </div>
                   </div>
                   <div className="toolbar-specialist-toolbar" aria-live="polite">
                     <label className="toolbar-specialist-label" htmlFor="toolbar-specialist-select">
