@@ -91,15 +91,35 @@ def run_specialist_chain(
     template_hints = template_hints.strip()[:20000]
     user_instructions = _merge_workspace_instructions(workspace_instructions, user_instructions).strip()[:24000]
 
-    has_azure_openai_config = bool(settings.azure_openai_endpoint and settings.azure_openai_deployment)
-    if not settings.openai_api_key and not settings.azure_openai_api_key and not has_azure_openai_config:
+    provider = (settings.llm_provider or "").strip().lower()
+    if provider not in ("openai", "azure"):
         warnings.append(
-            "LLM not configured (set OPENAI_API_KEY or Azure OpenAI env vars/managed identity). Returning structured placeholder."
+            "LLM provider not configured (set LLM_PROVIDER=openai or LLM_PROVIDER=azure for the API server)."
         )
         return (
             _fallback_sections(
                 output_schema,
-                "[LLM not configured — set OPENAI_API_KEY or Azure OpenAI settings in the API environment, then run this phase again.]",
+                "[LLM provider not configured — set LLM_PROVIDER in the API environment and restart the server.]",
+            ),
+            warnings,
+        )
+
+    if provider == "azure" and (not settings.azure_openai_endpoint or not settings.azure_openai_deployment):
+        warnings.append("Azure OpenAI endpoint or deployment missing.")
+        return (
+            _fallback_sections(
+                output_schema,
+                "[LLM not configured — set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_DEPLOYMENT.]",
+            ),
+            warnings,
+        )
+
+    if provider == "openai" and not settings.openai_api_key:
+        warnings.append("OPENAI_API_KEY missing.")
+        return (
+            _fallback_sections(
+                output_schema,
+                "[LLM not configured — set OPENAI_API_KEY when LLM_PROVIDER=openai.]",
             ),
             warnings,
         )
@@ -132,7 +152,7 @@ Return JSON matching the schema described in the format instructions. The full_m
         ]
     )
 
-    if has_azure_openai_config:
+    if provider == "azure":
         from langchain_openai import AzureChatOpenAI
 
         azure_kwargs: dict[str, Any] = {}

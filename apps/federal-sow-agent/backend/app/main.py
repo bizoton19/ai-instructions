@@ -7,7 +7,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-from app.config import settings
+from app.config import exit_if_llm_not_configured, settings
 from app.observability_events import record_event
 from app.database import init_db
 from app.routes.generate import router as generate_router
@@ -71,6 +71,7 @@ async def security_headers(request, call_next):
 
 @app.on_event("startup")
 def startup() -> None:
+    exit_if_llm_not_configured()
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     ensure_storage_dirs()
@@ -86,7 +87,8 @@ def startup() -> None:
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    p = (settings.llm_provider or "").strip().lower()
+    return {"status": "ok", "llm_provider": p if p in ("openai", "azure") else None}
 
 
 @app.get("/ready")

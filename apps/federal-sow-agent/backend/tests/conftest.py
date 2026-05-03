@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+import os
+
+# Settings load at import time; the real API calls exit_if_llm_not_configured() on startup.
+os.environ.setdefault("LLM_PROVIDER", "openai")
+os.environ.setdefault("OPENAI_API_KEY", "sk-test-pytest-placeholder-not-used")
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
