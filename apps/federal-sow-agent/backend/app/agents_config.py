@@ -250,6 +250,27 @@ DEFAULT_PIPELINE_SEQUENCE: tuple[str, ...] = (
 )
 
 
+PIPELINE_PHASE_INSTRUCTIONS: dict[str, str] = {
+    "requirements_agent": (
+        "The workspace Template heading hints summarise the customer's uploaded SOW or PWS template. "
+        "Shape your Requirements Clarification Document around those headings so later phases populate the same scaffold."
+    ),
+    "requirements_analyst": (
+        "Group or tag requirements under headings from Template heading hints whenever possible so the SOW Writer can map them into the final document."
+    ),
+    "market_research": (
+        "Align major findings with Template heading hints where they support the eventual SOW narrative and acquisition strategy."
+    ),
+    "sow_writer": (
+        "Merge ALL substantive content from Prior pipeline output into full_markdown. "
+        "Match ## section titles and order primarily to Template heading hints; treat prior phases as authoritative on facts."
+    ),
+    "cost_estimator": (
+        "Tie cost lines and assumptions to the finalized SOW from the prior phase; keep IGCE annex structure consistent with Template heading hints where helpful."
+    ),
+}
+
+
 # Pipeline dependencies - each phase builds on previous artifacts
 PIPELINE_DEPENDENCIES: dict[str, list[str]] = {
     "requirements_agent": [],  # First phase - no dependencies
