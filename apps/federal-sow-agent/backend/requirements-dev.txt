@@ -1,2 +1,6 @@
 -r requirements.txt
 pytest==8.3.4
+# Optional: used only by scripts/pdf_template_to_docx.py (not required for API runtime or Docker image).
+# pdf2docx can pull numpy 2.x; langchain in requirements.txt needs numpy<2 on Python 3.11.
+numpy>=1.26.0,<2
+pdf2docx==0.5.8
