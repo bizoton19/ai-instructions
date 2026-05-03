@@ -20,6 +20,16 @@ from app.models import AgentSession, Message, PipelineArtifact, Workspace
 from app.schemas import PipelineAdvanceIn, SOWSectionsModel
 
 
+def _sections_payload(last_result: object | None) -> dict | None:
+    """Serialize the last specialist output for the API client (preview panel)."""
+    if last_result is None:
+        return None
+    dump = getattr(last_result, "model_dump", None)
+    if not callable(dump):
+        return None
+    return dump(mode="json")
+
+
 def _needs_clarification(text: str | None) -> bool:
     if not text:
         return False
@@ -296,6 +306,7 @@ def advance_pipeline(db: Session, workspace_id: str, session_id: str, body: Pipe
             out.update(
                 {
                     "warnings": all_warnings,
+                    "sections": _sections_payload(last_result),
                     "artifact_produced": last_artifact.artifact_type if last_artifact else None,
                     "phase_name_run": last_phase,
                     "phases_run": phases_run,
@@ -324,6 +335,7 @@ def advance_pipeline(db: Session, workspace_id: str, session_id: str, body: Pipe
             out.update(
                 {
                     "warnings": all_warnings,
+                    "sections": _sections_payload(last_result),
                     "artifact_produced": artifact.artifact_type,
                     "phase_name_run": last_phase,
                     "phases_run": phases_run,
@@ -337,6 +349,7 @@ def advance_pipeline(db: Session, workspace_id: str, session_id: str, body: Pipe
             out.update(
                 {
                     "warnings": all_warnings,
+                    "sections": _sections_payload(last_result),
                     "artifact_produced": artifact.artifact_type,
                     "phase_name_run": last_phase,
                     "phases_run": phases_run,

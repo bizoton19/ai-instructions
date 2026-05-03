@@ -63,6 +63,8 @@ def test_advance_pipeline_persists_distinct_artifacts(db_session: Session, works
         err, payload = advance_pipeline(db_session, workspace_id, session_id, body)
         assert err is None
         assert payload.get("pipeline_completed") is True
+        assert payload.get("sections") is not None
+        assert payload["sections"].get("full_markdown")
 
     artifacts = get_session_artifacts(db_session, session_id)
     assert len(artifacts) == len(DEFAULT_PIPELINE_SEQUENCE)

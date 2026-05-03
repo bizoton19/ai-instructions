@@ -28,7 +28,7 @@ import {
 import { api, ApiError, downloadFileByPath } from "./api";
 import { content } from "./content";
 
-/** When the API leaves full_markdown empty but fills structured fields (e.g. IGCE lines in deliverables). */
+/** Preview pipeline or generate output: prefers full_markdown, then SOW-shaped fields, then other string fields. */
 function sectionsToPreviewMarkdown(sections) {
   if (!sections || typeof sections !== "object") return "";
   const fm = String(sections.full_markdown || "").trim();
@@ -48,7 +48,19 @@ function sectionsToPreviewMarkdown(sections) {
     const block = String(sections[key] || "").trim();
     if (block) parts.push(`## ${title}\n\n${block}`);
   }
-  return parts.join("\n\n");
+  if (parts.length) return parts.join("\n\n");
+  const extra = [];
+  for (const [k, v] of Object.entries(sections)) {
+    if (k === "full_markdown" || v == null) continue;
+    if (typeof v === "string" && v.trim()) {
+      const label = k.replace(/_/g, " ");
+      extra.push(`## ${label}\n\n${v.trim()}`);
+    } else if (Array.isArray(v) && v.length) {
+      const label = k.replace(/_/g, " ");
+      extra.push(`## ${label}\n\n\`\`\`json\n${JSON.stringify(v, null, 2)}\n\`\`\``);
+    }
+  }
+  return extra.join("\n\n");
 }
 
 /** Stable icon and color per specialist for pipeline timeline (accessibility: not emoji). */
@@ -381,7 +393,7 @@ function App() {
         setPipelineArtifacts([]);
         showNotice(e instanceof ApiError ? `Could not load pipeline artifacts: ${e.message}` : "Could not load pipeline artifacts.");
       });
-  }, [workspaceId, sessionId, viewMode]);
+  }, [workspaceId, sessionId, viewMode, activeSession?.pipeline_artifact_count]);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -1628,6 +1640,23 @@ function App() {
                               <h3 className="card-title" style={{ fontSize: 14 }}>{content.wizard.step3.outputBufferTitle}</h3>
                             </div>
                             <div className="card-body markdown-draft-body" style={{ padding: "0 24px 24px", overflow: "auto", flex: 1 }}>
+                              {Array.isArray(generation?.warnings) && generation.warnings.length > 0 ? (
+                                <div
+                                  className="alert"
+                                  role="region"
+                                  aria-label={content.wizard.step3.generationWarningsHeading}
+                                >
+                                  <strong style={{ display: "block", marginBottom: 8 }}>
+                                    {content.wizard.step3.generationWarningsHeading}
+                                  </strong>
+                                  <p style={{ margin: "0 0 8px" }}>{content.wizard.step3.generationWarningsHint}</p>
+                                  <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                                    {generation.warnings.map((w, i) => (
+                                      <li key={`gw-${i}`}>{String(w)}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
                               {previewMarkdown ? (
                                 <div className="markdown-draft-view">
                                   <ReactMarkdown>{previewMarkdown}</ReactMarkdown>

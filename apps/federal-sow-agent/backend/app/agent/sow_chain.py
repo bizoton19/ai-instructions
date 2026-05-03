@@ -96,7 +96,13 @@ def run_specialist_chain(
         warnings.append(
             "LLM not configured (set OPENAI_API_KEY or Azure OpenAI env vars/managed identity). Returning structured placeholder."
         )
-        return _fallback_sections(output_schema, "[LLM not configured]"), warnings
+        return (
+            _fallback_sections(
+                output_schema,
+                "[LLM not configured — set OPENAI_API_KEY or Azure OpenAI settings in the API environment, then run this phase again.]",
+            ),
+            warnings,
+        )
 
     parser = PydanticOutputParser(pydantic_object=output_schema)
 
@@ -112,6 +118,8 @@ Template heading hints from the workspace ACTIVE reference file (DOCX headings, 
 User instructions for this phase (may include prior pipeline specialist output under a separator—treat that text as authoritative factual input):
 
 {user_instructions}
+
+When template heading hints list section titles from the workspace reference file, mirror that outline in full_markdown using ## headings in a sensible order. Do not paste raw source documents verbatim as the deliverable; synthesize and draft new contract-ready text.
 
 Return JSON matching the schema described in the format instructions. The full_markdown field must contain the complete document in Markdown form for this specialist's specific deliverable.
 
@@ -188,10 +196,25 @@ Return JSON matching the schema described in the format instructions. The full_m
             return output_schema(**data), warnings
         except Exception as e2:
             warnings.append(f"Parse error: {e2}")
-            return _fallback_sections(output_schema, context_block[:5000]), warnings
+            return (
+                _fallback_sections(
+                    output_schema,
+                    f"[Model output could not be parsed as JSON for this specialist schema: {e2!s}]\n\n"
+                    "The draft was not produced. Fix model access or simplify instructions and retry.",
+                ),
+                warnings,
+            )
     except Exception as e:
         warnings.append(str(e))
-        return _fallback_sections(output_schema, context_block[:5000]), warnings
+        return (
+            _fallback_sections(
+                output_schema,
+                f"[Generation failed: {e!s}]\n\n"
+                "The server did not copy your source documents into this field. "
+                "Check API keys, deployment name, network, and model availability, then retry.",
+            ),
+            warnings,
+        )
 
 
 # Backward compatibility: keep the old function name for existing code

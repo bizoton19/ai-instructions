@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -287,7 +288,10 @@ class PipelineAdvanceOut(BaseModel):
     pipeline_paused: bool
     needs_user_clarification: bool
     pipeline_artifact_count: int = 0
-    sections: SOWSectionsModel | None = None
+    sections: dict[str, Any] | None = Field(
+        default=None,
+        description="Structured output from the last completed pipeline phase (shape varies by specialist).",
+    )
     warnings: list[str] = []
     phase_name_run: str | None = None
     phases_run: int = 0

@@ -199,6 +199,9 @@ export const content = {
       goToTemplateStep: "Open Template step",
       outputBufferTitle: "Draft preview",
       outputEmpty: "Generate a draft to see formatted preview here.",
+      generationWarningsHeading: "Warnings from the last model run",
+      generationWarningsHint:
+        "If the API is missing LLM keys or the model returned an error, fix configuration and run the phase again. Warnings are also stored in the server response for support.",
       chatRegionLabel: "Session chat drawer",
       openChatDrawerLabel: "Open session chat",
       closeChatDrawerLabel: "Close session chat",
