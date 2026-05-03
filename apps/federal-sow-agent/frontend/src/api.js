@@ -178,6 +178,9 @@ export const api = {
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts`),
   downloadAllPipelineArtifactsPath: (workspaceId, sessionId) =>
     `/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts/all/download`,
+  /** Primary handoff: one ZIP with per-phase .md, optional *_word_export.docx, MANIFEST.txt */
+  downloadPipelineArtifactsPackagePath: (workspaceId, sessionId) =>
+    `/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts/package/download`,
   merge: (workspaceId, sessionId, templateAssetId) =>
     request(`/workspaces/${workspaceId}/sessions/${sessionId}/merge`, {
       method: "POST",

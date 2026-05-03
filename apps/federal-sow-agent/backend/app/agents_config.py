@@ -290,18 +290,19 @@ PIPELINE_PHASE_INSTRUCTIONS: dict[str, str] = {
         "Match ## section titles and order primarily to Template heading hints; treat prior phases as authoritative on facts."
     ),
     "cost_estimator": (
-        "Tie cost lines and assumptions to the finalized SOW from the prior phase; keep IGCE annex structure consistent with Template heading hints where helpful."
+        "Use Requirements Discovery, Analyst, Market Research, and SOW artifacts (injected under Prior pipeline artifacts) to ground labor, ODC, assumptions, "
+        "and risk; tie cost lines to finalized scope. Keep IGCE annex structure consistent with Template heading hints where helpful."
     ),
 }
 
 
-# Pipeline dependencies - each phase builds on previous artifacts
+# Pipeline dependencies — documentation of substantive inputs each phase relies on (all ids must precede this phase in DEFAULT_PIPELINE_SEQUENCE)
 PIPELINE_DEPENDENCIES: dict[str, list[str]] = {
     "requirements_agent": [],  # First phase - no dependencies
     "requirements_analyst": ["requirements_agent"],  # Builds on Requirements Clarification
     "market_research": ["requirements_analyst"],  # Builds on SRD
-    "sow_writer": ["requirements_analyst", "market_research"],  # Builds on SRD + Market Research
-    "cost_estimator": ["sow_writer"],  # Builds on SOW
+    "sow_writer": ["requirements_agent", "requirements_analyst", "market_research"],  # All upstream specialist artifacts inform the draft
+    "cost_estimator": ["requirements_agent", "requirements_analyst", "market_research", "sow_writer"],  # IGCE uses reqs + MR + SOW reasoning
 }
 
 

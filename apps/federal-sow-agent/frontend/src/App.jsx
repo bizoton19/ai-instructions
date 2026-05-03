@@ -15,6 +15,7 @@ import {
   FolderOpen,
   LayoutTemplate,
   LineChart,
+  Package,
   Plus,
   Search,
   Settings,
@@ -246,27 +247,16 @@ function App() {
     return { completed, total };
   }, [activeSession, pipelinePlan]);
 
-  const hasDraftContent = useMemo(() => {
-    if ((activeSession?.pipeline_artifact_count ?? 0) > 0) return true;
-    const s = generation?.sections;
-    if ((s?.full_markdown || "").trim()) return true;
-    if (s) {
-      const keys = [
-        "purpose",
-        "background",
-        "scope",
-        "deliverables",
-        "period_of_performance",
-        "roles_and_responsibilities",
-        "acceptance_criteria",
-        "assumptions_and_constraints",
-      ];
-      if (keys.some((k) => (s[k] || "").trim())) return true;
-    }
-    return messages.some((m) => m.role === "assistant" && (m.content || "").trim());
-  }, [generation, messages, activeSession?.pipeline_artifact_count]);
-
   const previewMarkdown = useMemo(() => sectionsToPreviewMarkdown(generation?.sections), [generation]);
+
+  /** Map pipeline phase index (0-based) to API artifact row for per-phase download links. */
+  const artifactByPhaseOrder = useMemo(() => {
+    const m = new Map();
+    for (const a of pipelineArtifacts) {
+      m.set(a.phase_order, a);
+    }
+    return m;
+  }, [pipelineArtifacts]);
 
   function specialistDisplayName(agentTypeId) {
     if (!agentTypeId) return "";
@@ -759,32 +749,13 @@ function App() {
     }
   }
 
-  async function onMergeDownload() {
-    if (!workspaceId || !sessionId || !activeTemplateId) return;
-    setBusyHint(content.agents.exportingStatus);
-    setLoading(true);
-    try {
-      const merged = await api.exportDocument(workspaceId, sessionId, {
-        template_asset_id: activeTemplateId,
-        use_latest_generation: true,
-      });
-      await downloadFileByPath(merged.download_path);
-      showNotice(content.notices.exportReady);
-    } catch (err) {
-      showNotice(err.message);
-    } finally {
-      setBusyHint(null);
-      setLoading(false);
-    }
-  }
-
-  async function onDownloadAllArtifacts() {
+  async function onDownloadSessionPackageZip() {
     if (!workspaceId || !sessionId) return;
-    setBusyHint(content.agents.artifactsExportStatus);
+    setBusyHint(content.agents.sessionPackageZipStatus);
     setLoading(true);
     try {
-      await downloadFileByPath(api.downloadAllPipelineArtifactsPath(workspaceId, sessionId));
-      showNotice(content.notices.artifactsExportReady);
+      await downloadFileByPath(api.downloadPipelineArtifactsPackagePath(workspaceId, sessionId));
+      showNotice(content.notices.sessionPackageReady);
     } catch (err) {
       showNotice(err.message);
     } finally {
@@ -1286,124 +1257,6 @@ function App() {
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "24px", minWidth: 0, overflow: "auto" }}>
                           <div className="card" style={{ flexShrink: 0 }}>
                             <div className="card-body" style={{ padding: "24px" }}>
-                              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                                <h4 style={{ margin: 0, fontSize: "14px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
-                                  {content.wizard.step3.synthesisTitle}
-                                </h4>
-                                <textarea
-                                  className="text-input"
-                                  style={{ width: "100%" }}
-                                  value={instructions}
-                                  onChange={(e) => setInstructions(e.target.value)}
-                                  rows="2"
-                                  placeholder={content.wizard.step3.instructionsPlaceholder}
-                                />
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                  <label htmlFor="workspace-default-template" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)" }}>
-                                    {content.wizard.step3.defaultTemplateLabel}
-                                  </label>
-                                  {templates.length > 0 ? (
-                                    <>
-                                      <select
-                                        id="workspace-default-template"
-                                        className="text-input"
-                                        style={{ maxWidth: "100%" }}
-                                        value={activeTemplateId ?? ""}
-                                        onChange={(e) => {
-                                          const v = e.target.value;
-                                          if (v) onActivateTemplate(v);
-                                        }}
-                                      >
-                                        <option value="">{content.wizard.step3.templateSelectPlaceholder}</option>
-                                        {templates.map((t) => (
-                                          <option key={t.id} value={t.id}>
-                                            {t.filename}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <p className="action-hint">{content.wizard.step3.defaultTemplateHint}</p>
-                                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)", marginTop: 6 }}>
-                                        {content.wizard.step3.specialistTemplateRoutingLabel}
-                                      </label>
-                                      <p className="action-hint">{content.wizard.step3.specialistTemplateRoutingHint}</p>
-                                      {agentOptions.map((a) => (
-                                        <div key={`synth-route-${a.id}`} style={{ display: "grid", gridTemplateColumns: "220px minmax(0,1fr)", gap: 10, alignItems: "center" }}>
-                                          <label style={{ fontSize: 12, color: "var(--text-muted)" }}>{a.name}</label>
-                                          <select
-                                            className="text-input"
-                                            value={specialistTemplateMap[a.id] || ""}
-                                            onChange={(e) => onAssignSpecialistTemplate(a.id, e.target.value)}
-                                          >
-                                            <option value="">{content.wizard.step2.specialistRoutingUseDefault}</option>
-                                            {templates.map((t) => (
-                                              <option key={`synth-${a.id}-${t.id}`} value={t.id}>
-                                                {t.filename}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </div>
-                                      ))}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <p className="action-hint">{content.wizard.step3.noTemplatesForExport}</p>
-                                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-                                        <input
-                                          className="usa-file-input"
-                                          style={{ display: "none" }}
-                                          id="quick-synth-template-upload"
-                                          type="file"
-                                          accept=".docx,.pdf,.xlsx"
-                                          onChange={onUploadTemplate}
-                                        />
-                                        <label htmlFor="quick-synth-template-upload" className="btn">
-                                          {content.wizard.step3.uploadTemplateQuickBrowse}
-                                        </label>
-                                        <button type="button" className="btn" onClick={() => setWizardStep(2)}>
-                                          {content.wizard.step3.goToTemplateStep}
-                                        </button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                                <div className="synthesis-actions">
-                                  <div className="synthesis-action">
-                                    <button className="btn" style={{ width: "100%", justifyContent: "center" }} onClick={onGenerate} disabled={loading || !sessionId}>
-                                      <Zap size={14} color="var(--text-accent)" aria-hidden="true" /> {content.wizard.step3.generateLabel}
-                                    </button>
-                                    <p className="action-hint">{content.wizard.step3.generateHint}</p>
-                                  </div>
-                                  <div className="synthesis-action">
-                                    <button
-                                      className="btn"
-                                      style={{ width: "100%", justifyContent: "center" }}
-                                      onClick={onDownloadAllArtifacts}
-                                      disabled={loading || !sessionId || !hasDraftContent}
-                                      type="button"
-                                    >
-                                      <FileText size={14} aria-hidden="true" /> {content.wizard.step3.downloadAllArtifactsLabel}
-                                    </button>
-                                    <p className="action-hint">{content.wizard.step3.downloadAllArtifactsHint}</p>
-                                  </div>
-                                  <div className="synthesis-action">
-                                    <button
-                                      className="btn btn-primary"
-                                      style={{ width: "100%", justifyContent: "center" }}
-                                      onClick={onMergeDownload}
-                                      disabled={loading || !sessionId || !activeTemplateId}
-                                      type="button"
-                                    >
-                                      <FileDown size={14} aria-hidden="true" /> {content.wizard.step3.downloadLabel}
-                                    </button>
-                                    <p className="action-hint">{content.wizard.step3.downloadHint}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="card" style={{ flexShrink: 0 }}>
-                            <div className="card-body" style={{ padding: "24px" }}>
                               <div
                                 style={{
                                   display: "flex",
@@ -1525,6 +1378,14 @@ function App() {
                                         pipelineDone: pipelineUi.pipelineDone,
                                         p3: content.wizard.step3,
                                       });
+                                      const step = activeSession?.pipeline_step ?? 0;
+                                      const phaseComplete = pipelineUi.pipelineDone || i < step;
+                                      const phaseArtifact = artifactByPhaseOrder.get(i);
+                                      const artifactBlurb = content.wizard.step3.pipelinePhaseArtifactReady;
+                                      const detailLines =
+                                        phaseComplete && phaseArtifact?.download_url
+                                          ? row.detail.filter((line) => line !== artifactBlurb)
+                                          : row.detail;
                                       return (
                                         <div key={phase.agent_id} className={`pipeline-phase ${row.statusClass}`}>
                                           <div className="phase-indicator">
@@ -1538,11 +1399,63 @@ function App() {
                                             </div>
                                             <div className="phase-status" aria-label={`${phase.name}: ${row.primary}`}>
                                               <div className="phase-status-primary">{row.primary}</div>
-                                              {row.detail.map((line, j) => (
+                                              {detailLines.map((line, j) => (
                                                 <div key={j} className="phase-status-detail">
                                                   {line}
                                                 </div>
                                               ))}
+                                              {phaseComplete ? (
+                                                phaseArtifact?.download_url ? (
+                                                  <div
+                                                    className="pipeline-phase-artifact-links"
+                                                    role="group"
+                                                    aria-label={content.wizard.step3.pipelinePhaseArtifactLinkGroupLabel(phase.name)}
+                                                  >
+                                                    <button
+                                                      type="button"
+                                                      className="btn"
+                                                      style={{ padding: "6px 12px", fontSize: 13 }}
+                                                      onClick={async () => {
+                                                        try {
+                                                          await downloadFileByPath(phaseArtifact.download_url);
+                                                        } catch (e) {
+                                                          showNotice(e.message);
+                                                        }
+                                                      }}
+                                                    >
+                                                      <FileText size={14} aria-hidden="true" />{" "}
+                                                      {content.wizard.step3.artifactLinkMarkdown}
+                                                    </button>
+                                                    {phaseArtifact.merged_docx_download_url ? (
+                                                      <button
+                                                        type="button"
+                                                        className="btn"
+                                                        style={{ padding: "6px 12px", fontSize: 13 }}
+                                                        onClick={async () => {
+                                                          try {
+                                                            await downloadFileByPath(phaseArtifact.merged_docx_download_url);
+                                                          } catch (e) {
+                                                            showNotice(e.message);
+                                                          }
+                                                        }}
+                                                      >
+                                                        <FileDown size={14} aria-hidden="true" />{" "}
+                                                        {content.wizard.step3.artifactLinkWord}
+                                                      </button>
+                                                    ) : null}
+                                                    {(phaseArtifact.word_export_note || "").trim() ? (
+                                                      <span className="action-hint" style={{ fontSize: 12, flex: "1 1 220px" }}>
+                                                        {content.wizard.step3.artifactWordExportNotePrefix}{" "}
+                                                        {(phaseArtifact.word_export_note || "").trim()}
+                                                      </span>
+                                                    ) : null}
+                                                  </div>
+                                                ) : (
+                                                  <p className="action-hint" style={{ margin: "6px 0 0", fontSize: 12 }}>
+                                                    {content.wizard.step3.pipelinePhaseArtifactPending}
+                                                  </p>
+                                                )
+                                              ) : null}
                                             </div>
                                           </div>
                                         </div>
@@ -1555,6 +1468,32 @@ function App() {
                                       <p className="action-hint" style={{ marginTop: 8, color: "var(--text-accent)" }}>{content.wizard.step3.pipelineClarificationHint}</p>
                                     ) : null}
                                   </div>
+
+                                  {pipelineArtifacts.length > 0 && sessionId ? (
+                                    <div
+                                      style={{
+                                        marginTop: 16,
+                                        paddingTop: 16,
+                                        borderTop: "1px solid var(--border-color)",
+                                      }}
+                                    >
+                                      <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        style={{ width: "100%", justifyContent: "center" }}
+                                        onClick={onDownloadSessionPackageZip}
+                                        disabled={loading || !sessionId}
+                                      >
+                                        <Package size={14} aria-hidden="true" /> {content.wizard.step3.downloadArtifactsPackageLabel}
+                                      </button>
+                                      <p className="action-hint" style={{ marginBottom: 0 }}>
+                                        {content.wizard.step3.downloadArtifactsPackageHint}
+                                      </p>
+                                      <p className="action-hint" style={{ marginTop: 8 }}>
+                                        {content.wizard.step3.pipelineCardMoreExportsHint}
+                                      </p>
+                                    </div>
+                                  ) : null}
 
                                   {pipelineUi.clarActive ? (
                                     <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14, cursor: "pointer" }}>
@@ -1632,6 +1571,112 @@ function App() {
                                   </div>
                                 </>
                               )}
+                            </div>
+                          </div>
+
+                          <div className="card" style={{ flexShrink: 0 }}>
+                            <div className="card-body" style={{ padding: "24px" }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <h4 style={{ margin: 0, fontSize: "14px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
+                                  {content.wizard.step3.synthesisTitle}
+                                </h4>
+                                <p className="action-hint" style={{ margin: 0 }}>
+                                  {content.wizard.step3.sessionSetupIntro}
+                                </p>
+                                <textarea
+                                  className="text-input"
+                                  style={{ width: "100%" }}
+                                  value={instructions}
+                                  onChange={(e) => setInstructions(e.target.value)}
+                                  rows="2"
+                                  placeholder={content.wizard.step3.instructionsPlaceholder}
+                                />
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                  <label htmlFor="workspace-default-template" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)" }}>
+                                    {content.wizard.step3.defaultTemplateLabel}
+                                  </label>
+                                  {templates.length > 0 ? (
+                                    <>
+                                      <select
+                                        id="workspace-default-template"
+                                        className="text-input"
+                                        style={{ maxWidth: "100%" }}
+                                        value={activeTemplateId ?? ""}
+                                        onChange={(e) => {
+                                          const v = e.target.value;
+                                          if (v) onActivateTemplate(v);
+                                        }}
+                                      >
+                                        <option value="">{content.wizard.step3.templateSelectPlaceholder}</option>
+                                        {templates.map((t) => (
+                                          <option key={t.id} value={t.id}>
+                                            {t.filename}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <p className="action-hint">{content.wizard.step3.defaultTemplateHint}</p>
+                                      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)", marginTop: 6 }}>
+                                        {content.wizard.step3.specialistTemplateRoutingLabel}
+                                      </label>
+                                      <p className="action-hint">{content.wizard.step3.specialistTemplateRoutingHint}</p>
+                                      {agentOptions.map((a) => (
+                                        <div key={`synth-route-${a.id}`} style={{ display: "grid", gridTemplateColumns: "220px minmax(0,1fr)", gap: 10, alignItems: "center" }}>
+                                          <label style={{ fontSize: 12, color: "var(--text-muted)" }}>{a.name}</label>
+                                          <select
+                                            className="text-input"
+                                            value={specialistTemplateMap[a.id] || ""}
+                                            onChange={(e) => onAssignSpecialistTemplate(a.id, e.target.value)}
+                                          >
+                                            <option value="">{content.wizard.step2.specialistRoutingUseDefault}</option>
+                                            {templates.map((t) => (
+                                              <option key={`synth-${a.id}-${t.id}`} value={t.id}>
+                                                {t.filename}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      ))}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="action-hint">{content.wizard.step3.noTemplatesForExport}</p>
+                                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                                        <input
+                                          className="usa-file-input"
+                                          style={{ display: "none" }}
+                                          id="quick-synth-template-upload"
+                                          type="file"
+                                          accept=".docx,.pdf,.xlsx"
+                                          onChange={onUploadTemplate}
+                                        />
+                                        <label htmlFor="quick-synth-template-upload" className="btn">
+                                          {content.wizard.step3.uploadTemplateQuickBrowse}
+                                        </label>
+                                        <button type="button" className="btn" onClick={() => setWizardStep(2)}>
+                                          {content.wizard.step3.goToTemplateStep}
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                <details style={{ marginTop: 4 }}>
+                                  <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                                    {content.wizard.step3.optionalGenerateSummary}
+                                  </summary>
+                                  <div style={{ marginTop: 12 }}>
+                                    <button
+                                      type="button"
+                                      className="btn"
+                                      style={{ width: "100%", maxWidth: 420, justifyContent: "center" }}
+                                      onClick={onGenerate}
+                                      disabled={loading || !sessionId}
+                                    >
+                                      <Zap size={14} color="var(--text-accent)" aria-hidden="true" /> {content.wizard.step3.generateLabel}
+                                    </button>
+                                    <p className="action-hint">{content.wizard.step3.generateHint}</p>
+                                  </div>
+                                </details>
+                              </div>
                             </div>
                           </div>
 
@@ -1879,6 +1924,11 @@ function App() {
                                   <div className="pipeline-artifact-download-meta">
                                     {a.artifact_filename}
                                     {a.summary ? ` — ${a.summary}` : ""}
+                                    {(a.word_export_note || "").trim() ? (
+                                      <div style={{ marginTop: 6 }}>
+                                        Word export note: {(a.word_export_note || "").trim()}
+                                      </div>
+                                    ) : null}
                                   </div>
                                 </div>
                                 <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
@@ -1917,24 +1967,44 @@ function App() {
                           </ul>
                         )}
                         {pipelineArtifacts.length > 0 ? (
-                          <button
-                            type="button"
-                            className="btn"
-                            style={{ marginTop: 16 }}
-                            onClick={async () => {
-                              if (!workspaceId || !sessionId) return;
-                              try {
-                                await downloadFileByPath(
-                                  `/workspaces/${workspaceId}/sessions/${sessionId}/pipeline/artifacts/all/download`,
-                                );
-                                showNotice(content.notices.artifactsExportReady);
-                              } catch (e) {
-                                showNotice(e.message);
-                              }
-                            }}
-                          >
-                            <FileText size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadAll}
-                          </button>
+                          <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 12 }}>
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={async () => {
+                                if (!workspaceId || !sessionId) return;
+                                try {
+                                  setBusyHint(content.agents.sessionPackageZipStatus);
+                                  await downloadFileByPath(api.downloadPipelineArtifactsPackagePath(workspaceId, sessionId));
+                                  showNotice(content.notices.sessionPackageReady);
+                                } catch (e) {
+                                  showNotice(e.message);
+                                } finally {
+                                  setBusyHint(null);
+                                }
+                              }}
+                            >
+                              <Package size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadPackage}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn"
+                              onClick={async () => {
+                                if (!workspaceId || !sessionId) return;
+                                try {
+                                  setBusyHint(content.agents.artifactsExportStatus);
+                                  await downloadFileByPath(api.downloadAllPipelineArtifactsPath(workspaceId, sessionId));
+                                  showNotice(content.notices.artifactsExportReady);
+                                } catch (e) {
+                                  showNotice(e.message);
+                                } finally {
+                                  setBusyHint(null);
+                                }
+                              }}
+                            >
+                              <FileText size={14} aria-hidden="true" /> {content.manager.pipelineArtifactsDownloadCombinedMarkdown}
+                            </button>
+                          </div>
                         ) : null}
                       </>
                     )}

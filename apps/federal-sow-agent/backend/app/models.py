@@ -154,8 +154,10 @@ class PipelineArtifact(Base):
     # Summary for quick display
     content_summary: Mapped[str] = mapped_column(Text, nullable=True)  # Brief preview/summary
 
-    # Optional merged Word export (relative key under upload dir, e.g. outputs/uuid_phase0_....docx)
+    # Optional Word export (relative key under upload dir, e.g. outputs/uuid_phase0_....docx)
     exported_docx_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    exported_docx_note: Mapped[str | None] = mapped_column(String(512), nullable=True)  # last export status / failure reason
+
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     

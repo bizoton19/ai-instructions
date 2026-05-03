@@ -49,7 +49,9 @@ export const content = {
     draftGenerationSuccessful: "Draft Generation Successful.",
     exportReady: "Export ready.",
     markdownExportReady: "Markdown file ready to download.",
-    artifactsExportReady: "All pipeline artifacts bundled in one Markdown download.",
+    sessionPackageReady:
+      "Session package downloaded — a ZIP folder with separate files per phase (Markdown, Word exports when present, and MANIFEST.txt).",
+    artifactsExportReady: "Combined Markdown download ready (single file — use for quick search only).",
   },
 
   sidebar: {
@@ -85,9 +87,10 @@ export const content = {
     draftingStatus: (specialistLabel) =>
       `${specialistLabel} is drafting. This is a single model run for this session.`,
     pipelineRunning: "Pipeline specialists are drafting (server-side orchestration).",
-    exportingStatus: "Merging draft into Word template.",
+    exportingStatus: "Generating Word export.",
     markdownExportStatus: "Generating Markdown export.",
-    artifactsExportStatus: "Bundling all pipeline phase drafts into one Markdown file.",
+    sessionPackageZipStatus: "Building session artifact package (ZIP).",
+    artifactsExportStatus: "Combining all pipeline phases into one Markdown file.",
     ingestStatus: "Uploading workspace files.",
   },
 
@@ -118,7 +121,7 @@ export const content = {
         short: "Synthesis",
         title: "Synthesis",
         tooltip: "Run the drafting agent from the sidebar session, preview output, export DOCX.",
-        subtitle: "Co-create in the terminal, generate a draft, then merge to Word.",
+        subtitle: "Run the specialist pipeline, review artifacts per phase, and download a ZIP package when finished.",
       },
     ],
 
@@ -175,17 +178,26 @@ export const content = {
       roleUser: "OPERATOR",
       messagePlaceholder: "Input directive...",
       transmit: "Transmit",
-      synthesisTitle: "Synthesis Controls",
+      synthesisTitle: "Session setup",
+      sessionSetupIntro:
+        "Notes and templates guide how specialists draft. The pipeline card above saves one artifact per completed phase; use the links there or download the full ZIP package when you are ready to hand off files.",
       instructionsPlaceholder: "Global compilation directives...",
-      generateLabel: "Generate draft",
+      optionalGenerateSummary: "Optional: single-step generate (toolbar specialist)",
+      generateLabel: "Generate one draft",
       generateHint:
-        "One toolbar Generate pass uses only the specialist selected above. The ordered specialist pipeline ignores that selection and runs its own phases; use Download all artifacts to save every phase in one Markdown file.",
-      downloadAllArtifactsLabel: "Download all artifacts",
-      downloadAllArtifactsHint:
-        "One Markdown file listing each completed pipeline phase (and the same content you see in chat), separated by horizontal rules. For a final Word package merged from the latest draft, use Download Word below.",
-      downloadLabel: "Download Word (final draft)",
+        "Runs one model pass using the specialist selected in the sidebar toolbar — not the ordered multi-phase pipeline. Use this only when you want a quick standalone draft; normal acquisition drafting uses Run next specialist or Run full automatic chain in the pipeline card.",
+      downloadArtifactsPackageLabel: "Download artifacts package (ZIP)",
+      downloadArtifactsPackageHint:
+        "One ZIP folder: one Markdown file per completed phase, Word exports when the server saved them, and MANIFEST.txt. This is not one integrated Statement of Work file.",
+      downloadSessionPackageLabel: "Download session package (ZIP)",
+      downloadSessionPackageHint:
+        "One download containing separate files per completed phase (Markdown plus Word exports when the server saved them), plus MANIFEST.txt. This is not a single integrated Statement of Work file.",
+      downloadCombinedMarkdownLabel: "Download combined Markdown",
+      downloadCombinedMarkdownHint:
+        "One Markdown file with every phase concatenated — useful for text search only; prefer the ZIP package for proper file boundaries.",
+      downloadLabel: "Download Word (latest chat draft)",
       downloadHint:
-        "Merges the most recent assistant draft into the workspace template. Use this for the finished package after the pipeline; it does not archive each earlier phase separately. Uses the workspace default template when set. Pure .docx templates can merge with Jinja placeholders; PDF or Excel references produce structured Word built from drafting output.",
+        "Exports Word from the most recent assistant message in this session — not tied to a specific pipeline phase. The server builds a .docx from drafting output using the workspace default template for styling context; it does not perform Word merge-field or mail-merge mapping.",
       defaultTemplateLabel: "Workspace default template (export pairing)",
       defaultTemplateHint:
         "Active file guides template hints for agents. Prefer .docx for style-preserving placeholder merge when your file uses merge fields.",
@@ -237,7 +249,15 @@ export const content = {
       progressPillTitle: "Pipeline phases finished so far (each finished phase produced one stored artifact).",
       artifactsReadyPill: (n) => `${n} artifact${n === 1 ? "" : "s"} ready for download`,
       artifactsReadyPillTitle: "Markdown artifacts stored on the server for this session; download individually or as a bundle.",
-      pipelinePhaseArtifactReady: "Artifact saved — ready to download from Storage or the list below.",
+      pipelinePhaseArtifactReady: "Artifact saved on the server.",
+      pipelinePhaseArtifactPending:
+        "This phase is complete; artifact links appear here when the list loads. If nothing shows, wait a moment or open Storage view and return.",
+      pipelinePhaseArtifactLinkGroupLabel: (phaseName) => `Downloads for ${phaseName}`,
+      artifactLinkMarkdown: "Markdown file",
+      artifactLinkWord: "Word export",
+      artifactWordExportNotePrefix: "Word export note:",
+      pipelineCardMoreExportsHint:
+        "For a single combined Markdown file or Word from the latest chat message, use Storage: Produced pipeline artifacts in the manager view.",
       pipelinePhaseHandoff: (nextAgentName) => `Handing off to ${nextAgentName}.`,
       pipelinePhaseStatusComplete: "Complete",
       pipelinePhaseRunning: "Running…",
@@ -256,10 +276,10 @@ export const content = {
   observability: {
     pageTitle: "Operations overview",
     pageIntro:
-      "Quick links and status for the specialist pipeline, workspace storage, LangSmith tracing, and recent server-side events.",
+      "Quick links and status for the specialist pipeline, workspace storage, LangSmith tracing, and recent server-side events (including Word exports and downloads).",
     eventsTitle: "Recent events",
     eventsIntro:
-      "Pipeline completions, Word merge results, and HTTP errors (4xx/5xx) recorded by this API process. Data is in-memory and resets when the server restarts; use LangSmith for full LLM traces.",
+      "Pipeline completions, Word export results, and HTTP errors (4xx/5xx) recorded by this API process. Data is in-memory and resets when the server restarts; use LangSmith for full LLM traces.",
     eventsRefresh: "Refresh now",
     eventsEmpty: "No events recorded yet. Run a pipeline step or trigger an API error to populate this list.",
     eventsLoadError: "Could not load observability data from the server.",
@@ -291,13 +311,14 @@ export const content = {
     templatesTitle: "Storage: Templates",
     pipelineArtifactsTitle: "Storage: Produced pipeline artifacts",
     pipelineArtifactsIntro:
-      "Each specialist phase saves a Markdown artifact for the session selected in the sidebar. The server also builds a Word (.docx) export per phase from the model’s draft. The active template supplies outline and boilerplate context to the model; the .docx is not produced by Word merge-field mapping. PDF is not generated automatically.",
+      "Each specialist phase saves a Markdown artifact for the session selected in the sidebar. The server also attempts a Word (.docx) export per phase. The active template feeds outline hints to the model; per-phase exports are Word files built from drafting output — not guaranteed pixel-perfect insertion into the agency template binary. PDF is not generated automatically.",
     pipelineArtifactsNoSession: "Select a session in the sidebar to list produced artifacts.",
     pipelineArtifactsEmpty:
       "No pipeline artifacts yet for this session. Run specialists from the Synthesis step (Pipeline view). If the list stays empty after a run, check the browser notice bar for API errors.",
     pipelineArtifactsDownloadOne: "Markdown",
     pipelineArtifactsDownloadMerged: "Word (export)",
-    pipelineArtifactsDownloadAll: "Download all phases (one Markdown file)",
+    pipelineArtifactsDownloadPackage: "Download artifacts package (ZIP)",
+    pipelineArtifactsDownloadCombinedMarkdown: "Download combined Markdown",
     pipelineArtifactsSessionLabel: "Session",
     dropSourceMaterials: "Drop Source Materials",
     browse: "Browse",

@@ -1345,6 +1345,14 @@ body::before {
   gap: 16px;
 }
 
+.pipeline-phase-artifact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
 .phase-indicator {
   display: flex;
   flex-direction: column;

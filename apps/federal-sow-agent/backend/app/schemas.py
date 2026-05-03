@@ -278,6 +278,10 @@ class PipelineArtifactOut(BaseModel):
     summary: str  # Brief preview of content
     download_url: str | None = None
     merged_docx_download_url: str | None = None
+    word_export_note: str | None = Field(
+        default=None,
+        description="Status or error detail from last automatic Word export for this phase.",
+    )
 
 
 class PipelineAdvanceOut(BaseModel):

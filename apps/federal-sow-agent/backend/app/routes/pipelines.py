@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import AgentSession, PipelineArtifact
+from app.models import AgentSession, Workspace
+from app.pipeline_zip import build_pipeline_artifacts_zip_bytes
 from app.pipeline_runner import (
     advance_pipeline,
     get_session_artifacts,
@@ -91,6 +92,7 @@ def list_pipeline_artifacts(
                 if a.exported_docx_key
                 else None
             ),
+            word_export_note=a.exported_docx_note,
         )
         for a in artifacts
     ]
@@ -172,7 +174,10 @@ def download_phase_merged_docx(
     if not artifact.exported_docx_key:
         raise HTTPException(
             status_code=404,
-            detail="No merged Word file for this phase. Set a workspace template and re-run the phase, or use Download Word from Synthesis.",
+            detail=(
+                "No Word export for this phase yet. Re-run the specialist after fixing context, "
+                "or see word_export_note on the artifact list."
+            ),
         )
 
     path = resolve_storage_key(artifact.exported_docx_key)
@@ -184,6 +189,46 @@ def download_phase_merged_docx(
         path,
         filename=download_name,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+
+@router.get("/artifacts/package/download")
+def download_artifacts_package_zip(
+    workspace_id: str,
+    session_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    One ZIP containing separate files per phase (.md and optional .docx Word export) plus MANIFEST.txt.
+
+    This is the primary “handoff package”; it does not concatenate all narrative into one Markdown file.
+    """
+    must_workspace_exist(db, workspace_id)
+    session = (
+        db.query(AgentSession).filter(AgentSession.id == session_id, AgentSession.workspace_id == workspace_id).first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    artifacts = get_session_artifacts(db, session_id)
+    if not artifacts:
+        raise HTTPException(status_code=404, detail="No artifacts found for this session")
+
+    ws_row = db.query(Workspace).filter(Workspace.id == session.workspace_id).first()
+    tid = ws_row.active_template_asset_id if ws_row else None
+
+    payload = build_pipeline_artifacts_zip_bytes(
+        artifacts,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        active_template_asset_id=tid,
+        resolve_storage_key=resolve_storage_key,
+    )
+    fname = f"session_{session_id[:8]}_pipeline_artifacts.zip"
+    return Response(
+        content=payload,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
     )
 
 

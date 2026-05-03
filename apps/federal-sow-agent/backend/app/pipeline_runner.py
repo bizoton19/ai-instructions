@@ -17,6 +17,7 @@ from app.context_builder import assemble_prior_pipeline_text, build_generation_i
 from app.merge.pipeline_phase_export import delete_merged_docx_file, try_write_merged_docx_for_phase
 from app.observability_events import record_event
 from app.models import AgentSession, Message, PipelineArtifact, Workspace
+from app.prior_artifacts import assemble_prior_artifacts_for_llm_block
 from app.schemas import PipelineAdvanceIn, SOWSectionsModel
 
 
@@ -126,10 +127,26 @@ def _run_one_pipeline_phase(
         workspace_id,
         preferred_agent_id=agent_id,
     )
-    prior = assemble_prior_pipeline_text(db, session.id)
+    prior_artifact_block = assemble_prior_artifacts_for_llm_block(
+        db, session.id, agent_id, upcoming_phase_order=step_idx
+    )
+    clarification_chat = ""
+    if agent_id in ("sow_writer", "cost_estimator"):
+        pc = assemble_prior_pipeline_text(db, session.id)
+        if pc.strip():
+            clarification_chat = "(Additional session assistant summaries for clarification context.)\n\n" + pc.strip()
+
     parts: list[str] = []
-    if prior.strip():
-        parts.append("Prior pipeline output to refine or build on:\n\n" + prior)
+
+    if prior_artifact_block.strip():
+        parts.append(prior_artifact_block.strip())
+    else:
+        legacy_prior = assemble_prior_pipeline_text(db, session.id)
+        if legacy_prior.strip():
+            parts.append("Prior pipeline output to refine or build on:\n\n" + legacy_prior.strip())
+
+    if clarification_chat.strip():
+        parts.append(clarification_chat.strip())
     if additional_instructions.strip():
         parts.append("Operator instructions for this phase:\n" + additional_instructions.strip())
     compiled = "\n\n".join(parts) if parts else ""
@@ -202,15 +219,17 @@ def _run_one_pipeline_phase(
     db.refresh(artifact)
 
     export_key, export_note = try_write_merged_docx_for_phase(db, workspace_id, session_id, artifact.id)
+    artifact.exported_docx_note = (export_note or "")[:500]
     if export_key:
         artifact.exported_docx_key = export_key
-        db.commit()
-        db.refresh(artifact)
-    elif export_note and export_note not in ("no active template", "empty phase content"):
+    db.commit()
+    db.refresh(artifact)
+
+    if not export_key and export_note and export_note not in ("empty phase content",):
         record_event(
             "warning",
             "merge",
-            "Merged Word not created after pipeline phase",
+            "Word export not created after pipeline phase",
             detail=export_note[:400],
             agent_id=agent_id,
             phase_order=str(step_idx),

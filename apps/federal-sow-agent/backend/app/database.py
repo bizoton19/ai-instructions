@@ -110,3 +110,5 @@ def init_db():
             pa_names = {c[1] for c in pa_cols}
             if "exported_docx_key" not in pa_names:
                 conn.execute(text("ALTER TABLE pipeline_artifacts ADD COLUMN exported_docx_key VARCHAR(512)"))
+            if "exported_docx_note" not in pa_names:
+                conn.execute(text("ALTER TABLE pipeline_artifacts ADD COLUMN exported_docx_note VARCHAR(512)"))
