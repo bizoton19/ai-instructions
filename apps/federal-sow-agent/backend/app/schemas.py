@@ -127,6 +127,22 @@ class RequirementsDiscoveryModel(BaseModel):
     Produces a Requirements Clarification Document that identifies
     gaps, asks SMART questions, and summarizes known requirements.
     """
+    source_document_profile: str = Field(
+        default="",
+        description=(
+            "Classify uploaded context: e.g. formal specification, requirements set, RFI/RFP excerpt, "
+            "user guide, architecture description, microservice diagram or narrative, ERD or data model, "
+            "API documentation, operations runbook, mixed sources, or insufficient to tell — cite filenames or sections as evidence."
+        ),
+    )
+    assumed_it_project_posture: str = Field(
+        default="",
+        description=(
+            "Framing for downstream phases, e.g. net_new_IT_capability, modernization_or_redesign, "
+            "sustainment_or_O&M, data_platform_or_analytics, AI_or_cloud_enablement, or unknown — "
+            "with one or two sentences of rationale (architecture/ERD usually implies IT work; thin context implies greenfield assumptions)."
+        ),
+    )
     executive_summary: str = Field(default="", description="Brief summary of current understanding")
     key_objectives: list[str] = Field(default_factory=list, description="Key objectives like newspaper headlines")
     known_requirements: list[dict] = Field(default_factory=list, description="Requirements identified so far with SMART assessment")

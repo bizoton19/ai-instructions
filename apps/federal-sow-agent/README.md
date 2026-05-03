@@ -4,6 +4,8 @@ Prototype full-stack application for generating U.S. federal-style Statements of
 
 ## Features
 
+- **Pipeline phase 1 (Requirements Discovery)** classifies uploaded context (spec, guide, architecture, ERD, and so on), frames the likely IT project posture (net-new, modernization, sustainment), and only then produces the clarification document. That phase acts as the built-in orchestration step; add a separate orchestrator only if you need an extra model pass before phase 1.
+- Optional **workspace agent instructions** (settings): paste agency-specific rules, evaluation factors, or “always assume cloud/AI review” language; they are prepended to every generate and pipeline step.
 - Multiple workspaces and agent sessions
 - Separate upload areas for:
   - Context documents (`.pdf`, `.docx`, `.xlsx`, `.csv`, image files)

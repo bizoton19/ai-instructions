@@ -29,6 +29,12 @@ def _generate_summary(structured_data: dict, agent_id: str) -> str:
     summaries = []
     
     if agent_id == "requirements_agent":
+        profile = (structured_data.get("source_document_profile") or "").strip()
+        posture = (structured_data.get("assumed_it_project_posture") or "").strip()
+        if profile:
+            summaries.append(profile[:220] + ("…" if len(profile) > 220 else ""))
+        if posture:
+            summaries.append(posture[:220] + ("…" if len(posture) > 220 else ""))
         known = len(structured_data.get("known_requirements", []))
         questions = len(structured_data.get("clarification_questions", []))
         summaries.append(f"Identified {known} known requirements, {questions} clarification questions")
