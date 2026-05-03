@@ -37,6 +37,7 @@ def generate_sow(
         system_prompt=agent_profile.system_prompt,
         temperature=float(ws.agent_temperature),
         workspace_instructions=ws.agent_workspace_instructions,
+        run_tags=["federal-sow-generate", session.agent_type],
     )
 
     assistant_message = Message(

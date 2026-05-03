@@ -134,6 +134,7 @@ def _run_one_pipeline_phase(
         output_schema=profile.output_schema,
         temperature=float(ws.agent_temperature),
         workspace_instructions=ws.agent_workspace_instructions,
+        run_tags=["federal-sow-pipeline", agent_id],
     )
 
     # Convert result to dict for storage

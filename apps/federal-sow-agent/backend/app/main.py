@@ -16,6 +16,7 @@ from app.routes.workspaces import router as workspaces_router
 from app.storage import ensure_storage_dirs
 
 from app.routes.agents import router as agents_router
+from app.routes.observability import router as observability_router
 from app.routes.pipelines import router as pipelines_router
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,7 @@ def ready():
 
 
 app.include_router(agents_router)
+app.include_router(observability_router)
 app.include_router(pipelines_router)
 app.include_router(workspaces_router)
 app.include_router(sessions_router)

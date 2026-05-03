@@ -1385,12 +1385,85 @@ body::before {
 }
 
 .phase-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 700;
   color: var(--text-main);
   margin-bottom: 4px;
   line-height: 1.2;
+}
+
+.phase-name-text {
+  min-width: 0;
+}
+
+.specialist-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.specialist-avatar--emphasize {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px var(--border-highlight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .specialist-avatar--emphasize {
+    transform: none;
+  }
+}
+
+.ops-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.ops-matrix-table th,
+.ops-matrix-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  vertical-align: top;
+}
+
+.ops-matrix-table th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+}
+
+.ops-matrix-table tbody td {
+  color: var(--text-main);
+  background: var(--bg-panel);
+}
+
+.ops-matrix-table tbody tr:nth-child(even) td {
+  background: var(--bg-surface);
+}
+
+.usa-link {
+  color: var(--text-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.usa-link:hover {
+  color: var(--text-main);
 }
 
 .phase-status {

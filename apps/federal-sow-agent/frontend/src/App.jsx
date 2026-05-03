@@ -4,17 +4,23 @@ import ReactMarkdown from "react-markdown";
 import {
   Activity,
   Box,
+  Calculator,
   ChevronRight,
+  ClipboardList,
   Database,
   FileDown,
+  FilePenLine,
   FileText,
   FileUp,
   FolderOpen,
   LayoutTemplate,
+  LineChart,
   Plus,
+  Search,
   Settings,
   Terminal,
   Trash2,
+  User,
   Workflow,
   X,
   Zap,
@@ -43,6 +49,29 @@ function sectionsToPreviewMarkdown(sections) {
     if (block) parts.push(`## ${title}\n\n${block}`);
   }
   return parts.join("\n\n");
+}
+
+/** Stable icon and color per specialist for pipeline timeline (accessibility: not emoji). */
+const SPECIALIST_AVATAR = {
+  requirements_agent: { Icon: Search, bg: "#1b6ec2" },
+  requirements_analyst: { Icon: ClipboardList, bg: "#168821" },
+  market_research: { Icon: LineChart, bg: "#9c3d9a" },
+  sow_writer: { Icon: FilePenLine, bg: "#c05600" },
+  cost_estimator: { Icon: Calculator, bg: "#4a4a4a" },
+};
+
+function SpecialistAvatar({ agentId, emphasize }) {
+  const spec = SPECIALIST_AVATAR[agentId] || { Icon: User, bg: "#565c65" };
+  const Icon = spec.Icon;
+  return (
+    <span
+      className={`specialist-avatar${emphasize ? " specialist-avatar--emphasize" : ""}`}
+      style={{ backgroundColor: spec.bg }}
+      aria-hidden="true"
+    >
+      <Icon size={14} strokeWidth={2} color="#fff" />
+    </span>
+  );
 }
 
 function emailInitials(email) {
@@ -129,7 +158,8 @@ function App() {
   const [clarificationResolved, setClarificationResolved] = useState(false);
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
-  const [viewMode, setViewMode] = useState("wizard"); // wizard | manager
+  const [viewMode, setViewMode] = useState("wizard"); // wizard | manager | observability
+  const [observabilityStatus, setObservabilityStatus] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTemp, setSettingsTemp] = useState(0.2);
   const [settingsGuidance, setSettingsGuidance] = useState("");
@@ -254,6 +284,14 @@ function App() {
   useEffect(() => {
     api.listPipeline().then(setPipelinePlan).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (viewMode !== "observability") return;
+    api
+      .getObservability()
+      .then(setObservabilityStatus)
+      .catch(() => setObservabilityStatus({ langsmith_tracing_enabled: false, error: true }));
+  }, [viewMode]);
 
   useEffect(() => {
     if (!workspaceId || !templates.length || activeTemplateId) return;
@@ -807,18 +845,28 @@ function App() {
 
                 <div className="view-toggles">
                   <button
+                    type="button"
                     className={`toggle-btn ${viewMode === "wizard" ? "active" : ""}`}
                     onClick={() => setViewMode("wizard")}
                   >
-                    <Workflow size={14} style={{ marginRight: 6, marginBottom: -2 }} /> 
+                    <Workflow size={14} style={{ marginRight: 6, marginBottom: -2 }} aria-hidden="true" />
                     {content.toolbar.pipeline}
                   </button>
                   <button
+                    type="button"
                     className={`toggle-btn ${viewMode === "manager" ? "active" : ""}`}
                     onClick={() => setViewMode("manager")}
                   >
-                    <Database size={14} style={{ marginRight: 6, marginBottom: -2 }} />
+                    <Database size={14} style={{ marginRight: 6, marginBottom: -2 }} aria-hidden="true" />
                     {content.toolbar.storage}
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-btn ${viewMode === "observability" ? "active" : ""}`}
+                    onClick={() => setViewMode("observability")}
+                  >
+                    <Activity size={14} style={{ marginRight: 6, marginBottom: -2 }} aria-hidden="true" />
+                    {content.toolbar.observability}
                   </button>
                 </div>
               </div>
@@ -1236,7 +1284,10 @@ function App() {
                                             <div className="phase-line" />
                                           </div>
                                           <div className="phase-details">
-                                            <div className="phase-name">{phase.name}</div>
+                                            <div className="phase-name">
+                                              <SpecialistAvatar agentId={phase.agent_id} emphasize={row.showPulse} />
+                                              <span className="phase-name-text">{phase.name}</span>
+                                            </div>
                                             <div className="phase-status" aria-label={`${phase.name}: ${row.primary}`}>
                                               <div className="phase-status-primary">{row.primary}</div>
                                               {row.detail.map((line, j) => (
@@ -1419,7 +1470,7 @@ function App() {
                     )}
                   </AnimatePresence>
                 </div>
-              ) : (
+              ) : viewMode === "manager" ? (
                 <>
                 <div className="grid-2">
                   <div className="card">
@@ -1580,6 +1631,72 @@ function App() {
                   </div>
                 </div>
                 </>
+              ) : (
+                <div className="observability-panel" style={{ padding: "0 8px 24px", flex: 1, overflow: "auto" }}>
+                  <div className="card">
+                    <div className="card-header">
+                      <h3 className="card-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <Activity color="var(--text-accent)" aria-hidden="true" /> {content.observability.pageTitle}
+                      </h3>
+                    </div>
+                    <div className="card-body">
+                      <p className="action-hint" style={{ marginTop: 0 }}>
+                        {content.observability.pageIntro}
+                      </p>
+                      <p className="action-hint">{content.observability.requirementsRolesNote}</p>
+                      <div style={{ overflowX: "auto" }}>
+                        <table className="ops-matrix-table">
+                          <caption className="sr-only-label">{content.observability.tableCaption}</caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">{content.observability.colArea}</th>
+                              <th scope="col">{content.observability.colStatus}</th>
+                              <th scope="col">{content.observability.colAction}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>{content.observability.rowPipelineName}</td>
+                              <td>{content.observability.rowPipelineStatus}</td>
+                              <td>{content.observability.rowPipelineAction}</td>
+                            </tr>
+                            <tr>
+                              <td>{content.observability.rowStorageName}</td>
+                              <td>{content.observability.rowStorageStatus(contextDocs.length, templates.length)}</td>
+                              <td>{content.observability.rowStorageAction}</td>
+                            </tr>
+                            <tr>
+                              <td>{content.observability.rowObsName}</td>
+                              <td>
+                                {observabilityStatus?.langsmith_tracing_enabled
+                                  ? content.observability.rowObsOn
+                                  : content.observability.rowObsOff}
+                                {observabilityStatus?.langchain_project
+                                  ? ` ${content.observability.rowObsProject(observabilityStatus.langchain_project)}`
+                                  : ""}
+                              </td>
+                              <td>
+                                <a
+                                  href={
+                                    import.meta.env.VITE_LANGSMITH_PROJECT_URL ||
+                                    observabilityStatus?.langsmith_ui_base ||
+                                    "https://smith.langchain.com"
+                                  }
+                                  className="usa-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {content.observability.openLangSmith}
+                                  <span className="usa-sr-only"> (opens in new tab)</span>
+                                </a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </motion.div>
           ) : (

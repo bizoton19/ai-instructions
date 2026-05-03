@@ -66,6 +66,7 @@ export const content = {
     statSessions: "SESSIONS",
     pipeline: "Pipeline",
     storage: "Storage",
+    observability: "Observability",
     specialistBadge: "Session specialist",
     specialistUnset: "(select a session)",
     specialistSelectTitle: "Change specialist for drafts and standalone Generate draft",
@@ -231,6 +232,29 @@ export const content = {
       pipelinePhaseNeedsClarification: "Needs clarification",
       pipelinePhaseNeedsClarificationDetail: "Reply in session chat, confirm below if prompted, then continue the pipeline.",
     },
+  },
+
+  observability: {
+    pageTitle: "Operations overview",
+    pageIntro:
+      "Quick links and status for the specialist pipeline, workspace storage, and LangSmith tracing (when enabled on the server).",
+    tableCaption: "Pipeline, storage, and observability",
+    colArea: "Area",
+    colStatus: "Status",
+    colAction: "Details",
+    rowPipelineName: "Pipeline",
+    rowPipelineStatus: "Run specialists from the Synthesis step (Pipeline view).",
+    rowPipelineAction: "Switch to Pipeline using the control above.",
+    rowStorageName: "Storage",
+    rowStorageStatus: (nCtx, nTpl) => `${nCtx} context file(s), ${nTpl} template(s) in this workspace.`,
+    rowStorageAction: "Switch to Storage to upload or remove files.",
+    rowObsName: "Observability (LangSmith)",
+    rowObsOn: "Tracing is enabled. LLM runs are tagged federal-sow-pipeline or federal-sow-generate with the specialist id.",
+    rowObsOff: "Tracing is off. Set LANGCHAIN_TRACING_V2=true and LANGCHAIN_API_KEY in the backend .env to record runs.",
+    rowObsProject: (name) => (name ? `Project name: ${name}` : ""),
+    openLangSmith: "Open LangSmith",
+    requirementsRolesNote:
+      "There is one discovery agent (requirements_agent) and one formal analyst (requirements_analyst); they are different pipeline phases, not duplicates.",
   },
 
   manager: {

@@ -94,6 +94,7 @@ export async function downloadFileByPath(downloadPath) {
 }
 
 export const api = {
+  getObservability: () => request("/observability"),
   listAgents: () => request("/agents"),
   listPipeline: () => request("/agents/pipeline"),
   listWorkspaces: () => request("/workspaces"),

@@ -54,6 +54,13 @@ def _fallback_sections(output_schema: type[BaseModel], text: str) -> BaseModel:
         return output_schema()
 
 
+def _lc_run_config(run_tags: list[str] | None) -> dict[str, object]:
+    """LangSmith/LangChain tracing tags and run name (no PII)."""
+    if not run_tags:
+        return {}
+    return {"tags": run_tags, "run_name": run_tags[-1]}
+
+
 def run_specialist_chain(
     context_block: str,
     template_hints: str,
@@ -63,6 +70,7 @@ def run_specialist_chain(
     *,
     temperature: float = 0.2,
     workspace_instructions: str | None = None,
+    run_tags: list[str] | None = None,
 ) -> tuple[BaseModel, list[str]]:
     """Run a pipeline specialist with a specific output schema.
     
@@ -143,6 +151,7 @@ Return JSON matching the schema described in the format instructions. The full_m
         llm = ChatOpenAI(model=settings.llm_model, api_key=settings.openai_api_key, temperature=temperature)
 
     chain = prompt | llm | parser
+    invoke_cfg = _lc_run_config(run_tags)
 
     try:
         raw = chain.invoke(
@@ -151,7 +160,8 @@ Return JSON matching the schema described in the format instructions. The full_m
                 "template_hints": template_hints or "[No template hints]",
                 "user_instructions": user_instructions or "[Execute this pipeline phase.]",
                 "format_instructions": parser.get_format_instructions(),
-            }
+            },
+            config=invoke_cfg,
         )
         if isinstance(raw, BaseModel):
             return raw, warnings
@@ -169,7 +179,8 @@ Return JSON matching the schema described in the format instructions. The full_m
                     "user_instructions": user_instructions
                     or "[Return JSON only per format instructions]",
                     "format_instructions": parser.get_format_instructions(),
-                }
+                },
+                config=invoke_cfg,
             )
             content = getattr(msg, "content", str(msg))
             content = _strip_json_fence(content)
@@ -192,6 +203,7 @@ def run_sow_chain(
     *,
     temperature: float = 0.2,
     workspace_instructions: str | None = None,
+    run_tags: list[str] | None = None,
 ) -> tuple[SOWSectionsModel, list[str]]:
     """Legacy entry point for SOW generation (used by non-pipeline routes)."""
     return run_specialist_chain(
@@ -202,6 +214,7 @@ def run_sow_chain(
         output_schema=SOWSectionsModel,
         temperature=temperature,
         workspace_instructions=workspace_instructions,
+        run_tags=run_tags,
     )
 
 

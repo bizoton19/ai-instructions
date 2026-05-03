@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,5 +27,17 @@ class Settings(BaseSettings):
     dev_login_password: str = "devpassword-change-me"
     cors_allow_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
+    # LangSmith / LangChain tracing (optional). Set LANGCHAIN_TRACING_V2=true and LANGCHAIN_API_KEY in .env.
+    langchain_tracing_v2: bool = False
+    langchain_api_key: str | None = None
+    langchain_project: str = "federal-sow-agent"
+
 
 settings = Settings()
+
+# Ensure OpenAI/LC client libraries pick up tracing before first LLM call.
+if settings.langchain_tracing_v2 and (settings.langchain_api_key or "").strip():
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key.strip()
+    if settings.langchain_project:
+        os.environ["LANGCHAIN_PROJECT"] = settings.langchain_project.strip()

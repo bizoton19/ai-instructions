@@ -1,3 +1,9 @@
+"""Agent profiles and pipeline sequence.
+
+There is a single Phase 1 discovery profile: ``requirements_agent`` (Requirements Discovery /
+clarification). ``requirements_analyst`` is Phase 2 (SRD-style formal requirements)—not a duplicate.
+"""
+
 from pydantic import BaseModel
 
 from app.schemas import (
