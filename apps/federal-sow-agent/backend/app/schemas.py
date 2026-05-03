@@ -260,6 +260,9 @@ class PipelineAdvanceOut(BaseModel):
     phase_name_run: str | None = None
     phases_run: int = 0
     artifact_produced: str | None = Field(default=None, description="Type of artifact produced in this phase")
+    latest_artifact_filename: str | None = Field(
+        default=None, description="Suggested download filename for the artifact from the last completed phase."
+    )
 
 
 class MergeIn(BaseModel):
