@@ -291,12 +291,12 @@ export const content = {
     templatesTitle: "Storage: Templates",
     pipelineArtifactsTitle: "Storage: Produced pipeline artifacts",
     pipelineArtifactsIntro:
-      "Each specialist phase saves a Markdown artifact for the session selected in the sidebar. When this workspace has a default template, the server also builds a merged Word (.docx) file per phase using that template. Final format is Word only; PDF is not generated automatically.",
+      "Each specialist phase saves a Markdown artifact for the session selected in the sidebar. The server also builds a Word (.docx) export per phase from the model’s draft. The active template supplies outline and boilerplate context to the model; the .docx is not produced by Word merge-field mapping. PDF is not generated automatically.",
     pipelineArtifactsNoSession: "Select a session in the sidebar to list produced artifacts.",
     pipelineArtifactsEmpty:
       "No pipeline artifacts yet for this session. Run specialists from the Synthesis step (Pipeline view). If the list stays empty after a run, check the browser notice bar for API errors.",
     pipelineArtifactsDownloadOne: "Markdown",
-    pipelineArtifactsDownloadMerged: "Word (merged)",
+    pipelineArtifactsDownloadMerged: "Word (export)",
     pipelineArtifactsDownloadAll: "Download all phases (one Markdown file)",
     pipelineArtifactsSessionLabel: "Session",
     dropSourceMaterials: "Drop Source Materials",

@@ -242,7 +242,7 @@ def run_sow_chain(
 
 
 def sections_to_flat_dict(sections: SOWSectionsModel) -> dict[str, Any]:
-    """Flatten for docxtpl variable substitution."""
+    """Flatten structured SOW sections for Word export."""
     return {
         "purpose": sections.purpose,
         "background": sections.background,
