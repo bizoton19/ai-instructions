@@ -290,10 +290,15 @@ function App() {
 
   useEffect(() => {
     if (viewMode !== "observability") return;
-    api
-      .getObservability()
-      .then(setObservabilityStatus)
-      .catch(() => setObservabilityStatus({ langsmith_tracing_enabled: false, error: true }));
+    function loadObs() {
+      api
+        .getObservability()
+        .then(setObservabilityStatus)
+        .catch(() => setObservabilityStatus({ langsmith_tracing_enabled: false, load_error: true }));
+    }
+    loadObs();
+    const interval = setInterval(loadObs, 15000);
+    return () => clearInterval(interval);
   }, [viewMode]);
 
   useEffect(() => {
@@ -1969,6 +1974,70 @@ function App() {
                             </tr>
                           </tbody>
                         </table>
+                      </div>
+                      <div style={{ marginTop: 24 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                          <h4 style={{ margin: 0, fontSize: 14, fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
+                            {content.observability.eventsTitle}
+                          </h4>
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => {
+                              api
+                                .getObservability()
+                                .then(setObservabilityStatus)
+                                .catch(() => setObservabilityStatus({ langsmith_tracing_enabled: false, load_error: true }));
+                            }}
+                          >
+                            {content.observability.eventsRefresh}
+                          </button>
+                        </div>
+                        <p className="action-hint">{content.observability.eventsIntro}</p>
+                        {observabilityStatus?.load_error ? (
+                          <p className="action-hint" role="alert">
+                            {content.observability.eventsLoadError}
+                          </p>
+                        ) : null}
+                        {!observabilityStatus?.recent_events?.length ? (
+                          <p className="action-hint">{content.observability.eventsEmpty}</p>
+                        ) : (
+                          <div style={{ overflowX: "auto" }}>
+                            <table className="ops-matrix-table obs-events-table">
+                              <caption className="sr-only-label">{content.observability.eventsTitle}</caption>
+                              <thead>
+                                <tr>
+                                  <th scope="col">{content.observability.eventsColumnTime}</th>
+                                  <th scope="col">{content.observability.eventsColumnLevel}</th>
+                                  <th scope="col">{content.observability.eventsColumnCategory}</th>
+                                  <th scope="col">{content.observability.eventsColumnMessage}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[...(observabilityStatus.recent_events || [])].reverse().map((ev, idx) => (
+                                  <tr key={`${ev.ts}-${idx}`} className={`obs-event-row obs-event-row--${ev.level}`}>
+                                    <td style={{ whiteSpace: "nowrap", fontSize: 12 }}>{ev.ts}</td>
+                                    <td>{ev.level}</td>
+                                    <td>{ev.category}</td>
+                                    <td>
+                                      <div>{ev.message}</div>
+                                      {ev.detail ? (
+                                        <div className="obs-event-detail">{ev.detail}</div>
+                                      ) : null}
+                                      {ev.context && Object.keys(ev.context).length > 0 ? (
+                                        <div className="obs-event-detail">
+                                          {Object.entries(ev.context)
+                                            .map(([k, v]) => `${k}=${v}`)
+                                            .join(" · ")}
+                                        </div>
+                                      ) : null}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

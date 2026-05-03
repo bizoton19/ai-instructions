@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.merge.docx_merge import merge_or_standalone_docx, sow_model_to_flat
 from app.models import PipelineArtifact, TemplateAsset, Workspace
+from app.observability_events import record_event
 from app.schemas import SOWSectionsModel
 from app.storage import resolve_storage_key
 
@@ -75,9 +76,29 @@ def try_write_merged_docx_for_phase(
     flat = sow_model_to_flat(sections)
     out_name = f"{uuid.uuid4().hex}_phase{artifact.phase_order}_{artifact.agent_id}_{session_id[:8]}.docx"
     out_path = settings.upload_dir / "outputs" / out_name
-    note = merge_or_standalone_docx(template_path, template.filename, flat, out_path)
-    key = f"outputs/{out_name}"
-    return key, note
+    try:
+        note = merge_or_standalone_docx(template_path, template.filename, flat, out_path)
+        key = f"outputs/{out_name}"
+        record_event(
+            "info",
+            "merge",
+            "Pipeline phase output merged to Word",
+            agent_id=artifact.agent_id,
+            phase_order=str(artifact.phase_order),
+            session_id=session_id[:8],
+        )
+        return key, note
+    except Exception as exc:
+        record_event(
+            "error",
+            "merge",
+            "Word merge failed for pipeline phase",
+            detail=str(exc)[:400],
+            agent_id=artifact.agent_id,
+            phase_order=str(artifact.phase_order),
+            session_id=session_id[:8],
+        )
+        return None, f"merge error: {exc!s}"[:200]
 
 
 def delete_merged_docx_file(storage_key: str | None) -> None:

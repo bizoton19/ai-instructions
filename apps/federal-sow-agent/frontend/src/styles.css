@@ -1610,3 +1610,29 @@ body::before {
   background: rgba(248, 113, 113, 0.12);
 }
 
+.obs-events-table td {
+  vertical-align: top;
+}
+
+.obs-event-detail {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  max-width: 640px;
+}
+
+.obs-event-row--error td:nth-child(2) {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.obs-event-row--warning td:nth-child(2) {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.obs-event-row--info td:nth-child(2) {
+  color: #93c5fd;
+}
+

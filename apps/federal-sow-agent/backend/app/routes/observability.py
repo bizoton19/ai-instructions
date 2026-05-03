@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.config import settings
+from app.observability_events import get_recent_events
 
 router = APIRouter(prefix="/observability", tags=["observability"])
 
@@ -18,4 +19,9 @@ def observability_status():
         "langsmith_tracing_enabled": tracing,
         "langchain_project": settings.langchain_project if tracing else None,
         "langsmith_ui_base": "https://smith.langchain.com",
+        "recent_events": get_recent_events(50),
+        "events_note": (
+            "Recent pipeline, merge, and HTTP events (last 50). Stored in memory only and cleared when the "
+            "API process restarts. Use LangSmith for full LLM traces."
+        ),
     }

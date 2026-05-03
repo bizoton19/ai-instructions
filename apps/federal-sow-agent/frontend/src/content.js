@@ -253,7 +253,17 @@ export const content = {
   observability: {
     pageTitle: "Operations overview",
     pageIntro:
-      "Quick links and status for the specialist pipeline, workspace storage, and LangSmith tracing (when enabled on the server).",
+      "Quick links and status for the specialist pipeline, workspace storage, LangSmith tracing, and recent server-side events.",
+    eventsTitle: "Recent events",
+    eventsIntro:
+      "Pipeline completions, Word merge results, and HTTP errors (4xx/5xx) recorded by this API process. Data is in-memory and resets when the server restarts; use LangSmith for full LLM traces.",
+    eventsRefresh: "Refresh now",
+    eventsEmpty: "No events recorded yet. Run a pipeline step or trigger an API error to populate this list.",
+    eventsLoadError: "Could not load observability data from the server.",
+    eventsColumnTime: "Time (UTC)",
+    eventsColumnLevel: "Level",
+    eventsColumnCategory: "Category",
+    eventsColumnMessage: "Message",
     tableCaption: "Pipeline, storage, and observability",
     colArea: "Area",
     colStatus: "Status",

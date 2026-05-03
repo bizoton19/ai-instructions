@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.config import settings
+from app.observability_events import record_event
 from app.database import init_db
 from app.routes.generate import router as generate_router
 from app.routes.merge import router as merge_router
@@ -22,6 +24,24 @@ from app.routes.pipelines import router as pipelines_router
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Federal Document Writer Agent API", version="0.1.0")
+
+
+@app.exception_handler(HTTPException)
+async def observability_http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code >= 400:
+        detail = exc.detail
+        if isinstance(detail, (dict, list)):
+            detail_s = str(detail)[:400]
+        else:
+            detail_s = str(detail)[:400]
+        record_event(
+            "error" if exc.status_code >= 500 else "warning",
+            "http",
+            f"{exc.status_code} {request.method} {request.url.path}",
+            detail=detail_s,
+        )
+    return await http_exception_handler(request, exc)
+
 
 allowed_origins = [o.strip() for o in settings.cors_allow_origins.split(",") if o.strip()]
 
@@ -60,6 +80,8 @@ def startup() -> None:
 
     for warn in pipeline_sequence_warnings():
         logger.warning("%s", warn)
+
+    record_event("info", "server", "API process started")
 
 
 @app.get("/health")

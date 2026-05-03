@@ -15,6 +15,7 @@ from app.agents_config import (
 )
 from app.context_builder import assemble_prior_pipeline_text, build_generation_inputs
 from app.merge.pipeline_phase_export import delete_merged_docx_file, try_write_merged_docx_for_phase
+from app.observability_events import record_event
 from app.models import AgentSession, Message, PipelineArtifact, Workspace
 from app.schemas import PipelineAdvanceIn, SOWSectionsModel
 
@@ -190,11 +191,31 @@ def _run_one_pipeline_phase(
     db.refresh(session)
     db.refresh(artifact)
 
-    export_key, _export_note = try_write_merged_docx_for_phase(db, workspace_id, session_id, artifact.id)
+    export_key, export_note = try_write_merged_docx_for_phase(db, workspace_id, session_id, artifact.id)
     if export_key:
         artifact.exported_docx_key = export_key
         db.commit()
         db.refresh(artifact)
+    elif export_note and export_note not in ("no active template", "empty phase content"):
+        record_event(
+            "warning",
+            "merge",
+            "Merged Word not created after pipeline phase",
+            detail=export_note[:400],
+            agent_id=agent_id,
+            phase_order=str(step_idx),
+            session_id=session_id[:8],
+        )
+
+    record_event(
+        "info",
+        "pipeline",
+        f"Pipeline phase completed: {profile.name}",
+        workspace_id=workspace_id[:8],
+        session_id=session_id[:8],
+        agent_id=agent_id,
+        phase_order=str(step_idx),
+    )
 
     return result_model, warnings, profile.name, artifact
 
