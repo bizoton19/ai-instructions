@@ -12,7 +12,7 @@ Prototype full-stack application for generating U.S. federal-style Statements of
   - SOW templates (`.docx`)
 - Server-side ingestion modules convert files to normalized text with provenance metadata
 - LangChain generation pipeline returns structured SOW sections and markdown
-- Word merge using template placeholders (`{{ scope }}` style) with fallback append mode
+- Word export from specialist drafts (template outline feeds the model; no merge-field mapping)
 - Prototype session-cookie authentication (development only)
 
 ## Stack

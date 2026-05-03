@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # Unknown keys in .env (e.g. LLM_PROVIDER=azure) are ignored. Azure vs OpenAI is chosen in sow_chain:
+    # Azure when azure_openai_endpoint and azure_openai_deployment are both set; else OpenAI if openai_api_key is set.
 
     database_url: str = "sqlite:///./data/sow_agent.db"
     secret_key: str = "dev-secret-change-in-production-use-openssl-rand-hex-32"
