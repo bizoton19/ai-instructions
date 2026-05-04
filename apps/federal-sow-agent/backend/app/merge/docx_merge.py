@@ -8,10 +8,85 @@ fields into a new document.
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 from docx import Document
 
 from app.schemas import SOWSectionsModel
+
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+_ORDERED_LIST_RE = re.compile(r"^\s*\d+[.)]\s+(.+?)\s*$")
+_UNORDERED_LIST_RE = re.compile(r"^\s*[-*]\s+(.+?)\s*$")
+_INLINE_MD_RE = re.compile(r"(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)")
+
+
+def _add_inline_markdown(paragraph, text: str) -> None:
+    """Render a conservative subset of inline markdown as Word runs."""
+    if not text:
+        return
+    cursor = 0
+    for m in _INLINE_MD_RE.finditer(text):
+        if m.start() > cursor:
+            paragraph.add_run(text[cursor:m.start()])
+        token = m.group(0)
+        if token.startswith("**") and token.endswith("**") and len(token) >= 4:
+            run = paragraph.add_run(token[2:-2])
+            run.bold = True
+        elif token.startswith("*") and token.endswith("*") and len(token) >= 3:
+            run = paragraph.add_run(token[1:-1])
+            run.italic = True
+        elif token.startswith("`") and token.endswith("`") and len(token) >= 3:
+            run = paragraph.add_run(token[1:-1])
+            run.font.name = "Courier New"
+        else:
+            paragraph.add_run(token)
+        cursor = m.end()
+    if cursor < len(text):
+        paragraph.add_run(text[cursor:])
+
+
+def _render_markdown_to_docx(doc: Document, markdown_text: str) -> None:
+    """Render markdown into native Word paragraph styles."""
+    in_code_fence = False
+    for raw_line in (markdown_text or "").splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+
+        if stripped.startswith("```"):
+            in_code_fence = not in_code_fence
+            continue
+
+        if in_code_fence:
+            p = doc.add_paragraph()
+            run = p.add_run(line)
+            run.font.name = "Courier New"
+            continue
+
+        if not stripped:
+            doc.add_paragraph()
+            continue
+
+        h = _HEADING_RE.match(stripped)
+        if h:
+            level = min(len(h.group(1)), 4)
+            p = doc.add_heading(level=level)
+            _add_inline_markdown(p, h.group(2))
+            continue
+
+        ul = _UNORDERED_LIST_RE.match(line)
+        if ul:
+            p = doc.add_paragraph(style="List Bullet")
+            _add_inline_markdown(p, ul.group(1))
+            continue
+
+        ol = _ORDERED_LIST_RE.match(line)
+        if ol:
+            p = doc.add_paragraph(style="List Number")
+            _add_inline_markdown(p, ol.group(1))
+            continue
+
+        p = doc.add_paragraph()
+        _add_inline_markdown(p, line)
 
 
 def merge_docx(
@@ -77,8 +152,7 @@ def standalone_docx_from_flat(
     body = (flat_context.get("full_markdown") or "").strip()
     if body:
         doc.add_heading("Specialist draft", level=1)
-        for line in body.splitlines():
-            doc.add_paragraph(line)
+        _render_markdown_to_docx(doc, body)
     else:
         doc.add_heading("Generated content", level=1)
         order = [
@@ -94,8 +168,7 @@ def standalone_docx_from_flat(
         for title, block in order:
             if block and str(block).strip():
                 doc.add_heading(title, level=2)
-                for line in str(block).splitlines():
-                    doc.add_paragraph(line)
+                _render_markdown_to_docx(doc, str(block))
 
     doc.save(str(output_path))
     return "Created Word document from specialist output (no placeholder merge)."
