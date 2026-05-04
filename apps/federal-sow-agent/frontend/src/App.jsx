@@ -178,6 +178,8 @@ function App() {
   const [settingsGuidance, setSettingsGuidance] = useState("");
   const [pipelineArtifacts, setPipelineArtifacts] = useState([]);
   const contextMenuRef = useRef(null);
+  const managerContextFileRef = useRef(null);
+  const managerTemplateFileRef = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
 
   const agentOptions = agentsCatalog.length
@@ -1096,7 +1098,7 @@ function App() {
                             <FileUp size={48} className="dropzone-icon" />
                             <span style={{ fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>{content.wizard.step1.dropTitle}</span>
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)" }}>{content.wizard.step1.dropSubtitle}</span>
-                            <input className="usa-file-input" style={{ display: "none" }} id="context-file" type="file" multiple onChange={onUploadContext} />
+                            <input className="usa-file-input file-input-offscreen" id="context-file" type="file" multiple onChange={onUploadContext} />
                             <label htmlFor="context-file" className="btn" style={{ marginTop: 24 }}>{content.wizard.step1.browseFiles}</label>
                           </div>
                           
@@ -1157,7 +1159,7 @@ function App() {
                             <Box size={48} className="dropzone-icon" />
                             <span style={{ fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>{content.wizard.step2.dropTitle}</span>
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)" }}>{content.wizard.step2.dropSubtitle}</span>
-                            <input className="usa-file-input" style={{ display: "none" }} id="template-file" type="file" multiple onChange={onUploadTemplate} />
+                            <input className="usa-file-input file-input-offscreen" id="template-file" type="file" multiple onChange={onUploadTemplate} />
                             <label htmlFor="template-file" className="btn" style={{ marginTop: 24 }}>{content.wizard.step2.browseTemplates}</label>
                           </div>
                           
@@ -1643,8 +1645,7 @@ function App() {
                                       <p className="action-hint">{content.wizard.step3.noTemplatesForExport}</p>
                                       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
                                         <input
-                                          className="usa-file-input"
-                                          style={{ display: "none" }}
+                                          className="usa-file-input file-input-offscreen"
                                           id="quick-synth-template-upload"
                                           type="file"
                                           onChange={onUploadTemplate}
@@ -1800,8 +1801,23 @@ function App() {
                         }}
                       >
                         <span style={{ fontSize: "14px", fontWeight: 700 }}>{content.manager.dropSourceMaterials}</span>
-                        <input className="usa-file-input" style={{ display: "none" }} id="context-mgr" type="file" multiple onChange={onUploadContext} />
-                        <label htmlFor="context-mgr" className="btn" style={{ marginTop: 12 }}>{content.manager.browse}</label>
+                        <input
+                          ref={managerContextFileRef}
+                          className="usa-file-input file-input-offscreen"
+                          id="context-mgr"
+                          type="file"
+                          multiple
+                          onChange={onUploadContext}
+                          tabIndex={-1}
+                        />
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ marginTop: 12 }}
+                          onClick={() => managerContextFileRef.current?.click()}
+                        >
+                          {content.manager.browse}
+                        </button>
                       </div>
                       
                       {contextDocs.length > 0 && (
@@ -1851,8 +1867,23 @@ function App() {
                         }}
                       >
                         <span style={{ fontSize: "14px", fontWeight: 700 }}>{content.manager.dropDocxTemplates}</span>
-                        <input className="usa-file-input" style={{ display: "none" }} id="tpl-mgr" type="file" multiple onChange={onUploadTemplate} />
-                        <label htmlFor="tpl-mgr" className="btn" style={{ marginTop: 12 }}>{content.manager.browse}</label>
+                        <input
+                          ref={managerTemplateFileRef}
+                          className="usa-file-input file-input-offscreen"
+                          id="tpl-mgr"
+                          type="file"
+                          multiple
+                          onChange={onUploadTemplate}
+                          tabIndex={-1}
+                        />
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ marginTop: 12 }}
+                          onClick={() => managerTemplateFileRef.current?.click()}
+                        >
+                          {content.manager.browse}
+                        </button>
                       </div>
                       
                       {templates.length > 0 && (

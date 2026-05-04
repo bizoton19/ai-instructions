@@ -1036,6 +1036,7 @@ body::before {
 
 /* Dropzone */
 .dropzone {
+  position: relative;
   border: 1px dashed var(--border-active);
   background: var(--bg-surface);
   border-radius: var(--radius-md);
@@ -1046,6 +1047,20 @@ body::before {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+/* display:none on file inputs breaks or freezes the system file dialog on some WebKit/macOS builds */
+.file-input-offscreen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0.01;
 }
 
 .dropzone:hover {
