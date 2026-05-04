@@ -303,14 +303,15 @@ function App() {
     return () => clearInterval(interval);
   }, [viewMode]);
 
+  const loneTemplateId = templates.length === 1 ? templates[0]?.id ?? null : null;
+
   useEffect(() => {
-    if (!workspaceId || !templates.length || activeTemplateId) return;
-    if (templates.length !== 1) return;
+    if (!workspaceId || !loneTemplateId || activeTemplateId) return;
     api
-      .activateTemplate(workspaceId, templates[0].id)
+      .activateTemplate(workspaceId, loneTemplateId)
       .then(() => refreshWorkspaceData(workspaceId))
       .catch(() => {});
-  }, [workspaceId, templates, activeTemplateId]);
+  }, [workspaceId, loneTemplateId, activeTemplateId]);
 
   useEffect(() => {
     if (settingsOpen && activeWorkspace) {
@@ -1156,7 +1157,7 @@ function App() {
                             <Box size={48} className="dropzone-icon" />
                             <span style={{ fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>{content.wizard.step2.dropTitle}</span>
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)" }}>{content.wizard.step2.dropSubtitle}</span>
-                            <input className="usa-file-input" style={{ display: "none" }} id="template-file" type="file" multiple accept=".docx,.pdf,.xlsx" onChange={onUploadTemplate} />
+                            <input className="usa-file-input" style={{ display: "none" }} id="template-file" type="file" multiple onChange={onUploadTemplate} />
                             <label htmlFor="template-file" className="btn" style={{ marginTop: 24 }}>{content.wizard.step2.browseTemplates}</label>
                           </div>
                           
@@ -1646,7 +1647,6 @@ function App() {
                                           style={{ display: "none" }}
                                           id="quick-synth-template-upload"
                                           type="file"
-                                          accept=".docx,.pdf,.xlsx"
                                           onChange={onUploadTemplate}
                                         />
                                         <label htmlFor="quick-synth-template-upload" className="btn">
@@ -1851,7 +1851,7 @@ function App() {
                         }}
                       >
                         <span style={{ fontSize: "14px", fontWeight: 700 }}>{content.manager.dropDocxTemplates}</span>
-                        <input className="usa-file-input" style={{ display: "none" }} id="tpl-mgr" type="file" multiple accept=".docx,.pdf,.xlsx" onChange={onUploadTemplate} />
+                        <input className="usa-file-input" style={{ display: "none" }} id="tpl-mgr" type="file" multiple onChange={onUploadTemplate} />
                         <label htmlFor="tpl-mgr" className="btn" style={{ marginTop: 12 }}>{content.manager.browse}</label>
                       </div>
                       
