@@ -10,14 +10,29 @@ export class ApiError extends Error {
 }
 
 async function request(path, opts = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    headers: {
-      ...(opts.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(opts.headers || {}),
-    },
-    ...opts,
-  });
+  const { timeoutMs = 90000, signal, ...fetchOpts } = opts;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const compositeSignal = signal || controller.signal;
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      signal: compositeSignal,
+      credentials: "include",
+      headers: {
+        ...(fetchOpts.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...(fetchOpts.headers || {}),
+      },
+      ...fetchOpts,
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new ApiError(`Request timed out after ${Math.round(timeoutMs / 1000)}s`, 408, null);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const txt = await res.text();
     let parsed = null;
@@ -128,6 +143,7 @@ export const api = {
     return request(`/workspaces/${workspaceId}/context/upload`, {
       method: "POST",
       body: fd,
+      timeoutMs: 180000,
     });
   },
   renameContext: (workspaceId, assetId, filename) =>
@@ -145,6 +161,7 @@ export const api = {
     return request(`/workspaces/${workspaceId}/templates/upload`, {
       method: "POST",
       body: fd,
+      timeoutMs: 180000,
     });
   },
   renameTemplate: (workspaceId, assetId, filename) =>

@@ -178,6 +178,9 @@ function App() {
   const [settingsGuidance, setSettingsGuidance] = useState("");
   const [pipelineArtifacts, setPipelineArtifacts] = useState([]);
   const contextMenuRef = useRef(null);
+  const wizardContextFileRef = useRef(null);
+  const wizardTemplateFileRef = useRef(null);
+  const quickSynthTemplateFileRef = useRef(null);
   const managerContextFileRef = useRef(null);
   const managerTemplateFileRef = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
@@ -1098,8 +1101,23 @@ function App() {
                             <FileUp size={48} className="dropzone-icon" />
                             <span style={{ fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>{content.wizard.step1.dropTitle}</span>
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)" }}>{content.wizard.step1.dropSubtitle}</span>
-                            <input className="usa-file-input file-input-offscreen" id="context-file" type="file" multiple onChange={onUploadContext} />
-                            <label htmlFor="context-file" className="btn" style={{ marginTop: 24 }}>{content.wizard.step1.browseFiles}</label>
+                            <input
+                              ref={wizardContextFileRef}
+                              className="usa-file-input file-input-offscreen"
+                              id="context-file"
+                              type="file"
+                              multiple
+                              onChange={onUploadContext}
+                              tabIndex={-1}
+                            />
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{ marginTop: 24 }}
+                              onClick={() => wizardContextFileRef.current?.click()}
+                            >
+                              {content.wizard.step1.browseFiles}
+                            </button>
                           </div>
                           
                           {contextDocs.length > 0 && (
@@ -1159,8 +1177,23 @@ function App() {
                             <Box size={48} className="dropzone-icon" />
                             <span style={{ fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>{content.wizard.step2.dropTitle}</span>
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-muted)" }}>{content.wizard.step2.dropSubtitle}</span>
-                            <input className="usa-file-input file-input-offscreen" id="template-file" type="file" multiple onChange={onUploadTemplate} />
-                            <label htmlFor="template-file" className="btn" style={{ marginTop: 24 }}>{content.wizard.step2.browseTemplates}</label>
+                            <input
+                              ref={wizardTemplateFileRef}
+                              className="usa-file-input file-input-offscreen"
+                              id="template-file"
+                              type="file"
+                              multiple
+                              onChange={onUploadTemplate}
+                              tabIndex={-1}
+                            />
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{ marginTop: 24 }}
+                              onClick={() => wizardTemplateFileRef.current?.click()}
+                            >
+                              {content.wizard.step2.browseTemplates}
+                            </button>
                           </div>
                           
                           {templates.length > 0 && (
@@ -1645,14 +1678,20 @@ function App() {
                                       <p className="action-hint">{content.wizard.step3.noTemplatesForExport}</p>
                                       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
                                         <input
+                                          ref={quickSynthTemplateFileRef}
                                           className="usa-file-input file-input-offscreen"
                                           id="quick-synth-template-upload"
                                           type="file"
                                           onChange={onUploadTemplate}
+                                          tabIndex={-1}
                                         />
-                                        <label htmlFor="quick-synth-template-upload" className="btn">
+                                        <button
+                                          type="button"
+                                          className="btn"
+                                          onClick={() => quickSynthTemplateFileRef.current?.click()}
+                                        >
                                           {content.wizard.step3.uploadTemplateQuickBrowse}
-                                        </label>
+                                        </button>
                                         <button type="button" className="btn" onClick={() => setWizardStep(2)}>
                                           {content.wizard.step3.goToTemplateStep}
                                         </button>
