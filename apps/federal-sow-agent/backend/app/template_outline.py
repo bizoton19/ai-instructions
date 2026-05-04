@@ -8,6 +8,7 @@ from pathlib import Path
 
 from app.ingestion.docx_extract import extract_docx_text_and_outline
 from app.ingestion.pdf_extract import extract_pdf_text
+from app.merge.template_markdown_merge import build_master_template_markdown_from_outline
 
 
 _NUM_HEADING = re.compile(r"^(\d+(\.\d+)*\.?\s+|[A-Z]\.\s+|[IVXLCDM]+\.\s+)\S.+")
@@ -81,12 +82,17 @@ def build_template_outline_json(path: Path, filename: str) -> str:
     lower = filename.lower()
     if lower.endswith(".docx"):
         text, headings = extract_docx_text_and_outline(path)
+        base = {
+            "kind": "docx",
+            "headings": headings,
+            "text_excerpt": (text or "")[:10000],
+        }
+        base["master_markdown_template"] = build_master_template_markdown_from_outline(
+            filename=filename,
+            outline_obj=base,
+        )
         return json.dumps(
-            {
-                "kind": "docx",
-                "headings": headings,
-                "text_excerpt": (text or "")[:10000],
-            }
+            base
         )
     if lower.endswith(".pdf"):
         text, meta = extract_pdf_text(path)
@@ -106,15 +112,22 @@ def build_template_outline_json(path: Path, filename: str) -> str:
             )
             if len(excerpt) > max_excerpt:
                 excerpt = excerpt[:max_excerpt]
-        return json.dumps(
-            {
-                "kind": "pdf",
-                "headings": guessed,
-                "text_excerpt": excerpt,
-                "pages": meta.get("pages"),
-            }
+        base = {
+            "kind": "pdf",
+            "headings": guessed,
+            "text_excerpt": excerpt,
+            "pages": meta.get("pages"),
+        }
+        base["master_markdown_template"] = build_master_template_markdown_from_outline(
+            filename=filename,
+            outline_obj=base,
         )
+        return json.dumps(base)
     if lower.endswith(".xlsx"):
         payload = _xlsx_outline(path)
+        payload["master_markdown_template"] = build_master_template_markdown_from_outline(
+            filename=filename,
+            outline_obj=payload,
+        )
         return json.dumps(payload)
     raise ValueError(f"Unsupported template type: {filename}")

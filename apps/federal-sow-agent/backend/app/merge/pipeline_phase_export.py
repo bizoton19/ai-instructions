@@ -98,7 +98,13 @@ def try_write_merged_docx_for_phase(
         return None, "template file missing on disk"
 
     try:
-        note = merge_or_standalone_docx(template_path, template.filename, flat, out_path)
+        note = merge_or_standalone_docx(
+            template_path,
+            template.filename,
+            flat,
+            out_path,
+            template_outline_json=template.extracted_outline_json,
+        )
         key = f"outputs/{out_name}"
         record_event(
             "info",

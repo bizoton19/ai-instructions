@@ -13,6 +13,11 @@ import re
 from docx import Document
 
 from app.schemas import SOWSectionsModel
+from app.merge.template_markdown_merge import (
+    build_master_template_markdown_from_outline,
+    merge_flat_context_into_master_markdown,
+    parse_outline_json,
+)
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _ORDERED_LIST_RE = re.compile(r"^\s*\d+[.)]\s+(.+?)\s*$")
@@ -116,6 +121,7 @@ def merge_or_standalone_docx(
     template_filename: str,
     flat_context: dict[str, str],
     output_path: Path,
+    template_outline_json: str | None = None,
 ) -> str:
     """
     If the workspace template is .docx, merge/render into that file; otherwise build a new .docx
@@ -126,12 +132,20 @@ def merge_or_standalone_docx(
     if suffix == ".docx":
         _, note = merge_docx(template_path, flat_context, output_path)
         return note
+    outline_obj = parse_outline_json(template_outline_json)
+    master_md = (outline_obj.get("master_markdown_template") or "").strip()
+    if not master_md:
+        master_md = build_master_template_markdown_from_outline(
+            filename=template_filename,
+            outline_obj=outline_obj,
+        )
+    merged_md = merge_flat_context_into_master_markdown(master_md, flat_context)
     preamble = (
         "Reference template file type: PDF or Excel. The system extracted headings, text, or table "
-        "previews for the drafting specialists. This Word file contains the generated Statement of Work "
-        "content in structured sections—it does not recreate the original file’s exact layout, forms, or print styling."
+        "previews for the drafting specialists, generated a markdown master template, merged specialist "
+        "content into that master, and then rendered this DOCX artifact."
     )
-    return standalone_docx_from_flat(flat_context, output_path, preamble=preamble)
+    return standalone_docx_from_flat({"full_markdown": merged_md}, output_path, preamble=preamble)
 
 
 def standalone_docx_from_flat(

@@ -24,9 +24,21 @@ def _load_session(db: Session, workspace_id: str, session_id: str) -> AgentSessi
     return session
 
 
-def _word_export(template_path: Path, template_filename: str, flat: dict[str, str], out_path: Path) -> str:
+def _word_export(
+    template_path: Path,
+    template_filename: str,
+    flat: dict[str, str],
+    out_path: Path,
+    template_outline_json: str | None = None,
+) -> str:
     """DOCX templates merge in place; PDF/Excel guides drafting but export is a standalone .docx."""
-    return merge_or_standalone_docx(template_path, template_filename, flat, out_path)
+    return merge_or_standalone_docx(
+        template_path,
+        template_filename,
+        flat,
+        out_path,
+        template_outline_json=template_outline_json,
+    )
 
 
 def _sections_have_exportable_body(s: SOWSectionsModel) -> bool:
@@ -92,7 +104,7 @@ def merge_sow_docx(
     suffix = Path(template.filename).suffix.lower()
     out_name = f"{uuid.uuid4().hex}_export.docx" if suffix != ".docx" else f"{uuid.uuid4().hex}_merged_{template.filename}"
     out_path = Path(template_path.parent.parent / "outputs" / out_name)
-    note = _word_export(template_path, template.filename, flat, out_path)
+    note = _word_export(template_path, template.filename, flat, out_path, template.extracted_outline_json)
 
     rel = f"/workspaces/{workspace_id}/sessions/{session_id}/downloads/{out_name}"
     return {"download_path": rel, "format": "docx", "note": note}
@@ -132,7 +144,7 @@ def export_document(
         suffix = Path(template.filename).suffix.lower()
         out_name = f"{uuid.uuid4().hex}_export.docx" if suffix != ".docx" else f"{uuid.uuid4().hex}_merged_{template.filename}"
         out_path = base_dir / out_name
-        note = _word_export(template_path, template.filename, flat, out_path)
+        note = _word_export(template_path, template.filename, flat, out_path, template.extracted_outline_json)
         rel = f"/workspaces/{workspace_id}/sessions/{session_id}/downloads/{out_name}"
         return {"download_path": rel, "format": "docx", "note": note}
 
